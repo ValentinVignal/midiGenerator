@@ -1,0 +1,13 @@
+to install libraries :
+> pip install -r requirements.txt
+
+to update requirements.txt :
+> pipreqs ./
+
+(https://www.idiotinside.com/2015/05/10/python-auto-generate-requirements-txt/)
+
+
+Virual environment :
+on server : > InterpolationProject/bin/activate
+desactiver : > deactivate
+(https://www.godaddy.com/garage/how-to-install-and-configure-python-on-a-hosted-server/)
