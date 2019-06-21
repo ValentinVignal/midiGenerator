@@ -64,7 +64,7 @@ def main():
     if args.pc:
         data_path = '../Dataset/lmd_matched'
     else:
-        data_path = '~/../../storage1/valentin/lmd_matched'
+        data_path = '~\\..\\..\\storage1\\valentin\\lmd_matched'
 
 
     data_p = os.path.join(data_path, 'data.p')      # Pickle file with the informations of the data set
