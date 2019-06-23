@@ -1,11 +1,8 @@
-import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
 import argparse
 import os
 import pickle
-import json
-from math import ceil
+import music21
+import numpy as np
 
 
 def allMidiFiles(path, small_data):
@@ -35,6 +32,45 @@ def allMidiFiles(path, small_data):
                     fichiers.append(os.path.join(root, i))
 
     return fichiers
+
+
+def note_to_int(note):  # converts the note's letter to pitch value which is integer form.
+    # source: https://musescore.org/en/plugin-development/note-pitch-values
+    # idea: https://github.com/bspaans/python-mingus/blob/master/mingus/core/notes.py
+    note_base_name = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    if ('#-' in note):
+        first_letter = note[0]
+        base_value = note_base_name.index(first_letter)
+        octave = note[3]
+        value = base_value + 12 * (int(octave) - (-1))
+
+    elif ('#' in note):  # not totally sure, source: http://www.pianofinders.com/educational/WhatToCallTheKeys1.htm
+        first_letter = note[0]
+        base_value = note_base_name.index(first_letter)
+        octave = note[2]
+        value = base_value + 12 * (int(octave) - (-1))
+
+    elif ('-' in note):
+        first_letter = note[0]
+        base_value = note_base_name.index(first_letter)
+        octave = note[2]
+        value = base_value + 12 * (int(octave) - (-1))
+
+    else:
+        first_letter = note[0]
+        base_val = note_base_name.index(first_letter)
+        octave = note[1]
+        value = base_val + 12 * (int(octave) - (-1))
+
+    return value
+
+def check_float(duration):  #  this function fix the issue which comes from some note's duration.
+    # For instance some note has duration like 14/3 or 7/3.
+    if ('/' in duration):
+        numerator = float(duration.split('/')[0])
+        denominator = float(duration.split('/')[1])
+        duration = str(float(numerator / denominator))
+    return duration
 
 def main():
     """
@@ -66,6 +102,15 @@ def main():
     else:
         data_path = '../../../../../../storage1/valentin/lmd_matched'
 
+    min_value = 0.00
+    lower_first = 0.00
+
+    lower_second = 0.5
+    upper_first = 0.5
+
+    upper_second = 1.0
+    max_value = 1.0
+
 
     data_p = os.path.join(data_path, 'data.p')      # Pickle file with the informations of the data set
     if os.path.exists(data_p):
@@ -79,7 +124,92 @@ def main():
                 'midi': data_midi
             }, dump_file)
 
-    print(len(data_midi))
+
+    filename = data_midi[0]
+
+    midi = music21.converter.parse(filename)
+    notes_to_parse = None
+
+    parts = music21.instrument.partitionByInstrument(midi)
+
+    instrument_names = []
+
+    try:
+        for instrument in parts:  # Learn names of instruments.
+            name = (str(instrument).split(' ')[-1])[:-1]
+            instrument_names.append(name)
+
+    except TypeError:
+        print('Type is not iterable.')
+        return None
+
+    # Just take piano part. For the future works, we can use different instrument.
+    try:
+        piano_index = instrument_names.index('Piano')
+    except ValueError:
+        print('%s have not any Piano part' % (filename))
+        return None
+
+    notes_to_parse = parts.parts[piano_index].recurse()
+
+    duration_piano = float(check_float((str(notes_to_parse._getDuration()).split(' ')[-1])[:-1]))
+
+    durations = []
+    notes = []
+    offsets = []
+
+    for element in notes_to_parse:
+        if isinstance(element, music21.note.Note):  # If it is single note
+            notes.append(note_to_int(str(element.pitch)))  # Append note's integer value to "notes" list.
+            duration = str(element.duration)[27:-1]
+            durations.append(check_float(duration))
+            offsets.append(element.offset)
+
+        elif isinstance(element, music21.chord.Chord):  # If it is chord
+            notes.append('.'.join(str(note_to_int(str(n)))
+                                  for n in element.pitches))
+            duration = str(element.duration)[27:-1]
+            durations.append(check_float(duration))
+            offsets.append(element.offset)
+
+    try:
+        last_offset = int(offsets[-1])
+    except IndexError:
+        print('Index Error')
+        return (None, None, None)
+
+    total_offset_axis = last_offset * 4 + (8 * 4)
+    our_matrix = np.random.uniform(min_value, lower_first, (128, int(total_offset_axis)))
+
+    for (note, duration, offset) in zip(notes, durations, offsets):
+        how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
+
+        # Define difference between single and double note.
+        # I have choose the value for first touch, the another value for continuation.
+        # Lets make it randomize
+
+        # I choose to use uniform distrubition. Maybe, you can use another distrubition like Gaussian.
+
+        first_touch = np.random.uniform(upper_second, max_value, 1)
+        continuation = np.random.uniform(lower_second, upper_first, 1)
+
+        if ('.' not in str(note)):  # It is not chord. Single note.
+            our_matrix[note, int(offset * 4)] = first_touch
+            our_matrix[note, int((offset * 4) + 1): int((offset * 4) + how_many)] = continuation
+
+        else:  # For chord
+            chord_notes_str = [note for note in note.split('.')]
+            chord_notes_float = list(map(int, chord_notes_str))  # Take notes in chord one by one
+
+            for chord_note_float in chord_notes_float:
+                our_matrix[chord_note_float, int(offset * 4)] = first_touch
+                our_matrix[chord_note_float, int((offset * 4) + 1): int((offset * 4) + how_many)] = continuation
+
+    print(our_matrix)
+
+
+    print('Done')
+
 
 
 
