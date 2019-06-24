@@ -1,4 +1,4 @@
-import global_variables as g
+import src.global_variables as g
 import numpy as np
 import music21
 
