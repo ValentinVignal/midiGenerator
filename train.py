@@ -49,6 +49,8 @@ def main():
     """
 
     parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset')
+    parser.add_argument('--data', type=str, default='lmd_matched_mini', metavar='N',
+                        help='The name of the data')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 5)')
     parser.add_argument('--lr', type=float, default=0.00001, metavar='LR',
@@ -69,14 +71,13 @@ def main():
     args = parser.parse_args()
 
     if args.pc:
-        data_path = '../Dataset/lmd_matched'
+        data_path = os.path.join('../Dataset', args.data)
         args.epochs = 2
     else:
-        data_path = '../../../../../../storage1/valentin/lmd_matched'
+        data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
-
 
     data_p = os.path.join(data_transformed_path, 'data.p')      # Pickle file with the informations of the data set
     if os.path.exists(data_p):
@@ -95,24 +96,21 @@ def main():
     ##################################
 
     midis_array_path = os.path.join(data_transformed_path, 'midis_array.npy')
-    pl_midis_array_path = Path(midis_array_path)
+    pl_midis_array_path = Path(midis_array_path)        # Use the library pathlib
 
     if pl_midis_array_path.is_file():
         midis_array = np.load(midis_array_path)
 
     else:
         print(os.getcwd())
-        print(all_midi_paths)
         matrix_of_all_midis = []
 
         # All midi have to be in same shape.
-
         for single_midi_path in all_midi_paths:
-            print(single_midi_path)
             matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, length=250)
             if (matrix_of_single_midi is not None):
                 matrix_of_all_midis.append(matrix_of_single_midi)
-                print(matrix_of_single_midi.shape)
+                # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
         midis_array = np.asarray(matrix_of_all_midis)
         midis_array = np.transpose(midis_array, (0, 2, 1))
         np.save(midis_array_path, midis_array)
