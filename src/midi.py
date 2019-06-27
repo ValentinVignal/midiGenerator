@@ -30,7 +30,6 @@ def note_to_int(note):  # converts the note's letter to pitch value which is int
         base_val = note_base_name.index(first_letter)
         octave = note[1]
         value = base_val + 12 * (int(octave) - (-1))
-
     return value
 
 
@@ -90,16 +89,17 @@ def check_float(duration):  #  this function fix the issue which comes from som
 
 def midi_to_matrix(filename, length=250):  # convert midi file to matrix for DL architecture.
 
-    midi = music21.converter.parse(filename)
-    notes_to_parse = None
+    midi = music21.converter.parse(filename)  # Load the file
 
     parts = music21.instrument.partitionByInstrument(midi)
 
     instrument_names = []
 
     try:
-        for instrument in parts:  # learn names of instruments
-            name = (str(instrument).split(' ')[-1])[:-1]
+        for instrument in parts:
+            # learn names of instruments
+            name = (str(instrument).split(' ')[-1])[
+                   :-1]  # str(instrument) = "<music21.stream.Part object Electric Bass>"
             instrument_names.append(name)
 
     except TypeError:
@@ -123,13 +123,13 @@ def midi_to_matrix(filename, length=250):  # convert midi file to matrix for DL 
 
     for element in notes_to_parse:
         if isinstance(element, music21.note.Note):  # if it is single note
-            notes.append(note_to_int(str(element.pitch)))
+            notes.append(int(element.pitch.midi))       # The code number for the pitch
             duration = str(element.duration)[27:-1]
             durations.append(check_float(duration))
             offsets.append(element.offset)
 
         elif isinstance(element, music21.chord.Chord):  # if it is chord
-            notes.append('.'.join(str(note_to_int(str(n)))
+            notes.append('.'.join(str(n.midi)
                                   for n in element.pitches))
             duration = str(element.duration)[27:-1]
             durations.append(check_float(duration))
@@ -147,7 +147,8 @@ def midi_to_matrix(filename, length=250):  # convert midi file to matrix for DL 
         return (
             our_matrix[:, :length])  #  We have to set all individual note matrix to same shape for Generative DL.
     else:
-        print('%s have not enough duration' % (filename))
+        print('%s have not enough duration' % filename)
+        return our_matrix
 
 
 def int_to_note(integer):
@@ -266,6 +267,7 @@ def matrix_to_midi(matrix, random=0):
 
     return output_notes
 
+
 def sample(preds, temperature=1.0):
     preds = np.asarray(preds).astype('float64')
     preds = np.log(preds) / temperature
@@ -286,5 +288,3 @@ def sample(preds, temperature=1.0):
     array[top_indices_sorted[num_of_first:num_of_first + 3]] = 0.5
 
     return array
-
-
