@@ -82,9 +82,9 @@ def main():
     ##################################
 
     midis_array_path = os.path.join(data_transformed_path, 'midis_array.npy')
-    pl_midis_array_path = Path(midis_array_path)
+    midis_array_pathlib = Path(midis_array_path)
 
-    if pl_midis_array_path.is_file():
+    if midis_array_pathlib.is_file():
         midis_array = np.load(midis_array_path)
     elif all_midi_paths is not None:
         print('Compute the data in {0}'.format(data_path))
