@@ -8,7 +8,6 @@ import tensorflow as tf
 import random
 import bottleneck
 
-import src.global_variables as g
 import src.midi as midi
 
 
@@ -80,16 +79,9 @@ def main():
         os.mkdir(data_transformed_path)
 
     data_p = os.path.join(data_transformed_path, 'data.p')      # Pickle file with the informations of the data set
-    if os.path.exists(data_p):
-        with open(data_p, 'rb') as dump_file:
-            d = pickle.load(dump_file)
-            all_midi_paths = d['midi']
-    else:
-        all_midi_paths = allMidiFiles(data_path, args.pc)
-        with open(data_p, 'wb') as dump_file:
-            pickle.dump({
-                'midi': all_midi_paths
-            }, dump_file)
+    with open(data_p, 'rb') as dump_file:
+        d = pickle.load(dump_file)
+        all_midi_paths = d['midi']
 
     ##################################
     ##################################
@@ -97,27 +89,19 @@ def main():
 
     midis_array_path = os.path.join(data_transformed_path, 'midis_array.npy')
     pl_midis_array_path = Path(midis_array_path)        # Use the library pathlib
-
-    if pl_midis_array_path.is_file():
-        midis_array = np.load(midis_array_path)
-
-    else:
-        print(os.getcwd())
-        matrix_of_all_midis = []
-
-        # All midi have to be in same shape.
-        for single_midi_path in all_midi_paths:
-            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, length=250)
-            if (matrix_of_single_midi is not None):
-                matrix_of_all_midis.append(matrix_of_single_midi)
-                # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
-        midis_array = np.asarray(matrix_of_all_midis)
-        midis_array = np.transpose(midis_array, (0, 2, 1))
-        np.save(midis_array_path, midis_array)
+    midis_array = np.load(midis_array_path)
 
     midis_array = np.reshape(midis_array, (-1, 128))
 
     print('midis_array : {0}'.format(midis_array.shape))
+
+    ######################################
+    ########## End Loading data ##########
+    ######################################
+
+    saved_models_path = 'saved_models'
+    saved_models_pathlib = Path(saved_models_path)
+    saved_models_pathlib.mkdir(parents=True, exist_ok=True)
 
     max_len = 18  # how many column will take account to predict next column.
     step = 1  # step size.
@@ -132,10 +116,10 @@ def main():
         predicted_full.append(pred)
 
     previous_full = np.asarray(previous_full).astype('float64')
-    predicted_full = np.asarray(predicted_full).astype('float64')
+    predicted_full = np.asarray(predicted_full).astype('float64')   #[:, np.newaxis, :]
 
-    print(previous_full.shape)
-    print(predicted_full.shape)
+    print('previous_full shape :', previous_full.shape)
+    print('predicted_full shape :', predicted_full.shape)
 
     ###################################
     ###################################
@@ -147,6 +131,12 @@ def main():
 
     input_midi = tf.keras.Input(midi_shape)
 
+    x = tf.keras.layers.LSTM(512, return_sequences=True, unit_forget_bias=True)(input_midi)
+    x = tf.keras.layers.LeakyReLU()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
+
+    """
     x = tf.keras.layers.LSTM(1024, return_sequences=True, unit_forget_bias=True)(input_midi)
     x = tf.keras.layers.LeakyReLU()(x)
     x = tf.keras.layers.BatchNormalization()(x)
@@ -191,7 +181,8 @@ def main():
     x = tf.keras.layers.LeakyReLU()(x)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Dropout(0.22)(x)
-
+    """
+    x = tf.keras.layers.Flatten()(x)
     x = tf.keras.layers.Dense(128, activation='softmax')(x)
 
     model = tf.keras.Model(input_midi, x)
@@ -215,15 +206,17 @@ def main():
     for epoch in range(1, epoch_total):
         print('Epoch:', epoch)
         model.fit(previous_full, predicted_full, batch_size=batch_size, epochs=1,
-                  shuffle=True)
+                  shuffle=True, verbose=1)
 
         start_index = random.randint(0, len(midis_array) - max_len - 1)
 
         generated_midi = midis_array[start_index: start_index + max_len]
 
         if ((epoch % 10) == 0):
-            model.save_weights('my_model_weights.h5')
+            model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
 
+            """
+            # In my opinion, we don't need to generate every epoch (slower)
             for temperature in [1.2]:
                 print('------ temperature:', temperature)
 
@@ -244,6 +237,10 @@ def main():
                 output_notes = midi.matrix_to_midi(generated_midi_final, random=0)
                 midi_stream = music21.stream.Stream(output_notes)
                 midi_stream.write('midi', fp='lstm_output_v1_{}_{}.mid'.format(epoch, temperature))
+            """
+
+    model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
+    model.save(str(saved_models_pathlib / 'my_model.h5'))
 
     for layer in model.layers:
         lstm_weights = layer.get_weights()  # list of numpy arrays
@@ -258,12 +255,10 @@ def main():
 
     start_index = random.randint(0, len(midis_array) - max_len - 1)
 
-    generated_midi = midis_array[start_index: start_index + max_len]
-
     for temperature in [0.7, 2.7]:
         print('------ temperature:', temperature)
         generated_midi = midis_array[start_index: start_index + max_len]
-        for i in range(680):
+        for i in range(100):
             samples = generated_midi[i:]
             expanded_samples = np.expand_dims(samples, axis=0)
             preds = model.predict(expanded_samples, verbose=0)[0]

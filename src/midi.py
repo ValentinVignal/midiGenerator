@@ -281,7 +281,7 @@ def sample(preds, temperature=1.0):
     preds[100:] = 0  # eliminate notes with very high octaves
 
     ind = np.argpartition(preds, -1 * num_of_top)[-1 * num_of_top:]
-    top_indices_sorted = ind[np.argsort(preds[ind])]
+    top_indices_sorted = ind[np.argsort(preds[ind])]    # 15 biggest number
 
     array = np.random.uniform(0.0, 0.0, (128))
     array[top_indices_sorted[0:num_of_first]] = 1.0
