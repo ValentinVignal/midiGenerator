@@ -242,6 +242,10 @@ def main():
     model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
     model.save(str(saved_models_pathlib / 'my_model.h5'))
 
+    generated_midis_path = 'geneterated_midis'
+    generated_midis_pathlib = Path(generated_midis_path)
+    generated_midis_pathlib.mkdir(parents=True, exist_ok=True)
+
     for layer in model.layers:
         lstm_weights = layer.get_weights()  # list of numpy arrays
 
@@ -274,7 +278,7 @@ def main():
         generated_midi_final = np.transpose(generated_midi, (1, 0))
         output_notes = midi.matrix_to_midi(generated_midi_final, random=1)
         midi_stream = music21.stream.Stream(output_notes)
-        midi_file_name = ('lstm_out_{}.mid'.format(temperature))
+        midi_file_name = (str(generated_midis_pathlib / 'lstm_out_{}.mid'.format(temperature)))
         midi_stream.write('midi', fp=midi_file_name)
         parsed = music21.converter.parse(midi_file_name)
         for part in parsed.parts:
@@ -287,8 +291,8 @@ def main():
     print(z)
     print('max:', np.max(preds))
 
-    model.save('my_model.h5')
-    model.save_weights('my_model_weights.h5')
+    model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
+    model.save(str(saved_models_pathlib / 'my_model.h5'))
 
     print('Done')
 
