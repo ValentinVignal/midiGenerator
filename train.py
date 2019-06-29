@@ -242,7 +242,7 @@ def main():
     model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
     model.save(str(saved_models_pathlib / 'my_model.h5'))
 
-    generated_midis_path = 'geneterated_midis'
+    generated_midis_path = 'generated_midis'
     generated_midis_pathlib = Path(generated_midis_path)
     generated_midis_pathlib.mkdir(parents=True, exist_ok=True)
 
