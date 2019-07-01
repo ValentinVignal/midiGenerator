@@ -1,6 +1,5 @@
 import argparse
 import os
-import pickle
 import music21
 import numpy as np
 from pathlib import Path
@@ -10,35 +9,7 @@ import bottleneck
 
 import src.midi as midi
 import src.NN.nn as nn
-
-
-def allMidiFiles(path, small_data):
-    """
-
-    :param path: the root path
-    :param small_data: if we want to keep only a small amount of data
-    :return: An array of all the path of all the .mid files in the directory
-    """
-    nb_small_data = 10
-    fichiers = []
-    if small_data:
-        j = 0
-        for root, dirs, files in os.walk(path):
-            if j == nb_small_data:
-                break
-            for i in files:
-                if j == nb_small_data:
-                    break
-                if i.endswith('.mid'):
-                    fichiers.append(os.path.join(root, i))
-                    j += 1
-    else:
-        for root, dirs, files in os.walk(path):
-            for i in files:
-                if i.endswith('.mid'):
-                    fichiers.append(os.path.join(root, i))
-
-    return fichiers
+from src.NN.data import MySequence
 
 
 def main():
@@ -80,17 +51,9 @@ def main():
     ##################################
     ##################################
 
-    midis_array_path = os.path.join(data_transformed_path, 'midis_array.npy')
-    pl_midis_array_path = Path(midis_array_path)  # Use the library pathlib
-    midis_array = np.load(midis_array_path)
+    npy_path = os.path.join(data_transformed_path, 'npy')
+    npy_pathlib = Path(npy_path)
 
-    midis_array = np.reshape(midis_array, (-1, 128))
-
-    print('midis_array : {0}'.format(midis_array.shape))
-
-    ######################################
-    ########## End Loading data ##########
-    ######################################
 
     saved_models_path = 'saved_models'
     saved_models_pathlib = Path(saved_models_path)
@@ -99,26 +62,13 @@ def main():
     max_len = 18  # how many column will take account to predict next column.
     step = 1  # step size.
 
-    previous_full = []
-    predicted_full = []
-
-    for i in range(0, midis_array.shape[0] - max_len, step):
-        prev = midis_array[i:i + max_len, ...]  # take max_len column.
-        pred = midis_array[i + max_len, ...]  # take (max_len)th column.
-        previous_full.append(prev)
-        predicted_full.append(pred)
-
-    previous_full = np.asarray(previous_full).astype('float64')
-    predicted_full = np.asarray(predicted_full).astype('float64')  # [:, np.newaxis, :]
-
-    print('previous_full shape :', previous_full.shape)
-    print('predicted_full shape :', predicted_full.shape)
-
     input_param = {
         'nb_steps': 18,
         'input_size': 128
     }
     model = nn.my_model(input_param=input_param)
+
+    my_sequence = MySequence(nb_files=0, npy_path=npy_path, nb_step=max_len, batch_size=args.batch)
 
     ############################
 
@@ -131,7 +81,7 @@ def main():
 
     print('Training ...')
 
-    model.fit(previous_full, predicted_full, batch_size=args.batch, epochs=args.epochs,
+    model.fit_generator(generator=my_sequence, epochs=args.epochs,
               shuffle=True, verbose=1)
 
     """

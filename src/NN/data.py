@@ -29,7 +29,7 @@ class MySequence(tf.keras.utils.Sequence):
         self.nb_elements = int(self.nb_elements / batch_size)
 
     def __len__(self):
-        return self.nb_files
+        return self.nb_elements
 
     def __getitem__(self, item):
         i_start = item * self.batch_size
@@ -39,7 +39,7 @@ class MySequence(tf.keras.utils.Sequence):
         for s in range(self.batch_size):
             if i != self.i_loaded:
                 self.i_loaded = i
-                self.npy_loaded = np.load(str(self.npy_pathlib / '{0}.npy'.format(i))).item()
+                self.npy_loaded = np.load(str(self.npy_pathlib / '{0}.npy'.format(i))).item()['list']
             x.append(self.npy_loaded[j][k: k + self.nb_step])
             y.append(self.npy_loaded[j][k+self.nb_step])
             k += 1
@@ -49,6 +49,7 @@ class MySequence(tf.keras.utils.Sequence):
                 if j == len(self.all_len[i]):
                     j = 0
                     i += 1
+        x, y = np.asarray(x), np.asarray(y)
 
         return x, y
 
@@ -87,9 +88,9 @@ class MySequence(tf.keras.utils.Sequence):
         all_len = []
         i = 0
         npy = None
-        file = str(npy_pathlib / '{0}.npy'.format(i))
+        file = npy_pathlib / '{0}.npy'.format(i)
         while file.exists():
-            npy = np.load(file).item()
+            npy = np.load(str(file), allow_pickle=True).item()['list']
             len_f = []
             for j in range(len(npy)):
                 l = int((len(npy[j]) - 1) / self.nb_step)
