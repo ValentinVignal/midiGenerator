@@ -108,10 +108,14 @@ def main():
             bar.update(i)
             i += 1
             if i % nb_file_per_npy == 0:  # Save a npy file with 100 songs in it
-                np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), matrix_of_all_midis)
+                np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), {
+                    'list': matrix_of_all_midis
+                })
                 matrix_of_all_midis = []
         if i % nb_file_per_npy != 0:  # If some songs are missing
-            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), matrix_of_all_midis)
+            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), {
+                'list': matrix_of_all_midis
+            })
         bar.finish()
     else:
         print('Compute the data in {0}'.format(data_path))
@@ -133,12 +137,16 @@ def main():
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
                 i += 1
                 if i % nb_file_per_npy == 0:  # Save 1 npy file with 100 songs in it
-                    np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), matrix_of_all_midis)
+                    np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), {
+                        'list': matrix_of_all_midis
+                    })
                     matrix_of_all_midis = []
             bar.update(i_bar)
             i_bar += 1
         if i % nb_file_per_npy != 0:  # If some songs are missing
-            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), matrix_of_all_midis)
+            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), {
+                'list': matrix_of_all_midis
+            })
         with open(data_p, 'wb') as dump_file:
             pickle.dump({
                 'midi': all_midi_paths,
