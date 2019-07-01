@@ -63,9 +63,11 @@ def my_model(input_param):
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Dropout(0.22)(x)
     """
+    print()
     x = tf.keras.layers.Flatten()(x)
     x = tf.keras.layers.Dense(128, activation='softmax')(x)
 
     model = tf.keras.Model(input_midi, x)
 
     return model
+

@@ -7,6 +7,7 @@ import progressbar
 
 import src.midi as midi
 
+
 def allMidiFiles(path, small_data):
     """
 
@@ -36,7 +37,6 @@ def allMidiFiles(path, small_data):
     return fichiers
 
 
-
 def main():
     """
         Entry point
@@ -59,51 +59,59 @@ def main():
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
 
-    all_dataset_p = os.path.join(data_transformed_path, 'all_dataset.p')      # Pickle file with the informations of the data set
-    data_p = os.path.join(data_transformed_path, 'data.p')        # Pickle file with the informations of the data set kept
+    all_dataset_p = os.path.join(data_transformed_path,
+                                 'all_dataset.p')  # Pickle file with the informations of the data set
+    data_p = os.path.join(data_transformed_path, 'data.p')  # Pickle file with the informations of the data set kept
     all_midi_paths = None
     if os.path.exists(data_p):
         with open(data_p, 'rb') as dump_file:
             d = pickle.load(dump_file)
-            all_midi_paths = d['midi']      # All the path for the files with no errors
+            all_midi_paths = d['midi']  # All the path for the files with no errors
     elif os.path.exists(all_dataset_p):
         with open(all_dataset_p, 'rb') as dump_file:
             d = pickle.load(dump_file)
-            all_midi_paths_dataset = d['midi']      # All the path for every files in the dataset (including the ones with errors)
+            all_midi_paths_dataset = d[
+                'midi']  # All the path for every files in the dataset (including the ones with errors)
     else:
         all_midi_paths_dataset = allMidiFiles(data_path, args.pc)
         with open(all_dataset_p, 'wb') as dump_file:
             pickle.dump({
-                'midi': all_midi_paths_dataset
+                'midi': all_midi_paths_dataset,
             }, dump_file)
 
     ##################################
     ##################################
     ##################################
 
-    midis_array_path = os.path.join(data_transformed_path, 'midis_array.npy')
-    midis_array_pathlib = Path(midis_array_path)
+    npy_path = os.path.join(data_transformed_path, 'npy')
+    npy_pathlib = Path(npy_path)
+    npy_pathlib.mkdir(parents=True, exist_ok=True)
 
-    if midis_array_pathlib.is_file():
-        midis_array = np.load(midis_array_path)
-    elif all_midi_paths is not None:
+
+    nb_file_per_npy = 100
+
+    if all_midi_paths is not None:
+        # We already know what are the good files
         print('Compute the data in {0}'.format(data_path))
         matrix_of_all_midis = []
 
         # All midi have to be in same shape.
-        bar = progressbar.ProgressBar(maxval=len(all_midi_paths), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ', progressbar.ETA()])
-        bar.start()     # To see it working
+        bar = progressbar.ProgressBar(maxval=len(all_midi_paths),
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        bar.start()  # To see it working
         i = 0
         for single_midi_path in all_midi_paths:
             matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, length=250)
-            if (matrix_of_single_midi is not None):
-                matrix_of_all_midis.append(matrix_of_single_midi)
-                # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
+            matrix_of_all_midis.append(np.transpose(matrix_of_single_midi, (1, 0)))
+            # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
             bar.update(i)
             i += 1
-        midis_array = np.asarray(matrix_of_all_midis)
-        midis_array = np.transpose(midis_array, (0, 2, 1))
-        np.save(midis_array_path, midis_array)
+            if i % nb_file_per_npy == 0:  # Save a npy file with 100 songs in it
+                np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), matrix_of_all_midis)
+                matrix_of_all_midis = []
+        if i % nb_file_per_npy != 0:  # If some songs are missing
+            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), matrix_of_all_midis)
         bar.finish()
     else:
         print('Compute the data in {0}'.format(data_path))
@@ -111,8 +119,11 @@ def main():
         all_midi_paths = []
 
         # All midi have to be in same shape.
-        bar = progressbar.ProgressBar(maxval=len(all_midi_paths_dataset), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ', progressbar.ETA()])
-        bar.start()     # To see it working
+        bar = progressbar.ProgressBar(maxval=len(all_midi_paths_dataset),
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        bar.start()  # To see it working
+        i_bar = 0
         i = 0
         for single_midi_path in all_midi_paths_dataset:
             matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, length=250)
@@ -120,21 +131,23 @@ def main():
                 all_midi_paths.append(single_midi_path)
                 matrix_of_all_midis.append(matrix_of_single_midi)
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
-            bar.update(i)
-            i += 1
+                i += 1
+                if i % nb_file_per_npy == 0:  # Save 1 npy file with 100 songs in it
+                    np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), matrix_of_all_midis)
+                    matrix_of_all_midis = []
+            bar.update(i_bar)
+            i_bar += 1
+        if i % nb_file_per_npy != 0:  # If some songs are missing
+            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), matrix_of_all_midis)
         with open(data_p, 'wb') as dump_file:
             pickle.dump({
-                'midi': all_midi_paths
+                'midi': all_midi_paths,
+                'nb_files': len(all_midi_paths)
             }, dump_file)
-        midis_array = np.asarray(matrix_of_all_midis)
-        midis_array = np.transpose(midis_array, (0, 2, 1))
-        np.save(midis_array_path, midis_array)
         bar.finish()
     # Now all_midi_paths is defined and we don't need all_midi_paths_dataset anymore
 
-    midis_array = np.reshape(midis_array, (-1, 128))
-
-    print('midis_array : {0}'.format(midis_array.shape))
+    print('Number of songs : {0}'.format(i))
 
 
 if __name__ == '__main__':

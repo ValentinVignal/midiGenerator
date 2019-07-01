@@ -12,7 +12,6 @@ import src.midi as midi
 import src.NN.nn as nn
 
 
-
 def allMidiFiles(path, small_data):
     """
 
@@ -42,7 +41,6 @@ def allMidiFiles(path, small_data):
     return fichiers
 
 
-
 def main():
     """
         Entry point
@@ -53,7 +51,9 @@ def main():
                         help='The name of the data')
     parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 5)')
-    parser.add_argument('--lr', type=float, default=0.00001, metavar='LR',
+    parser.add_argument('--batch', type=int, default=1,
+                        help='The number of the batchs')
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
@@ -63,8 +63,6 @@ def main():
                         help='how many batch to wait before logging training status')
     parser.add_argument('--model', type=str, default='1',
                         help='The model of the Neural Network used for the interpolation')
-    parser.add_argument('--batch', type=int, default=1,
-                        help='The number of the batchs')
     parser.add_argument('--gpu', type=str, default='0',
                         help='What GPU to use')
 
@@ -76,20 +74,14 @@ def main():
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
-    if not os.path.exists(data_transformed_path):
-        os.mkdir(data_transformed_path)
 
-    data_p = os.path.join(data_transformed_path, 'data.p')      # Pickle file with the informations of the data set
-    with open(data_p, 'rb') as dump_file:
-        d = pickle.load(dump_file)
-        all_midi_paths = d['midi']
 
     ##################################
     ##################################
     ##################################
 
     midis_array_path = os.path.join(data_transformed_path, 'midis_array.npy')
-    pl_midis_array_path = Path(midis_array_path)        # Use the library pathlib
+    pl_midis_array_path = Path(midis_array_path)  # Use the library pathlib
     midis_array = np.load(midis_array_path)
 
     midis_array = np.reshape(midis_array, (-1, 128))
@@ -117,7 +109,7 @@ def main():
         predicted_full.append(pred)
 
     previous_full = np.asarray(previous_full).astype('float64')
-    predicted_full = np.asarray(predicted_full).astype('float64')   #[:, np.newaxis, :]
+    predicted_full = np.asarray(predicted_full).astype('float64')  # [:, np.newaxis, :]
 
     print('previous_full shape :', previous_full.shape)
     print('predicted_full shape :', predicted_full.shape)
@@ -130,7 +122,7 @@ def main():
 
     ############################
 
-    optimizer = tf.keras.optimizers.SGD(lr=0.01)
+    optimizer = tf.keras.optimizers.SGD(lr=args.lr)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
     #######################################
@@ -139,11 +131,10 @@ def main():
 
     print('Training ...')
 
+    model.fit(previous_full, predicted_full, batch_size=args.batch, epochs=args.epochs,
+              shuffle=True, verbose=1)
 
-
-    epoch_total = args.epochs
-    batch_size = 2
-
+    """
     for epoch in range(1, epoch_total):
         print('Epoch:', epoch)
         model.fit(previous_full, predicted_full, batch_size=batch_size, epochs=1,
@@ -156,7 +147,6 @@ def main():
         if ((epoch % 10) == 0):
             model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
 
-            """
             # In my opinion, we don't need to generate every epoch (slower)
             for temperature in [1.2]:
                 print('------ temperature:', temperature)
@@ -178,14 +168,10 @@ def main():
                 output_notes = midi.matrix_to_midi(generated_midi_final, random=0)
                 midi_stream = music21.stream.Stream(output_notes)
                 midi_stream.write('midi', fp='lstm_output_v1_{}_{}.mid'.format(epoch, temperature))
-            """
+    """
 
     model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
     model.save(str(saved_models_pathlib / 'my_model.h5'))
-
-    generated_midis_path = 'generated_midis'
-    generated_midis_pathlib = Path(generated_midis_path)
-    generated_midis_pathlib.mkdir(parents=True, exist_ok=True)
 
     for layer in model.layers:
         lstm_weights = layer.get_weights()  # list of numpy arrays
@@ -197,6 +183,10 @@ def main():
     #######################################
 
     print('Generation...')
+
+    generated_midis_path = 'generated_midis'
+    generated_midis_pathlib = Path(generated_midis_path)
+    generated_midis_pathlib.mkdir(parents=True, exist_ok=True)
 
     start_index = random.randint(0, len(midis_array) - max_len - 1)
 
