@@ -11,142 +11,9 @@ import pickle
 import src.midi as midi
 import src.NN.nn as nn
 from src.NN.data_generator import MySequence
+from src.NN.MyModel import MyModel
 
 
-class Trainer():
-    """
-
-    """
-
-    def __init__(self):
-        # ----- General -----
-        self.total_epochs = 0
-        self.name = 'default_name'
-        self.model = ''
-        self.full_name = self.return_full_name()
-
-        self.saved_model_path = os.path.join('saved_models', self.full_name)
-        self.saved_model_pathlib = Path(self.saved_model_path)
-
-        # ----- Data -----
-        self.data_transformed_path = None
-        self.data_transformed_pathlib = None
-
-        self.nb_files = None
-
-        # ----- MySequence -----
-        self.my_sequence = None
-        self.batch = None
-
-        # ----- Neural Network -----
-        self.input_param = None
-        self.nn_model = None
-        self.optimizer = None
-
-    def return_full_name(self):
-        """
-
-        :return: set self.full name
-        """
-        i = 0
-        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
-        saved_model_path = os.path.join('saved_models', full_name)
-        saved_model_pathlib = Path(saved_model_path)
-        while saved_model_pathlib.exists():
-            i += 1
-            full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
-            saved_model_path = os.path.join('saved_models', full_name)
-            saved_model_pathlib = Path(saved_model_path)
-        return full_name
-
-    def save_infos(self, path=None):
-        """
-
-        :return:
-        """
-        path_to_save = self.saved_model_pathlib if path is None else Path(path)
-        path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
-        with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
-            pickle.dump({
-                'name': self.name,
-                'model': self.model,
-                'epochs': self.total_epochs,
-                'full_name': self.full_name
-            }, dump_file)
-
-    def load_data(self, data_transformed_path):
-        """
-
-        :return:
-        """
-        self.data_transformed_path = data_transformed_path
-        self.data_transformed_pathlib = Path(self.data_transformed_path)
-
-    def new_nn_model(self, input_param=None, lr=0.01, optimizer=None, loss='categorical_crossentropy'):
-        """
-
-        :param input_param: parameters of the input f the neural network
-        :return: Create the neural network
-        """
-        if input_param:
-            self.input_param = input_param
-        self.nn_model = nn.my_model(self.input_param)
-
-        self.optimizer = optimizer(lr=lr) if optimizer else tf.keras.optimizers.SGD(lr=lr)
-        self.nn_model.compile(loss=loss, optimizer=self.optimizer)
-
-    def train(self, epochs=50, batch=None, verbose=1, shuffle=True):
-        """
-
-        :param epochs:
-        :param batch:
-        :param verbose:
-        :param suffle:
-        :return:
-        """
-        if not self.nb_files:
-            with (str(self.data_transformed_pathlib / 'data.p'), 'rb') as dump_file:
-                d = pickle.load(dump_file)
-                self.nb_files = len(d['midi'])
-
-        # Do we have to create a new MySequence Object ?
-        flag_new_sequence = False
-        if batch is None and self.batch is None:
-            self.batch = 1,
-            flag_new_sequence = True
-        if batch is not None and batch != self.batch:
-            self.batch = batch
-            flag_new_sequence = True
-        if self.my_sequence is None:
-            flag_new_sequence = True
-
-        if flag_new_sequence:
-            self.my_sequence = MySequence(
-                nb_files=self.nb_files,
-                npy_path=str(self.data_transformed_pathlib / 'npy'),
-                nb_step=self.input_param['nb_steps'],
-                batch_size=self.batch
-            )
-
-        # Actual train
-        self.nn_model.fit_generator(generator=self.my_sequence, epochs=epochs,
-                                    shuffle=shuffle, verbose=verbose)
-
-        # Update parameters
-        self.total_epochs += epochs
-
-    def save_weights(self, path=None):
-        path_to_save = self.saved_model_pathlib if path is None else Path(path)
-        path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
-        self.saved_model_pathlib.mkdir(parents=True, exist_ok=True)
-        self.nn_model.save_weights(str(path_to_save / 'm_weights.h5'))
-        self.nn_model.save(str(path_to_save / 'm.h5'))
-
-    def print_weights(self):
-        for layer in self.nn_model.layers:
-            lstm_weights = layer.get_weights()  # list of numpy arrays
-
-            print('Lstm weights:', lstm_weights)
 
 
 def main():
@@ -165,14 +32,12 @@ def main():
                         help='learning rate (default: 0.001)')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
-    parser.add_argument('--seed', type=int, default=1234, metavar='S',
-                        help='random seed (default: 1234)')
-    parser.add_argument('--log-interval', type=int, default=5, metavar='N',
-                        help='how many batch to wait before logging training status')
+    #parser.add_argument('--log-interval', type=int, default=5, metavar='N',
+    #                    help='how many batch to wait before logging training status')
     parser.add_argument('-n', '--name', type=str, default='default_name',
                         help='how many batch to wait before logging training status')
     load_group = parser.add_mutually_exclusive_group()
-    load_group.add_argument('-m', '--model', type=str, default='1',
+    load_group.add_argument('-m', '--model', type=str, default='',
                             help='The model of the Neural Network used for the interpolation')
     load_group.add_argument('-l', '--load', type=str, default='',
                             help='The name of the trained model to load')
@@ -188,19 +53,20 @@ def main():
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
 
-    trainer = Trainer()
-    trainer.load_data(data_transformed_path=data_transformed_path)
+    my_model = MyModel()
+    my_model.load_data(data_transformed_path=data_transformed_path)
 
     input_param = {
         'nb_steps': 18,
         'input_size': 128
     }
 
-    trainer.new_nn_model(input_param=input_param)
-    trainer.train(epochs=args.epochs, batch=args.batch, verbose=1, shuffle=True)
-    trainer.save_weights()
-    trainer.save_infos()
-    trainer.print_weights()
+    #my_model.new_nn_model(input_param=input_param)
+    #my_model.load_weights('default_name--0-1')
+    my_model.load_model('default_name--2-0')
+    my_model.train(epochs=args.epochs, batch=args.batch, verbose=1, shuffle=True)
+    my_model.save_model()
+    my_model.print_weights()
 
     """
     total_epochs = args.epochs

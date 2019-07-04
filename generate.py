@@ -47,7 +47,7 @@ def main():
         'nb_steps': 18,
         'input_size': 128
     }
-    model = nn.my_model(input_param=input_param)
+    model = nn.create_model(input_param=input_param)
 
     print('Generation...')
 

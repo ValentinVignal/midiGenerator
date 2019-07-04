@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def my_model(input_param):
+def create_model(input_param):
     """
 
     :param input_param:

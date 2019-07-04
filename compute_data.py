@@ -137,7 +137,7 @@ def main():
             matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, length=250)
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
-                matrix_of_all_midis.append(matrix_of_single_midi)
+                matrix_of_all_midis.append(np.transpose(matrix_of_single_midi, (1, 0)))
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
                 i += 1
                 if i % nb_file_per_npy == 0:  # Save 1 npy file with 100 songs in it
