@@ -61,10 +61,13 @@ def main():
 
     all_dataset_p = os.path.join(data_transformed_path,
                                  'all_dataset.p')  # Pickle file with the informations of the data set
-    data_p = os.path.join(data_transformed_path, 'data.p')  # Pickle file with the informations of the data set kept
+    dataset_p = os.path.join(data_transformed_path,
+                             'dataset.p')  # Pickle file with the informations of the data set kept
+    infos_dataset_p = os.path.join(data_transformed_path,
+                                   'infos_dataset.p')  # pickle file with the informations of the dataset (smaller file)
     all_midi_paths = None
-    if os.path.exists(data_p):
-        with open(data_p, 'rb') as dump_file:
+    if os.path.exists(dataset_p):
+        with open(dataset_p, 'rb') as dump_file:
             d = pickle.load(dump_file)
             all_midi_paths = d['midi']  # All the path for the files with no errors
     elif os.path.exists(all_dataset_p):
@@ -79,6 +82,8 @@ def main():
                 'midi': all_midi_paths_dataset,
             }, dump_file)
 
+    # From here either all_midi_path and all_midi_path_dataset is not None
+
     ##################################
     ##################################
     ##################################
@@ -86,7 +91,6 @@ def main():
     npy_path = os.path.join(data_transformed_path, 'npy')
     npy_pathlib = Path(npy_path)
     npy_pathlib.mkdir(parents=True, exist_ok=True)
-
 
     nb_file_per_npy = 100
 
@@ -147,7 +151,7 @@ def main():
             np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), {
                 'list': matrix_of_all_midis
             })
-        with open(data_p, 'wb') as dump_file:
+        with open(dataset_p, 'wb') as dump_file:
             pickle.dump({
                 'midi': all_midi_paths,
                 'nb_files': len(all_midi_paths)
@@ -155,7 +159,15 @@ def main():
         bar.finish()
     # Now all_midi_paths is defined and we don't need all_midi_paths_dataset anymore
 
-    print('Number of songs : {0}'.format(i))
+    nb_valid_files = len(all_midi_paths)
+
+    with open(infos_dataset_p, 'wb') as dump_file:
+        # Save the information of the data in a smaller file (without all the big array)
+        pickle.dump({
+            'nb_files': nb_valid_files
+        }, dump_file)
+
+    print('Number of songs : {0}'.format(nb_valid_files))
 
 
 if __name__ == '__main__':
