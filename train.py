@@ -58,57 +58,7 @@ def main():
     my_model.save_model()
     my_model.print_weights()
 
-
-    #################################
-    ####################################### Generation
-    #######################################
-
-    """
-    print('Generation...')
-
-    generated_midis_path = 'generated_midis'
-    generated_midis_pathlib = Path(generated_midis_path)
-    generated_midis_pathlib.mkdir(parents=True, exist_ok=True)
-
-    start_index = random.randint(0, len(midis_array) - max_len - 1)
-
-    for temperature in [0.7, 2.7]:
-        print('------ temperature:', temperature)
-        generated_midi = midis_array[start_index: start_index + max_len]
-        for i in range(100):
-            samples = generated_midi[i:]
-            expanded_samples = np.expand_dims(samples, axis=0)
-            preds = model.predict(expanded_samples, verbose=0)[0]
-            preds = np.asarray(preds).astype('float64')
-
-            next_array = midi.sample(preds, temperature)
-
-            midi_list = []
-            midi_list.append(generated_midi)
-            midi_list.append(next_array)
-            generated_midi = np.vstack(midi_list)
-
-        generated_midi_final = np.transpose(generated_midi, (1, 0))
-        output_notes = midi.matrix_to_midi(generated_midi_final, random=1)
-        midi_stream = music21.stream.Stream(output_notes)
-        midi_file_name = (str(generated_midis_pathlib / 'lstm_out_{}.mid'.format(temperature)))
-        midi_stream.write('midi', fp=midi_file_name)
-        parsed = music21.converter.parse(midi_file_name)
-        for part in parsed.parts:
-            part.insert(0, music21.instrument.Piano())
-        parsed.write('midi', fp=midi_file_name)
-
-    # To see values
-
-    z = -bottleneck.partition(-preds, 20)[:20]
-    print(z)
-    print('max:', np.max(preds))
-
-    model.save_weights(str(saved_models_pathlib / 'my_model_weights.h5'))
-    model.save(str(saved_models_pathlib / 'my_model.h5'))
-
     print('Done')
-    """
 
 
 if __name__ == '__main__':

@@ -1,13 +1,6 @@
-import random
-import numpy as np
-import src.midi as midi
-import music21
-import bottleneck
 import argparse
 import os
-from pathlib import Path
 
-import src.NN.nn as nn
 from src.NN.MyModel import MyModel
 
 
