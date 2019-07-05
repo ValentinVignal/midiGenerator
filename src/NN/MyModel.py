@@ -73,6 +73,7 @@ class MyModel():
         self.saved_model_path = saved_model_path
         self.saved_model_pathlib = saved_model_pathlib
         self.full_name = full_name
+        print('Got new full_name : {0}'.format(self.full_name))
 
     def load_data(self, data_transformed_path):
         """
@@ -81,6 +82,7 @@ class MyModel():
         """
         self.data_transformed_path = data_transformed_path
         self.data_transformed_pathlib = Path(self.data_transformed_path)
+        print('data at {0} loaded'.format(data_transformed_path))
 
     def new_nn_model(self, input_param=None, lr=None, optimizer=None, loss=None):
         """
@@ -118,6 +120,7 @@ class MyModel():
             self.input_param = d['nn']['input_param']
 
         self.optimizer = self.nn_model.optimizer  # not sure about this part, we need to compile again ? I can load it with the pickle file
+        print('Model {0} loaded'.format(id))
 
     def load_weights(self, id):
         self.name, self.model, total_epochs, indice = id.split('-')
@@ -125,6 +128,7 @@ class MyModel():
         self.get_new_full_name()
         path_to_load = Path('saved_models', '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, indice))
         self.nn_model.load_weights(str(path_to_load / 'm_weights.h5'))
+        print('Weights of the {0} model loaded'.format(id))
 
     def train(self, epochs=50, batch=None, verbose=1, shuffle=True):
         """
@@ -160,12 +164,14 @@ class MyModel():
             )
 
         # Actual train
+        print('Training...')
         self.nn_model.fit_generator(generator=self.my_sequence, epochs=epochs,
                                     shuffle=shuffle, verbose=verbose)
 
         # Update parameters
         self.total_epochs += epochs
         self.get_new_full_name()
+        print('Training done')
 
     def save_model(self, path=None):
         path_to_save = self.saved_model_pathlib if path is None else Path(path)
@@ -185,6 +191,7 @@ class MyModel():
                     # 'optimizer': self.optimizer,
                 }
             }, dump_file)
+        print('Model saved in {0}'.format(path_to_save))
 
     def print_weights(self):
         for layer in self.nn_model.layers:

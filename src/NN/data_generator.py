@@ -27,6 +27,7 @@ class MySequence(tf.keras.utils.Sequence):
 
         self.nb_elements, self.all_len = self.know_size(npy_path)        # nb element available in the generator
         self.nb_elements = int(self.nb_elements / batch_size)
+        print('MySequence instance initiated on the data {0}'.format(npy_path))
 
     def __len__(self):
         return self.nb_elements
