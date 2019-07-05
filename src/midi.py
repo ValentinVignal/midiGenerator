@@ -214,7 +214,7 @@ def matrix_to_midi(matrix, random=0):
 
     matrix = matrix[:, how_many_in_start_zeros:]
     y_axis, x_axis = matrix.shape
-    print(y_axis, x_axis)
+    print('size : {0}, {1}'. format(y_axis, x_axis))
 
     for y_axis_num in range(y_axis):
         one_freq_interval = matrix[y_axis_num, :]  # bir columndaki değerler
@@ -288,3 +288,20 @@ def sample(preds, temperature=1.0):
     array[top_indices_sorted[num_of_first:num_of_first + 3]] = 0.5
 
     return array
+
+
+def save_midi(output_notes, path):
+    """
+
+    :param output_notes: the notes
+    :param path: The .mid file path
+    :return:
+    """
+
+    midi_stream = music21.stream.Stream(output_notes)
+    midi_stream.write('midi', fp=path)
+    parsed = music21.converter.parse(path)
+    for part in parsed.parts:
+        part.insert(0, music21.instrument.Piano())
+    parsed.write('midi', fp=path)
+    print(path, 'saved')
