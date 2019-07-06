@@ -31,8 +31,6 @@ class MyModel():
         self.data_transformed_path = None
         self.data_transformed_pathlib = None
 
-        self.nb_files = None
-
         # ----- MySequence -----
         self.my_sequence = None
         self.batch = None
@@ -150,10 +148,6 @@ class MyModel():
         :param shuffle:
         :return:
         """
-        if not self.nb_files:
-            with open(str(self.data_transformed_pathlib / 'infos_dataset.p'), 'rb') as dump_file:
-                d = pickle.load(dump_file)
-                self.nb_files = d['nb_files']
 
         # Do we have to create a new MySequence Object ?
         flag_new_sequence = False
@@ -168,8 +162,7 @@ class MyModel():
 
         if flag_new_sequence:
             self.my_sequence = MySequence(
-                nb_files=self.nb_files,
-                npy_path=str(self.data_transformed_pathlib / 'npy'),
+                path=str(self.data_transformed_pathlib),
                 nb_step=self.input_param['nb_steps'],
                 batch_size=self.batch
             )

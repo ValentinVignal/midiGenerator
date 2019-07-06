@@ -80,14 +80,17 @@ def notes_to_matrix(notes, durations, offsets, min_value=g.min_value, lower_firs
 
 def check_float(duration):  #  this function fix the issue which comes from some note's duration.
     # For instance some note has duration like 14/3 or 7/3.
-    if ('/' in duration):
-        numerator = float(duration.split('/')[0])
-        denominator = float(duration.split('/')[1])
-        duration = str(float(numerator / denominator))
-    return duration
+    if type(duration) is str:
+        if ('/' in duration):
+            numerator = float(duration.split('/')[0])
+            denominator = float(duration.split('/')[1])
+            duration = str(float(numerator / denominator))
+        return duration
+    else:
+        return str(float(duration))
 
 
-def midi_to_matrix(filename, length=250):  # convert midi file to matrix for DL architecture.
+def midi_to_matrix(filename, instruments, length=None):  # convert midi file to matrix for DL architecture.
 
     midi = music21.converter.parse(filename)  # Load the file
 
@@ -98,57 +101,61 @@ def midi_to_matrix(filename, length=250):  # convert midi file to matrix for DL 
     try:
         for instrument in parts:
             # learn names of instruments
-            name = (str(instrument).split(' ')[-1])[
-                   :-1]  # str(instrument) = "<music21.stream.Part object Electric Bass>"
+            name = instrument.partName
+            # name = (str(instrument).split(' ')[-1])[
+            #        :-1]  # str(instrument) = "<music21.stream.Part object Electric Bass>"
             instrument_names.append(name)
 
     except TypeError:
         print('Type is not iterable.')
         return None
 
-    # just take piano part
-    try:
-        piano_index = instrument_names.index('Piano')
-    except ValueError:
-        print('%s have not any Piano part' % (filename))
-        return None
+    # just take instruments desired parts
+    our_matrixes = []
+    # print(instrument_names)
+    for instrument in instruments:
+        try:
+            piano_index = instrument_names.index(instrument)
+            notes_to_parse = parts.parts[piano_index].recurse()
 
-    notes_to_parse = parts.parts[piano_index].recurse()
+            duration_piano = float(check_float(notes_to_parse._getDuration().quarterLength))
 
-    duration_piano = float(check_float((str(notes_to_parse._getDuration()).split(' ')[-1])[:-1]))
+            durations = []
+            notes = []
+            offsets = []
 
-    durations = []
-    notes = []
-    offsets = []
+            for element in notes_to_parse:
+                if isinstance(element, music21.note.Note):  # if it is single note
+                    notes.append(int(element.pitch.midi))  # The code number for the pitch
+                    duration = str(element.duration)[27:-1]
+                    durations.append(check_float(duration))
+                    offsets.append(element.offset)
 
-    for element in notes_to_parse:
-        if isinstance(element, music21.note.Note):  # if it is single note
-            notes.append(int(element.pitch.midi))       # The code number for the pitch
-            duration = str(element.duration)[27:-1]
-            durations.append(check_float(duration))
-            offsets.append(element.offset)
+                elif isinstance(element, music21.chord.Chord):  # if it is chord
+                    notes.append('.'.join(str(n.midi)
+                                          for n in element.pitches))
+                    duration = str(element.duration)[27:-1]
+                    durations.append(check_float(duration))
+                    offsets.append(element.offset)
 
-        elif isinstance(element, music21.chord.Chord):  # if it is chord
-            notes.append('.'.join(str(n.midi)
-                                  for n in element.pitches))
-            duration = str(element.duration)[27:-1]
-            durations.append(check_float(duration))
-            offsets.append(element.offset)
+            our_matrix = notes_to_matrix(notes, durations, offsets)
 
-    our_matrix = notes_to_matrix(notes, durations, offsets)
+            try:
+                freq, time = our_matrix.shape
+            except AttributeError:
+                print("'tuple' object has no attribute 'shape'")
+                return None
 
-    try:
-        freq, time = our_matrix.shape
-    except AttributeError:
-        print("'tuple' object has no attribute 'shape'")
-        return None
+            our_matrixes.append(our_matrix)
 
-    if (time >= length):
-        return (
-            our_matrix[:, :length])  #  We have to set all individual note matrix to same shape for Generative DL.
-    else:
-        print('%s have not enough duration' % filename)
-        return our_matrix
+        except ValueError:
+            print('{0} have not any {1} part'.format(filename, instrument))
+            return None
+
+    our_matrixes = np.asarray(our_matrixes)
+    print('our_', our_matrixes.shape)
+
+    return our_matrixes
 
 
 def int_to_note(integer):
@@ -214,7 +221,7 @@ def matrix_to_midi(matrix, random=0):
 
     matrix = matrix[:, how_many_in_start_zeros:]
     y_axis, x_axis = matrix.shape
-    print('size : {0}, {1}'. format(y_axis, x_axis))
+    print('size : {0}, {1}'.format(y_axis, x_axis))
 
     for y_axis_num in range(y_axis):
         one_freq_interval = matrix[y_axis_num, :]  # bir columndaki değerler
@@ -281,7 +288,7 @@ def sample(preds, temperature=1.0):
     preds[100:] = 0  # eliminate notes with very high octaves
 
     ind = np.argpartition(preds, -1 * num_of_top)[-1 * num_of_top:]
-    top_indices_sorted = ind[np.argsort(preds[ind])]    # 15 biggest number
+    top_indices_sorted = ind[np.argsort(preds[ind])]  # 15 biggest number
 
     array = np.random.uniform(0.0, 0.0, (128))
     array[top_indices_sorted[0:num_of_first]] = 1.0
