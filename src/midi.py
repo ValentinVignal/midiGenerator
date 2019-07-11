@@ -146,6 +146,9 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
                 print("'tuple' object has no attribute 'shape'")
                 return None
 
+            # To change shape
+            # our_matrix = our_matrix[:, :100]
+
             our_matrixes.append(our_matrix)
 
         except ValueError:
@@ -153,7 +156,6 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
             return None
 
     our_matrixes = np.asarray(our_matrixes)
-    print('our_', our_matrixes.shape)
 
     return our_matrixes
 

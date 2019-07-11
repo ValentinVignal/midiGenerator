@@ -31,6 +31,7 @@ class MyModel():
         self.data_transformed_path = None
         self.data_transformed_pathlib = None
 
+
         # ----- MySequence -----
         self.my_sequence = None
         self.batch = None
@@ -40,6 +41,8 @@ class MyModel():
         self.nn_model = None
         self.optimizer = None
         self.lr = None
+
+        self.nb_steps = None
 
         # ------ save_midi_path -----
         self.save_midis_pathlib = None
@@ -55,9 +58,9 @@ class MyModel():
                 """
                 value = None if key not in model_infos else model_infos[key]
                 return value
-
+            self.input_param = model_infos['input_param']
             self.new_nn_model(
-                input_param=model_infos['input_param'],
+                nb_steps=model_infos['nb_steps'],
                 lr=getValue('lr'),
                 optimizer=getValue('optimizer'),
                 loss=getValue('loss')
@@ -89,9 +92,14 @@ class MyModel():
         """
         self.data_transformed_path = data_transformed_path
         self.data_transformed_pathlib = Path(self.data_transformed_path)
+        self.input_param = {}
+        with open(str(self.data_transformed_pathlib / 'infos_dataset.p'), 'rb') as dump_file:
+            d = pickle.load(dump_file)
+            self.input_param['input_size'] = d['input_size']
+            self.input_param['nb_instruments'] = d['nb_instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
-    def new_nn_model(self, input_param=None, lr=None, optimizer=None, loss=None):
+    def new_nn_model(self, nb_steps=None, lr=None, optimizer=None, loss=None):
         """
 
         :param input_param:
@@ -100,10 +108,17 @@ class MyModel():
         :param loss:
         :return:
         """
-        if input_param:
-            self.input_param = input_param
+        try:
+            _ = self.input_param['input_size']
+            _ = self.input_param['nb_instruments']
+        except AttributeError:
+            print('Load the data before creating a new model')
+        if nb_steps is not None:
+            self.nb_sept = nb_steps
+            self.input_param['nb_steps'] = self.nb_sept
 
-        self.nn_model = nn.create_model(self.input_param)
+        self.nn_model = nn.create_model(
+            self.input_param)
 
         self.lr = lr if lr is not None else 0.01
         self.optimizer = optimizer(lr=self.lr) if optimizer is not None else tf.keras.optimizers.SGD(lr=self.lr)
@@ -163,7 +178,7 @@ class MyModel():
         if flag_new_sequence:
             self.my_sequence = MySequence(
                 path=str(self.data_transformed_pathlib),
-                nb_step=self.input_param['nb_steps'],
+                nb_steps=self.input_param['nb_steps'],
                 batch_size=self.batch
             )
 

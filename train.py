@@ -50,10 +50,11 @@ def main():
         'nb_steps': 18,
         'input_size': 128
     }
+    nb_steps = 18
 
-    #my_model.new_nn_model(input_param=input_param)
+    my_model.new_nn_model(nb_steps=nb_steps)
     #my_model.load_weights('default_name--0-1')
-    my_model.load_model('default_name--2-0')
+    #my_model.load_model('default_name--2-0')
     my_model.train(epochs=args.epochs, batch=args.batch, verbose=1, shuffle=True)
     my_model.save_model()
     my_model.print_weights()

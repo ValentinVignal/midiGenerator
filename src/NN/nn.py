@@ -9,14 +9,24 @@ def create_model(input_param):
     """
     print('Definition of the graph ...')
 
-    midi_shape = (input_param['nb_steps'], input_param['input_size'])
+    nb_instruments = input_param['nb_instruments']
+    nb_steps = input_param['nb_steps']
+    input_size = input_param['input_size']
 
-    input_midi = tf.keras.Input(midi_shape)
+    midi_shape = (nb_steps, input_size)  # (batch, nb_step, input_size)
+    inputs_midi = []
+    for instrument in range(nb_instruments):
+        inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size)]
 
-    x = tf.keras.layers.LSTM(512, return_sequences=True, unit_forget_bias=True)(input_midi)
-    x = tf.keras.layers.LeakyReLU()(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Dropout(0.3)(x)
+    # First level of lstm separated
+    first_layer = []
+    for instrument in range(nb_instruments):
+        x = tf.keras.layers.LSTM(512, return_sequences=True, unit_forget_bias=True)(
+            inputs_midi[instrument])  # (batch, nb_steps, 512)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+        first_layer.append(x)
 
     """
     x = tf.keras.layers.LSTM(1024, return_sequences=True, unit_forget_bias=True)(input_midi)
@@ -64,11 +74,20 @@ def create_model(input_param):
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Dropout(0.22)(x)
     """
-    print()
-    x = tf.keras.layers.Flatten()(x)
-    x = tf.keras.layers.Dense(128, activation='softmax')(x)
 
-    model = tf.keras.Model(input_midi, x)
+    # Concatenation
+    for instrument in range(nb_instruments):
+        first_layer[instrument] = tf.keras.layers.Reshape((nb_steps, 1, 512))(
+            first_layer[instrument])  # (batch, nb_steps, 1, 512)
+
+    x = tf.keras.layers.concatenate(first_layer, axis=2)  # (batch, nb_steps, nb_instruments, 512)
+    x = tf.keras.layers.Flatten()(x)
+
+    outputs = []        # (batch, nb_steps, nb_instruments, input_size)
+    for instrument in range(nb_instruments):
+        x = tf.keras.layers.Dense(input_size, activation='softmax')(x)
+        outputs.append(x)
+
+    model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
 
     return model
-
