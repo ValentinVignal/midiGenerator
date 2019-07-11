@@ -64,6 +64,7 @@ def main():
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
 
+    # Instruments :
     instruments = ['Piano', 'Acoustic Bass']
 
     all_dataset_p = os.path.join(data_transformed_path,
