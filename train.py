@@ -27,7 +27,7 @@ def main():
     parser.add_argument('-n', '--name', type=str, default='default_name',
                         help='how many batch to wait before logging training status')
     load_group = parser.add_mutually_exclusive_group()
-    load_group.add_argument('-m', '--model', type=str, default='',
+    load_group.add_argument('-m', '--model', type=str, default='18',
                             help='The model of the Neural Network used for the interpolation')
     load_group.add_argument('-l', '--load', type=str, default='',
                             help='The name of the trained model to load')
@@ -46,16 +46,14 @@ def main():
     my_model = MyModel()
     my_model.load_data(data_transformed_path=data_transformed_path)
 
-    input_param = {
-        'nb_steps': 18,
-        'input_size': 128
-    }
-    nb_steps = 18
+    if args.model != '':
+        nb_steps = int(args.model)
+        my_model.new_nn_model(nb_steps=nb_steps)
+    elif args.load != '':
+        my_model.load_model(args.load)
 
-    my_model.new_nn_model(nb_steps=nb_steps)
-    #my_model.load_weights('default_name--0-1')
-    #my_model.load_model('default_name--2-0')
     my_model.train(epochs=args.epochs, batch=args.batch, verbose=1, shuffle=True)
+
     my_model.save_model()
     my_model.print_weights()
 
