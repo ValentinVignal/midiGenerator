@@ -1,6 +1,7 @@
 import src.global_variables as g
 import numpy as np
 import music21
+import functools
 
 
 def note_to_int(note):  # converts the note's letter to pitch value which is integer form.
@@ -93,11 +94,9 @@ def check_float(duration):  #  this function fix the issue which comes from som
 def midi_to_matrix(filename, instruments, length=None):  # convert midi file to matrix for DL architecture.
 
     midi = music21.converter.parse(filename)  # Load the file
-
     parts = music21.instrument.partitionByInstrument(midi)
 
-    instrument_names = []
-
+    instrument_names = []       # Name of the instruments in the file
     try:
         for instrument in parts:
             # learn names of instruments
@@ -105,7 +104,6 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
             # name = (str(instrument).split(' ')[-1])[
             #        :-1]  # str(instrument) = "<music21.stream.Part object Electric Bass>"
             instrument_names.append(name)
-
     except TypeError:
         print('Type is not iterable.')
         return None
@@ -114,11 +112,22 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
     our_matrixes = []
     # print(instrument_names)
     for instrument in instruments:
-        try:
-            piano_index = instrument_names.index(instrument)
-            notes_to_parse = parts.parts[piano_index].recurse()
-
-            duration_piano = float(check_float(notes_to_parse._getDuration().quarterLength))
+        similar_instruments = return_all_list_instruments(instrument)
+        at_least_one = functools.reduce(lambda x, y: (x or (y in instrument_names)), similar_instruments, False)
+        if not at_least_one:
+            print('{0} have not any {1} part'.format(filename, instrument))
+            return None
+        else:       # We know there is a similar instrument in it
+            notes_to_parse = None
+            for similar_instrument in similar_instruments:
+                if similar_instrument in instrument_names:
+                    instrument_index = instrument_names.index(similar_instrument)
+                    if notes_to_parse is None:
+                        notes_to_parse = parts.parts[instrument_index]
+                    else:
+                        notes_to_parse.append(parts.parts[instrument_index])
+            notes_to_parse = notes_to_parse.recurse()
+            duration = float(check_float(notes_to_parse._getDuration().quarterLength))
 
             durations = []
             notes = []
@@ -147,17 +156,25 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
                 return None
 
             # To change shape
-            # our_matrix = our_matrix[:, :100]
+            if length is not None:
+                try:
+                    our_matrix = our_matrix[:, :100]
+                except IndexError:
+                    print('{0} is not long enough, shape : {1}'.format(filename, our_matrix.shape))
 
             our_matrixes.append(our_matrix)
 
-        except ValueError:
-            print('{0} have not any {1} part'.format(filename, instrument))
-            return None
+    # Normalization of the duration : make them all finish at the same time
+    max_len = 0
+    for matrix in our_matrixes:
+        if len(matrix[0]) > max_len:    # matrix has shape : (128, length)
+            max_len = len(matrix[0])
 
-    our_matrixes = np.asarray(our_matrixes)
+    final_matrix = np.zeros((len(our_matrixes), 128, max_len))
+    for i in range(len(our_matrixes)):
+        final_matrix[i, :, :len(our_matrixes[i][0])] = our_matrixes[i]
+    return final_matrix
 
-    return our_matrixes
 
 
 def int_to_note(integer):
@@ -204,7 +221,7 @@ def matrix_to_midi(matrix, random=0):
     for x_axis_num in range(x_axis):
         one_time_interval = matrix[:, x_axis_num]  # values in a column
         one_time_interval_norm = converter_func(one_time_interval)
-        if (first_touch not in one_time_interval_norm):
+        if first_touch not in one_time_interval_norm:
             how_many_in_start_zeros += 1
         else:
             break
@@ -213,7 +230,7 @@ def matrix_to_midi(matrix, random=0):
     for x_axis_num in range(x_axis - 1, 0, -1):
         one_time_interval = matrix[:, x_axis_num]  # values in a column
         one_time_interval_norm = converter_func(one_time_interval)
-        if (first_touch not in one_time_interval_norm):
+        if first_touch not in one_time_interval_norm:
             how_many_in_end_zeros += 1
         else:
             break
@@ -316,6 +333,11 @@ def save_midi(output_notes, path):
     print(path, 'saved')
 
 
+############################################
+###### Valentin #####
+############################################
+
+
 all_instruments = {
     'Piano': ['Acoustic Grand Piano', 'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano',
               'Electric Piano 1', 'Electric Piano 2', 'Harpsichord', 'Clavinet'],
@@ -369,3 +391,55 @@ all_instruments_perso = {
     'Sound Effects': ['Sound Effects']
 
 }
+
+
+def return_all_list_instruments(name):
+    """
+
+    :param name: the name of the instruments
+    :return: all the possible names for the training
+    """
+    l_final = []
+    key = None
+    for k in all_instruments:
+        if name in all_instruments[k]:
+            key = k
+    for k in all_instruments_perso:
+        if name in all_instruments_perso[k]:
+            key = k
+    try:
+        l_final = all_instruments[key] + all_instruments_perso[key]
+    except KeyError:
+        print(name, 'is not in the list of intruments')
+    return l_final
+
+
+def return_correct_name(name):
+    """
+
+    :param name: name of the instrument
+    :return: A name of correct instrument (exists in midi format)
+    """
+    correct_name = 'Accoustic Grand Piano'
+
+    for k in all_instruments:
+        if name in all_instruments[k]:
+            correct_name = name
+    for k in all_instruments_perso:
+        if name in all_instruments_perso[k]:
+            correct_name = all_instruments[k][0]
+
+    return correct_name
+
+
+def return_correct_names(names):
+    correct_names = []
+    for name in names:
+        correct_names.append(return_correct_name(name))
+    return correct_names
+
+
+
+
+
+

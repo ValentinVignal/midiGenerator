@@ -59,7 +59,7 @@ def main():
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
-    if args.force and os.path.exists(data_transformed_path):    # Delete the folder of the transformed data
+    if args.force and os.path.exists(data_transformed_path):  # Delete the folder of the transformed data
         shutil.rmtree(data_transformed_path)
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
@@ -74,11 +74,12 @@ def main():
     infos_dataset_p = os.path.join(data_transformed_path,
                                    'infos_dataset.p')  # pickle file with the informations of the dataset (smaller file)
     all_midi_paths = None
-    if os.path.exists(dataset_p):
+    #
+    if os.path.exists(dataset_p):  # If we already know what are the correct files
         with open(dataset_p, 'rb') as dump_file:
             d = pickle.load(dump_file)
             all_midi_paths = d['midi']  # All the path for the files with no errors
-    elif os.path.exists(all_dataset_p):
+    elif os.path.exists(all_dataset_p):  # If the path of all the files have already be saved
         with open(all_dataset_p, 'rb') as dump_file:
             d = pickle.load(dump_file)
             all_midi_paths_dataset = d[
@@ -104,6 +105,7 @@ def main():
 
     all_shapes = []
 
+    ##### Actualy compute the datas #####
     if all_midi_paths is not None:
         # We already know what are the good files
         print('Compute the data in {0}'.format(data_path))
@@ -185,12 +187,13 @@ def main():
     # Now all_midi_paths is defined and we don't need all_midi_paths_dataset anymore
 
     nb_valid_files = len(all_midi_paths)
+    correct_instuments = midi.return_correct_names(instruments)
 
     with open(infos_dataset_p, 'wb') as dump_file:
         # Save the information of the data in a smaller file (without all the big array)
         pickle.dump({
             'nb_files': nb_valid_files,
-            'instruments': instruments,
+            'instruments': correct_instuments,
             'nb_instruments': len(instruments),
             'all_shapes': all_shapes,
             'input_size': all_shapes[0][0][2]
