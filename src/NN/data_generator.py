@@ -86,7 +86,7 @@ class MySequence(tf.keras.utils.Sequence):
             if c + self.all_shapes[i][j][0] - self.nb_steps > i_start:
                 flag = False
             else:
-                c += self.all_shape[i][j][0] - self.nb_steps
+                c += self.all_shapes[i][j][0] - self.nb_steps
                 j += 1
         k = i_start - c
         return i, j, k
@@ -105,7 +105,6 @@ class MySequence(tf.keras.utils.Sequence):
                 acc += self.return_nb_elements(l2)
             return acc
         else:
-            print(l)
             return l[0] - self.nb_steps # not -self.nb_steps + 1 because of the y (true tab)
 
     def know_all_len(self):
