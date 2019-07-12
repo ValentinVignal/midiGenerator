@@ -199,7 +199,7 @@ def main():
         # Save the information of the data in a smaller file (without all the big array)
         pickle.dump({
             'nb_files': nb_valid_files,
-            'instruments': correct_instuments,
+            'instruments': instruments,
             'nb_instruments': len(instruments),
             'all_shapes': all_shapes,
             'input_size': all_shapes[0][0][2]

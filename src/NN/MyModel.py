@@ -69,6 +69,15 @@ class MyModel():
         if data is not None:
             self.load_data(data)
 
+    def get_full_name(self, i):
+        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
+        saved_model_path = os.path.join('saved_models', full_name)
+        saved_model_pathlib = Path(saved_model_path)
+        self.full_name = full_name
+        self.saved_model_path = saved_model_path
+        self.saved_model_pathlib = saved_model_pathlib
+        print('Get full_name : {0}'.format(self.full_name))
+
     def get_new_full_name(self):
         i = 0
         full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
@@ -127,7 +136,7 @@ class MyModel():
         m_loss = loss if loss is not None else 'categorical_crossentropy'
         self.nn_model.compile(loss=m_loss, optimizer=self.optimizer)
 
-    def load_model(self, id):
+    def load_model(self, id, keep_name=True):
         """
 
         :param id:
@@ -135,7 +144,10 @@ class MyModel():
         """
         self.name, self.model, total_epochs, indice = id.split('-')
         self.total_epochs = int(total_epochs)
-        self.get_new_full_name()
+        if keep_name:
+            self.get_full_name(indice)
+        else:
+            self.get_new_full_name()
         path_to_load = Path('saved_models',
                             '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, indice))
         self.nn_model = tf.keras.models.load_model(str(path_to_load / 'm.h5'))
@@ -147,10 +159,13 @@ class MyModel():
         self.optimizer = self.nn_model.optimizer  # not sure about this part, we need to compile again ? I can load it with the pickle file
         print('Model {0} loaded'.format(id))
 
-    def load_weights(self, id):
+    def load_weights(self, id, keep_name=True):
         self.name, self.model, total_epochs, indice = id.split('-')
         self.total_epochs = int(total_epochs)
-        self.get_new_full_name()
+        if keep_name:
+            self.get_full_name(indice)
+        else:
+            self.get_new_full_name()
         path_to_load = Path('saved_models',
                             '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, indice))
         self.nn_model.load_weights(str(path_to_load / 'm_weights.h5'))
@@ -259,9 +274,9 @@ class MyModel():
                                                    progressbar.ETA()])
             bar.start()  # To see it working
             for l in range(length):
-                samples = generated[:, l:]
+                samples = generated[:, np.newaxis, l:, :]
                 #expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.nn_model.predict(list(samples), verbose=0)[0]
+                preds = self.nn_model.predict(list(samples), verbose=0)
                 preds = np.asarray(preds).astype('float64')         # (nb_instruments, 128, 1)
 
                 # next_array = midi.sample(preds, temperature)
@@ -289,5 +304,5 @@ class MyModel():
             path_to_save = str(self.save_midis_pathlib / m_str)
 
             # Saving the midi file
-            midi.save_midi(output_notes_list=output_notes_list, path=path_to_save)
+            midi.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
         print('Done Generating')

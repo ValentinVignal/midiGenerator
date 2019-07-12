@@ -38,7 +38,7 @@ def main():
 
     if args.pc:
         data_path = os.path.join('../Dataset', args.data)
-        args.epochs = 2
+        args.epochs = 1
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
@@ -55,7 +55,6 @@ def main():
     my_model.train(epochs=args.epochs, batch=args.batch, verbose=1, shuffle=True)
 
     my_model.save_model()
-    my_model.print_weights()
 
     print('Done')
 

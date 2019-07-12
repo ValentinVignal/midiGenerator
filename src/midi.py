@@ -104,6 +104,7 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
             # name = (str(instrument).split(' ')[-1])[
             #        :-1]  # str(instrument) = "<music21.stream.Part object Electric Bass>"
             instrument_names.append(name)
+        print('instrument names', instrument_names)
     except TypeError:
         print('Type is not iterable.')
         return None
@@ -303,8 +304,9 @@ def sample(preds, temperature=1.0):
     num_of_top = 15
     num_of_first = np.random.randint(1, 3)
 
-    preds[0:48] = 0  # eliminate notes with low octaves
-    preds[100:] = 0  # eliminate notes with very high octaves
+    # preds[0:48] = 0  # eliminate notes with low octaves
+    # preds[100:] = 0  # eliminate notes with very high octaves
+
 
     ind = np.argpartition(preds, -1 * num_of_top)[-1 * num_of_top:]
     top_indices_sorted = ind[np.argsort(preds[ind])]  # 15 biggest number
@@ -316,26 +318,50 @@ def sample(preds, temperature=1.0):
     return array
 
 
-def save_midi(output_notes, path):
-    """
-
-    :param output_notes: the notes
-    :param path: The .mid file path
-    :return:
-    """
-
-    midi_stream = music21.stream.Stream(output_notes)
-    midi_stream.write('midi', fp=path)
-    parsed = music21.converter.parse(path)
-    for part in parsed.parts:
-        part.insert(0, music21.instrument.Piano())
-    parsed.write('midi', fp=path)
-    print(path, 'saved')
-
-
 ############################################
 ###### Valentin #####
 ############################################
+
+
+def save_midi(output_notes_list, instruments, path):
+    """
+
+    :param output_notes_list: the notes
+    :param instruments : le list of the name of the instruments used
+    :param path: The .mid file path
+    :return:
+    """
+    print('in save_midi')
+    print('instruments', instruments)
+    midi_stream = music21.stream.Stream()
+    for i in range(len(instruments)):
+        p = music21.stream.Part()
+        p.append(output_notes_list[i])
+        print('output_notes_list', output_notes_list[i][:10])
+        #p.insert(0, music21.instrument.Instrument(instrumentName=instruments[i]))
+        if i==0:
+            p.insert(0, music21.instrument.Piano())
+        else:
+            p.insert(0, music21.instrument.AcousticBass())
+        midi_stream.insert(0, p)
+    midi_stream.write('midi', fp=path)
+    print(path, 'saved')
+
+
+    """
+    midi_stream = music21.stream.Stream()
+    midi_stream.write('midi', fp=path)
+    parsed = music21.converter.parse(path)
+    for i in range(len(instruments)):
+
+
+        instru_stream = music21.stream.Stream(output_notes_list[i])
+        p = instru_stream()
+        for part in parsed.parts:
+            part.insert(0, music21.instrument.Instrument(instrumentName=instruments[i]))
+    parsed.write('midi', fp=path)
+    print(path, 'saved')
+    """
 
 
 all_instruments = {
@@ -372,7 +398,7 @@ all_instruments = {
 }
 
 all_instruments_perso = {
-    'Piano': ['Electric Piano', 'Piano'],
+    'Piano': ['Electric Piano', 'Piano', 'Grand Piano'],
     'Chromatic Percussion': ['Chromatic Percussion'],
     'Organ': ['Organ'],
     'Guitar': ['Guitar', 'Acoustic Guitar', 'Electric Guitar'],
@@ -437,7 +463,6 @@ def return_correct_names(names):
     for name in names:
         correct_names.append(return_correct_name(name))
     return correct_names
-
 
 
 
