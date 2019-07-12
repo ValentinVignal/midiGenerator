@@ -50,6 +50,8 @@ def main():
                         help='to work on a small computer with a cpu')
     parser.add_argument('--force', action='store_true', default=False,
                         help='If data already exists, erase it and reconstruct it')
+    parser.add_argument('--length', type=str, default='', metavar='N',
+                        help='The length of the data')
 
     args = parser.parse_args()
 
@@ -63,6 +65,11 @@ def main():
         shutil.rmtree(data_transformed_path)
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
+
+    if args.length == '':
+        args.length = None
+    else:
+        args.length = int(args.length)
 
     # Instruments :
     instruments = ['Piano', 'Acoustic Bass']
@@ -119,7 +126,7 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths:
-            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, instruments)
+            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, instruments, length=args.length)
             matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1))
             matrix_of_all_midis.append(matrix_of_single_midi)  # (length, nb_instruments, 128)
             # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
@@ -155,7 +162,7 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths_dataset:
-            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, instruments)
+            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, instruments, length=args.length)
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
                 matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1))
@@ -187,7 +194,6 @@ def main():
     # Now all_midi_paths is defined and we don't need all_midi_paths_dataset anymore
 
     nb_valid_files = len(all_midi_paths)
-    correct_instuments = midi.return_correct_names(instruments)
 
     with open(infos_dataset_p, 'wb') as dump_file:
         # Save the information of the data in a smaller file (without all the big array)

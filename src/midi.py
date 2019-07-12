@@ -158,7 +158,7 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
             # To change shape
             if length is not None:
                 try:
-                    our_matrix = our_matrix[:, :100]
+                    our_matrix = our_matrix[:, :length]
                 except IndexError:
                     print('{0} is not long enough, shape : {1}'.format(filename, our_matrix.shape))
 

@@ -31,6 +31,7 @@ class MyModel():
         self.data_transformed_path = None
         self.data_transformed_pathlib = None
 
+        self.instruments = None
 
         # ----- MySequence -----
         self.my_sequence = None
@@ -97,6 +98,7 @@ class MyModel():
             d = pickle.load(dump_file)
             self.input_param['input_size'] = d['input_size']
             self.input_param['nb_instruments'] = d['nb_instruments']
+            self.instruments = d['instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
     def new_nn_model(self, nb_steps=None, lr=None, optimizer=None, loss=None):
@@ -111,7 +113,7 @@ class MyModel():
         try:
             _ = self.input_param['input_size']
             _ = self.input_param['nb_instruments']
-        except AttributeError:
+        except KeyError:
             print('Load the data before creating a new model')
         if nb_steps is not None:
             self.nb_sept = nb_steps
@@ -141,7 +143,7 @@ class MyModel():
             d = pickle.load(dump_file)
             self.lr = d['nn']['lr']
             self.input_param = d['nn']['input_param']
-
+            self.instruments = d['instruments']
         self.optimizer = self.nn_model.optimizer  # not sure about this part, we need to compile again ? I can load it with the pickle file
         print('Model {0} loaded'.format(id))
 
@@ -208,7 +210,8 @@ class MyModel():
                     'input_param': self.input_param,
                     'lr': self.lr
                     # 'optimizer': self.optimizer,
-                }
+                },
+                'instruments': self.instruments
             }, dump_file)
         print('Model saved in {0}'.format(path_to_save))
 
@@ -235,7 +238,7 @@ class MyModel():
             seed = np.random.uniform(
                 low=g.min_value,
                 high=g.max_value,
-                size=(self.input_param['nb_steps'], self.input_param['input_size']))
+                size=(self.input_param['nb_instruments'], self.input_param['nb_steps'], self.input_param['input_size']))
         temperatures = temperatures if temperatures is not None else [0.7, 2.7]
         length = length if length is not None else 100
         # For save midi path
@@ -256,22 +259,27 @@ class MyModel():
                                                    progressbar.ETA()])
             bar.start()  # To see it working
             for l in range(length):
-                samples = generated[l:]
-                expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.nn_model.predict(expanded_samples, verbose=0)[0]
-                preds = np.asarray(preds).astype('float64')
+                samples = generated[:, l:]
+                #expanded_samples = np.expand_dims(samples, axis=0)
+                preds = self.nn_model.predict(list(samples), verbose=0)[0]
+                preds = np.asarray(preds).astype('float64')         # (nb_instruments, 128, 1)
 
-                next_array = midi.sample(preds, temperature)
+                # next_array = midi.sample(preds, temperature)
+                next_array = preds      # Without temperature
 
-                generated_list = []
-                generated_list.append(generated)
-                generated_list.append(next_array)
-                generated = np.vstack(generated_list)
+                # generated_list = []
+                # generated_list.append(generated)
+                # generated_list.append(next_array)
+                # generated = np.vstack(generated_list)
+                generated = np.concatenate((generated, preds), axis=1)
+
                 bar.update(l+1)
             bar.finish()
 
-            generated_midi_final = np.transpose(generated, (1, 0))
-            output_notes = midi.matrix_to_midi(generated_midi_final, random=1)
+            generated_midi_final = np.transpose(generated, (0, 2, 1))       # (nb_instruments, nb_steps, 128)
+            output_notes_list = []
+            for i in range(self.input_param['nb_instruments']):
+                output_notes_list.append(midi.matrix_to_midi(generated_midi_final[i], random=1))
             # find the name for the mide_file
             i = 0
             m_str = "lstm_out_t({0})_({1}).mid".format(temperature, i)
@@ -281,5 +289,5 @@ class MyModel():
             path_to_save = str(self.save_midis_pathlib / m_str)
 
             # Saving the midi file
-            midi.save_midi(output_notes=output_notes, path=path_to_save)
+            midi.save_midi(output_notes_list=output_notes_list, path=path_to_save)
         print('Done Generating')
