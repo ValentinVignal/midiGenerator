@@ -42,11 +42,6 @@ def create_model(input_param):
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.22)(x)
 
-        x = tf.keras.layers.LSTM(512, return_sequences=True, unit_forget_bias=True)(x)
-        x = tf.keras.layers.LeakyReLU()(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.22)(x)
-
         # compute importance for each step
         attention = tf.keras.layers.Dense(1, activation='tanh')(x)
         attention = tf.keras.layers.Flatten()(attention)
@@ -62,26 +57,24 @@ def create_model(input_param):
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.22)(x)
 
-        x = tf.keras.layers.LSTM(128, unit_forget_bias=True)(x)
-        x = tf.keras.layers.LeakyReLU()(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.22)(x)
-
         first_layer.append(x)
 
     # Concatenation
     for instrument in range(nb_instruments):
-        first_layer[instrument] = tf.keras.layers.Reshape((nb_steps, 1, 128))(
+        first_layer[instrument] = tf.keras.layers.Reshape((nb_steps, 1, 256))(
             first_layer[instrument])  # (batch, nb_steps, 1, 128)
 
     x = tf.keras.layers.concatenate(first_layer, axis=2)  # (batch, nb_steps, nb_instruments, 128)
     x = tf.keras.layers.Flatten()(x)
 
     x = tf.keras.layers.Dense(nb_instruments * input_size)(x)
+    x = tf.keras.layers.LeakyReLU()(x)
+    x = tf.keras.layers.Dropout(0.4)(x)
 
     outputs = []        # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
         output = tf.keras.layers.Dense(input_size, activation='softmax')(x)
+        output = tf.keras.layers.LeakyReLU()(output)
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
