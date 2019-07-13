@@ -202,7 +202,7 @@ def main():
             'instruments': instruments,
             'nb_instruments': len(instruments),
             'all_shapes': all_shapes,
-            'input_size': all_shapes[0][0][2]
+            'input_size': all_shapes[0][0][2]       # The number of notes
         }, dump_file)
 
     print('Number of songs : {0}'.format(nb_valid_files))

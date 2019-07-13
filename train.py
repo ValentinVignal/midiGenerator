@@ -22,8 +22,6 @@ def main():
                         help='learning rate (default: 0.001)')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
-    #parser.add_argument('--log-interval', type=int, default=5, metavar='N',
-    #                    help='how many batch to wait before logging training status')
     parser.add_argument('-n', '--name', type=str, default='default_name',
                         help='how many batch to wait before logging training status')
     load_group = parser.add_mutually_exclusive_group()

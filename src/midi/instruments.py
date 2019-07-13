@@ -26,10 +26,20 @@ similar_music21_instruments = [
 
 
 def string2instrument(name):
+    """
+
+    :param name: Name of the instrument
+    :return: The music21 corresponding instrument class to instenciate
+    """
     return music21_instruments_dict[name]
 
 
 def return_similar_instruments(name):
+    """
+
+    :param name: The name of the instrument
+    :return: All the possible instruments to train on which are similar
+    """
     sim_inst = []
     for l in similar_music21_instruments:
         if name in l:

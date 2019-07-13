@@ -96,7 +96,7 @@ class MySequence(tf.keras.utils.Sequence):
 
         :param l:
         :param acc:
-        :return:
+        :return: The number of useful element in the dataset
         """
 
         if type(l) is list:
@@ -105,9 +105,13 @@ class MySequence(tf.keras.utils.Sequence):
                 acc += self.return_nb_elements(l2)
             return acc
         else:
-            return l[0] - self.nb_steps # not -self.nb_steps + 1 because of the y (true tab)
+            return l[0] - self.nb_steps     # not -self.nb_steps + 1 because of the y (true tab)
 
     def know_all_len(self):
+        """
+
+        :return: all the length of all files
+        """
         def f_map(l):
             return functools.reduce(lambda x, y: x + y[0] - self.nb_steps, l, 0)    # not -self.nb_steps + 1 because of the y (true tab)
 

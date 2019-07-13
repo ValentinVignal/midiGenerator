@@ -17,36 +17,40 @@ class MyModel():
     """
 
     def __init__(self, load_model=None, model_infos=None, data=None):
+        """
+
+        :param load_model: if not None, load the model
+        :param model_infos: if load_model is None and model_infos is not None : create a new model with model_infos parameters
+        :param data: if not None, load the data
+        """
         # ----- General -----
         self.total_epochs = 0
         self.name = 'default_name'
-        self.model = ''
-        self.full_name = None
+        self.model = ''  # Id of the model used
+        self.full_name = ''  # Id of this MyModel instance
         self.get_new_full_name()
 
-        self.saved_model_path = os.path.join('saved_models', self.full_name)
+        self.saved_model_path = os.path.join('saved_models', self.full_name)  # Where to saved the trained model
         self.saved_model_pathlib = Path(self.saved_model_path)
 
         # ----- Data -----
-        self.data_transformed_path = None
+        self.data_transformed_path = None  # Where are the data to train on
         self.data_transformed_pathlib = None
 
-        self.instruments = None
+        self.instruments = None  # List of instruments used
 
         # ----- MySequence -----
-        self.my_sequence = None
-        self.batch = None
+        self.my_sequence = None  # Instance of MySequence Generator
+        self.batch = None  # Size if the batch
 
         # ----- Neural Network -----
-        self.input_param = None
-        self.nn_model = None
+        self.input_param = None  # The parameters for the neural network
+        self.nn_model = None  # Our neural network
         self.optimizer = None
         self.lr = None
 
-        self.nb_steps = None
-
         # ------ save_midi_path -----
-        self.save_midis_pathlib = None
+        self.save_midis_pathlib = None  # Where to save the generated midi files
 
         if load_model is not None:
             self.load_model(load_model)
@@ -59,6 +63,7 @@ class MyModel():
                 """
                 value = None if key not in model_infos else model_infos[key]
                 return value
+
             self.input_param = model_infos['input_param']
             self.new_nn_model(
                 nb_steps=model_infos['nb_steps'],
@@ -70,6 +75,11 @@ class MyModel():
             self.load_data(data)
 
     def get_full_name(self, i):
+        """
+
+        :param i: index
+        :return: set up the full name and the path to save the trained model
+        """
         full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
         saved_model_path = os.path.join('saved_models', full_name)
         saved_model_pathlib = Path(saved_model_path)
@@ -79,6 +89,10 @@ class MyModel():
         print('Get full_name : {0}'.format(self.full_name))
 
     def get_new_full_name(self):
+        """
+
+        :return: set up a new unique full name and the corresponding path to save the trained model
+        """
         i = 0
         full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
         saved_model_path = os.path.join('saved_models', full_name)
@@ -98,7 +112,7 @@ class MyModel():
     def load_data(self, data_transformed_path):
         """
 
-        :return:
+        :return: load the data
         """
         self.data_transformed_path = data_transformed_path
         self.data_transformed_pathlib = Path(self.data_transformed_path)
@@ -110,23 +124,22 @@ class MyModel():
             self.instruments = d['instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
-    def new_nn_model(self, nb_steps=None, lr=None, optimizer=None, loss=None):
+    def new_nn_model(self, nb_steps, lr=None, optimizer=None, loss=None):
         """
 
-        :param input_param:
+        :param nb_steps: Size for the RNN
         :param lr:
         :param optimizer:
         :param loss:
-        :return:
+        :return: set up the neural network
         """
         try:
             _ = self.input_param['input_size']
             _ = self.input_param['nb_instruments']
         except KeyError:
             print('Load the data before creating a new model')
-        if nb_steps is not None:
-            self.nb_sept = nb_steps
-            self.input_param['nb_steps'] = self.nb_sept
+
+        self.input_param['nb_steps'] = nb_steps
 
         self.nn_model = nn.create_model(
             self.input_param)
@@ -139,8 +152,9 @@ class MyModel():
     def load_model(self, id, keep_name=True):
         """
 
-        :param id:
-        :return:
+        :param id: id of the model to load
+        :param keep_name: if true keep the name, if not, get a new index at the and of the full name
+        :return: load a model
         """
         self.name, self.model, total_epochs, indice = id.split('-')
         self.total_epochs = int(total_epochs)
@@ -160,6 +174,12 @@ class MyModel():
         print('Model {0} loaded'.format(id))
 
     def load_weights(self, id, keep_name=True):
+        """
+
+        :param id: id of the model to load
+        :param keep_name: if true keep the name, if not, get a new index at the and of the full name
+        :return: load the weights of a model
+        """
         self.name, self.model, total_epochs, indice = id.split('-')
         self.total_epochs = int(total_epochs)
         if keep_name:
@@ -178,7 +198,7 @@ class MyModel():
         :param batch:
         :param verbose:
         :param shuffle:
-        :return:
+        :return: train the model
         """
 
         # Do we have to create a new MySequence Object ?
@@ -210,6 +230,11 @@ class MyModel():
         print('Training done')
 
     def save_model(self, path=None):
+        """
+
+        :param path: path were to save the model, if Nonem it will be at self.saved_model_path
+        :return:
+        """
         path_to_save = self.saved_model_pathlib if path is None else Path(path)
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
         self.saved_model_pathlib.mkdir(parents=True, exist_ok=True)
@@ -231,12 +256,21 @@ class MyModel():
         print('Model saved in {0}'.format(path_to_save))
 
     def print_weights(self):
+        """
+        Print the weights
+        :return:
+        """
         for layer in self.nn_model.layers:
             lstm_weights = layer.get_weights()  # list of numpy arrays
             print('Lstm weights:', lstm_weights)
 
     def get_new_save_midis_path(self, path=None):
-        if path is None :
+        """
+        set up a new save midi path
+        :param path:
+        :return:
+        """
+        if path is None:
             i = 0
             m_str = '{0}-generation({1})'.format(self.full_name, i)
             while Path('generated_midis', m_str).exists():
@@ -248,6 +282,14 @@ class MyModel():
         print('new save path for midi files :', str(self.save_midis_pathlib))
 
     def generate(self, seed=None, temperatures=None, length=None, new_save_path=None):
+        """
+        Generate midi file from the seed and the trained model
+        :param seed: seed for the generation
+        :param temperatures:
+        :param length: Length of th generation
+        :param new_save_path:
+        :return:
+        """
         # --- Verify the inputs ---
         if seed is None:
             seed = np.random.uniform(
@@ -275,12 +317,12 @@ class MyModel():
             bar.start()  # To see it working
             for l in range(length):
                 samples = generated[:, np.newaxis, l:, :]
-                #expanded_samples = np.expand_dims(samples, axis=0)
+                # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.nn_model.predict(list(samples), verbose=0)
-                preds = np.asarray(preds).astype('float64')         # (nb_instruments, 128, 1)
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 128, 1)
 
                 # next_array = midi.sample(preds, temperature)
-                next_array = preds      # Without temperature
+                next_array = preds  # Without temperature
 
                 # generated_list = []
                 # generated_list.append(generated)
@@ -288,10 +330,10 @@ class MyModel():
                 # generated = np.vstack(generated_list)
                 generated = np.concatenate((generated, preds), axis=1)
 
-                bar.update(l+1)
+                bar.update(l + 1)
             bar.finish()
 
-            generated_midi_final = np.transpose(generated, (0, 2, 1))       # (nb_instruments, nb_steps, 128)
+            generated_midi_final = np.transpose(generated, (0, 2, 1))  # (nb_instruments, nb_steps, 128)
             output_notes_list = []
             for i in range(self.input_param['nb_instruments']):
                 output_notes_list.append(midi_create.matrix_to_midi(generated_midi_final[i], random=1))
