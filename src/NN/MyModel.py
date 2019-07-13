@@ -144,8 +144,11 @@ class MyModel():
         self.nn_model = nn.create_model(
             self.input_param)
 
-        self.lr = lr if lr is not None else 0.01
-        self.optimizer = optimizer(lr=self.lr) if optimizer is not None else tf.keras.optimizers.SGD(lr=self.lr)
+        self.lr = lr if lr is not None else 0.001
+        self.optimizer = optimizer(
+            lr=self.lr) if optimizer is not None \
+            else tf.keras.optimizers.Adam(lr=self.lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1,
+                                          amsgrad=False)  # tf.keras.optimizers.SGD(lr=self.lr)
         m_loss = loss if loss is not None else 'categorical_crossentropy'
         self.nn_model.compile(loss=m_loss, optimizer=self.optimizer)
 
