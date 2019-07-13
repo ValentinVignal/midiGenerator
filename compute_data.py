@@ -6,7 +6,7 @@ from pathlib import Path
 import progressbar
 import shutil
 
-import src.midi as midi
+import src.midi.open as midi_open
 
 
 def allMidiFiles(path, small_data):
@@ -126,7 +126,7 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths:
-            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, instruments, length=args.length)
+            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments, length=args.length)
             matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1))
             matrix_of_all_midis.append(matrix_of_single_midi)  # (length, nb_instruments, 128)
             # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
@@ -162,7 +162,7 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths_dataset:
-            matrix_of_single_midi = midi.midi_to_matrix(single_midi_path, instruments, length=args.length)
+            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments, length=args.length)
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
                 matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1))

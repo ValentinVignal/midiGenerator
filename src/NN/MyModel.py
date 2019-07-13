@@ -8,7 +8,7 @@ import progressbar
 
 from src.NN.data_generator import MySequence
 import src.global_variables as g
-import src.midi as midi
+import src.midi.create as midi_create
 
 
 class MyModel():
@@ -294,7 +294,7 @@ class MyModel():
             generated_midi_final = np.transpose(generated, (0, 2, 1))       # (nb_instruments, nb_steps, 128)
             output_notes_list = []
             for i in range(self.input_param['nb_instruments']):
-                output_notes_list.append(midi.matrix_to_midi(generated_midi_final[i], random=1))
+                output_notes_list.append(midi_create.matrix_to_midi(generated_midi_final[i], random=1))
             # find the name for the mide_file
             i = 0
             m_str = "lstm_out_t({0})_({1}).mid".format(temperature, i)
@@ -304,5 +304,5 @@ class MyModel():
             path_to_save = str(self.save_midis_pathlib / m_str)
 
             # Saving the midi file
-            midi.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
         print('Done Generating')
