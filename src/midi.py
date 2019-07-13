@@ -46,10 +46,10 @@ def notes_to_matrix(notes, durations, offsets, min_value=g.min_value, lower_firs
     # represent the continuum of this note playing.
 
     try:
-        last_offset = int(offsets[-1])
-    except IndexError:
-        print('Index Error')
-        return (None, None, None)
+        last_offset = max(map(lambda x: int(x), offsets))
+    except ValueError:
+        print('Value Error')
+        return None, None, None
 
     total_offset_axis = last_offset * 4 + (8 * 4)
     our_matrix = np.random.uniform(min_value, lower_first, (128, int(total_offset_axis)))
@@ -82,7 +82,7 @@ def notes_to_matrix(notes, durations, offsets, min_value=g.min_value, lower_firs
 def check_float(duration):  #  this function fix the issue which comes from some note's duration.
     # For instance some note has duration like 14/3 or 7/3.
     if type(duration) is str:
-        if ('/' in duration):
+        if '/' in duration:
             numerator = float(duration.split('/')[0])
             denominator = float(duration.split('/')[1])
             duration = str(float(numerator / denominator))
@@ -96,7 +96,7 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
     midi = music21.converter.parse(filename)  # Load the file
     parts = music21.instrument.partitionByInstrument(midi)
 
-    instrument_names = []       # Name of the instruments in the file
+    instrument_names = []  # Name of the instruments in the file
     try:
         for instrument in parts:
             # learn names of instruments
@@ -104,7 +104,6 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
             # name = (str(instrument).split(' ')[-1])[
             #        :-1]  # str(instrument) = "<music21.stream.Part object Electric Bass>"
             instrument_names.append(name)
-        print('instrument names', instrument_names)
     except TypeError:
         print('Type is not iterable.')
         return None
@@ -113,12 +112,12 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
     our_matrixes = []
     # print(instrument_names)
     for instrument in instruments:
-        similar_instruments = return_all_list_instruments(instrument)
+        similar_instruments = return_similar_instruments(instrument)
         at_least_one = functools.reduce(lambda x, y: (x or (y in instrument_names)), similar_instruments, False)
         if not at_least_one:
             print('{0} have not any {1} part'.format(filename, instrument))
             return None
-        else:       # We know there is a similar instrument in it
+        else:  # We know there is a similar instrument in it
             notes_to_parse = None
             for similar_instrument in similar_instruments:
                 if similar_instrument in instrument_names:
@@ -168,14 +167,13 @@ def midi_to_matrix(filename, instruments, length=None):  # convert midi file to 
     # Normalization of the duration : make them all finish at the same time
     max_len = 0
     for matrix in our_matrixes:
-        if len(matrix[0]) > max_len:    # matrix has shape : (128, length)
+        if len(matrix[0]) > max_len:  # matrix has shape : (128, length)
             max_len = len(matrix[0])
 
     final_matrix = np.zeros((len(our_matrixes), 128, max_len))
     for i in range(len(our_matrixes)):
         final_matrix[i, :, :len(our_matrixes[i][0])] = our_matrixes[i]
     return final_matrix
-
 
 
 def int_to_note(integer):
@@ -307,7 +305,6 @@ def sample(preds, temperature=1.0):
     # preds[0:48] = 0  # eliminate notes with low octaves
     # preds[100:] = 0  # eliminate notes with very high octaves
 
-
     ind = np.argpartition(preds, -1 * num_of_top)[-1 * num_of_top:]
     top_indices_sorted = ind[np.argsort(preds[ind])]  # 15 biggest number
 
@@ -331,140 +328,51 @@ def save_midi(output_notes_list, instruments, path):
     :param path: The .mid file path
     :return:
     """
-    print('in save_midi')
-    print('instruments', instruments)
     midi_stream = music21.stream.Stream()
     for i in range(len(instruments)):
         p = music21.stream.Part()
         p.append(output_notes_list[i])
-        print('output_notes_list', output_notes_list[i][:10])
-        #p.insert(0, music21.instrument.Instrument(instrumentName=instruments[i]))
-        if i==0:
-            p.insert(0, music21.instrument.Piano())
-        else:
-            p.insert(0, music21.instrument.AcousticBass())
+        # p.insert(0, music21.instrument.Instrument(instrumentName=instruments[i]))
+        p.insert(string2instrument(instruments[i])())
         midi_stream.insert(0, p)
     midi_stream.write('midi', fp=path)
     print(path, 'saved')
 
 
-    """
-    midi_stream = music21.stream.Stream()
-    midi_stream.write('midi', fp=path)
-    parsed = music21.converter.parse(path)
-    for i in range(len(instruments)):
 
 
-        instru_stream = music21.stream.Stream(output_notes_list[i])
-        p = instru_stream()
-        for part in parsed.parts:
-            part.insert(0, music21.instrument.Instrument(instrumentName=instruments[i]))
-    parsed.write('midi', fp=path)
-    print(path, 'saved')
-    """
+music21_instruments_dict = dict([(cls().instrumentName, cls) for name, cls in music21.instrument.__dict__.items() if
+                                 (isinstance(cls, type) and hasattr(cls(), 'instrumentName'))])
+
+similar_music21_instruments = [
+    ['Keyboard', 'Piano', 'Harpsichord', 'Clavichord', 'Celesta', 'Vibraphone', 'Marimba', 'Xylophone', 'Glockenspiel'],
+    ['Organ', 'Pipe Organ', 'Electric Organ', 'Reed Organ', 'Accordion', 'Harmonica'],
+    ['StringInstrument', 'Violin', 'Viola', 'Violoncello', 'Contrabass'],
+    ['Harp', 'Guitar', 'Acoustic Guitar', 'Electric Guitar'],
+    ['Acoustic Bass', 'Electric Bass', 'Fretless Bass', 'Contrabass', 'Bass Clarinet'],
+    ['Mandolin', 'Ukulele', 'Banjo', 'Lute', 'Sitar', 'Shamisen'],
+    ['Koto', 'Woodwind', 'Flute', 'Piccolo', 'Recorder', 'Pan Flute', 'Shakuhachi', 'Whistle', 'Ocarina', 'Oboe',
+     'English Horn', 'Clarinet', 'Bass clarinet', 'Bassoon'],
+    ['Saxophone', 'Soprano Saxophone', 'Alto Saxophone', 'Tenor Saxophone', 'Baritone Saxophone', 'Bagpipes',
+     'Shehnai'],
+    ['Brass', 'Horn', 'Trumpet', 'Trombone', 'Bass Trombone', 'Tuba'],
+    ['Percussion', 'Vibraphone', 'Marimba', 'Xylophone', 'Glockenspiel', 'Church Bells', 'Tubular Bells', 'Gong',
+     'Handbells', 'Dulcimer', 'Steel Drum', 'Timpani', 'Kalimba', 'Woodblock'],
+    ['Temple Block', 'Castanets', 'Maracas', 'Vibraslap', 'Cymbals', 'Finger Cymbals', 'Crash Cymbals',
+     'Suspended Cymbal', 'Sizzle Cymbal', 'Splash Cymbals', 'Ride Cymbals', 'Hi-Hat Cymbal', 'Triangle', 'Cowbell',
+     'Agogo', 'Tam-Tam', 'Sleigh Bells', 'Snare Drum', 'Tenor Drum', 'Bongo Drums', 'Tom-Tom', 'Timbales', 'Conga Drum',
+     'Bass Drum', 'Taiko', 'Tambourine', 'Whip', 'Ratchet', 'Siren', 'Sandpaper Blocks', 'Wind Machine'],
+    ['Voice', 'Soprano', 'Mezzo-Soprano', 'Alto', 'Tenor', 'Baritone', 'Bass']
+]
 
 
-all_instruments = {
-    'Piano': ['Acoustic Grand Piano', 'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano',
-              'Electric Piano 1', 'Electric Piano 2', 'Harpsichord', 'Clavinet'],
-    'Chromatic Percussion': ['Celesta', 'Glockenspiel', 'Music Box', 'Vibraphone', 'Miramba', 'Xylophone',
-                             'Tubular Bells', 'Dulcimer'],
-    'Organ': ['Drawbar Organ', 'Percussive Organ', 'Rock Organ', 'Church Organ', 'Reed Organ', 'Accordion', 'Harmonica',
-              'Tango Accordion'],
-    'Guitar': ['Acoustic Guitar (nylon)', 'Acoustic Guitar (steel)', 'Electric Guitar (jazz)',
-               'Electric Guitar (clean)', 'Electric Guitar (muted)', 'Overdriven Guitar', 'Distortion Guitar',
-               'Guitar Harmonics'],
-    'Bass': ['Acoustic Bass', 'Electric Bass (finger)', 'Electric Bass (pick)', 'Fretless Bass', 'Slap Bass 1',
-             'Slap Bass 2', 'Synth Bass 1', 'Synth Bass 2'],
-    'Strings': ['Violin', 'Viola', 'Cello', 'Contrabass', 'Tremolo Strings', 'Pizzicato Strings', 'Orchestral Harp',
-                'Timpani'],
-    'Ensemble': ['String Ensemble 1', 'String Ensemble 2', 'Synth Strings 1', 'Synth Strings 2', 'Choir Aahs',
-                 'Voice Oohs', 'Synth Choir', 'Orchestra Hit'],
-    'Brass': ['Trumpet', 'Trombone', 'Tuba', 'Muted Trumpet', 'French Horn', 'Brass Section', 'Synth Brass 1',
-              'Synth Brass 2'],
-    'Reed': ['Soprano Sax', 'Alto Sax', 'Tenor Sax', 'Baritone Sax', 'Oboe', 'English Horn', 'Bassoon', 'Clarinet'],
-    'Pipe': ['Piccolo', 'Flute', 'Recorder', 'Pan Flute', 'Blown bottle', 'Shakuhachi', 'Whistle', 'Ocarina'],
-    'Synth Lead': ['Lead 1 (square)', 'Lead 2 (sawtooth)', 'Lead 3 (calliope)', 'Lead 4 (chiff)', 'Lead 5 (charang)',
-                   'Lead 6 (voice)', 'Lead 7 (fifths)', 'Lead 8 (bass + lead)'],
-    'Pad': ['Pad 1 (new age)', 'Pad 2 (warm)', 'Pad 3 (polysynth)', 'Pad 4 (choir)', 'Pad 5 (bowed)',
-            'Pad 6 (metallic)', 'Pad 7 (halo)', 'Pad 8 (sweep)'],
-    'Synth Effects': ['FX 1 (rain)', 'FX 2 (soundtrack)', 'FX 3 (crystal)', 'FX 4 (atmosphere)', 'FX 5 (brightness)',
-                      'FX 6 (goblins)', 'FX 7 (echoes)', 'FX 8 (sci-fi)'],
-    'Ethnic': ['Sitar', 'Banjo', 'Shamisen', 'Koto', 'Kalimba', 'Bagpipe', 'Fiddle', 'Shanai'],
-    'Percussive': ['Tinkle Bell', 'Agogo', 'Steel Drums', 'Woodblock', 'Taiko Drum', 'Melodic Tom', 'Synth Drum',
-                   'Reverse Cymbal'],
-    'Sound Effects': ['Guitar Fret Noise', 'Breath Noise', 'Seashore', 'Bird Tweet', 'Telephone Ring', 'Helicopter',
-                      'Applause', 'Gunshot']
-}
-
-all_instruments_perso = {
-    'Piano': ['Electric Piano', 'Piano', 'Grand Piano'],
-    'Chromatic Percussion': ['Chromatic Percussion'],
-    'Organ': ['Organ'],
-    'Guitar': ['Guitar', 'Acoustic Guitar', 'Electric Guitar'],
-    'Bass': ['Electric Bass', 'Bass'],
-    'Strings': ['Strings'],
-    'Ensemble': ['Ensemble', 'String Ensemble', 'Synth String', 'Choir'],
-    'Brass': ['Brass', 'Synth Brass'],
-    'Reed': ['Sax', 'Horn', 'Reed'],
-    'Pipe': ['Pipe'],
-    'Synth Lead': ['Synth Lead', 'Lead', 'Lead 1', 'Lead 2', 'Lead 3', 'Lead 4', 'Lead 5', 'Lead 6', 'Lead 7',
-                   'Lead 8'],
-    'Pad': ['Pad', 'Pad 1', 'Pad 2', 'Pad 3', 'Pad 4', 'Pad 5', 'Pad 6', 'Pad 7', 'Pad 8'],
-    'Synth Effects': ['Synth Effects', 'FX', 'FX 1', 'FX 2', 'FX 3', 'FX 4', 'FX 5', 'FX 6', 'FX 7', 'FX 8'],
-    'Ethnic': ['Ethnic'],
-    'Percussive': ['Percussive'],
-    'Sound Effects': ['Sound Effects']
-
-}
+def string2instrument(name):
+    return music21_instruments_dict[name]
 
 
-def return_all_list_instruments(name):
-    """
-
-    :param name: the name of the instruments
-    :return: all the possible names for the training
-    """
-    l_final = []
-    key = None
-    for k in all_instruments:
-        if name in all_instruments[k]:
-            key = k
-    for k in all_instruments_perso:
-        if name in all_instruments_perso[k]:
-            key = k
-    try:
-        l_final = all_instruments[key] + all_instruments_perso[key]
-    except KeyError:
-        print(name, 'is not in the list of intruments')
-    return l_final
-
-
-def return_correct_name(name):
-    """
-
-    :param name: name of the instrument
-    :return: A name of correct instrument (exists in midi format)
-    """
-    correct_name = 'Accoustic Grand Piano'
-
-    for k in all_instruments:
-        if name in all_instruments[k]:
-            correct_name = name
-    for k in all_instruments_perso:
-        if name in all_instruments_perso[k]:
-            correct_name = all_instruments[k][0]
-
-    return correct_name
-
-
-def return_correct_names(names):
-    correct_names = []
-    for name in names:
-        correct_names.append(return_correct_name(name))
-    return correct_names
-
-
-
-
-
+def return_similar_instruments(name):
+    sim_inst = []
+    for l in similar_music21_instruments:
+        if name in l:
+            sim_inst += l
+    return sim_inst

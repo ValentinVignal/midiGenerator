@@ -44,13 +44,13 @@ def main():
     """
 
     parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset')
-    parser.add_argument('--data', type=str, default='lmd_matched_mini', metavar='N',
+    parser.add_argument('-d', '--data', type=str, default='lmd_matched_mini', metavar='N',
                         help='The name of the data')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
-    parser.add_argument('--force', action='store_true', default=False,
+    parser.add_argument('-f', '--force', action='store_true', default=False,
                         help='If data already exists, erase it and reconstruct it')
-    parser.add_argument('--length', type=str, default='', metavar='N',
+    parser.add_argument('-l', '--length', type=str, default='', metavar='N',
                         help='The length of the data')
 
     args = parser.parse_args()
