@@ -37,7 +37,7 @@ def int_to_note(integer):
     return note
 
 
-def matrix_to_midi(matrix, random=0):
+def matrix_to_midi(matrix, random=False, instrument='Piano'):
     first_touch = 1.0
     continuation = 0.0
     y_axis, x_axis = matrix.shape
@@ -78,7 +78,7 @@ def matrix_to_midi(matrix, random=0):
         i = 0
         offset = 0
 
-        if (random):
+        if random:
 
             while i < len(one_freq_interval):
                 how_many_repetitive = 0
@@ -94,7 +94,7 @@ def matrix_to_midi(matrix, random=0):
                                                  duration=music21.duration.Duration(
                                                      0.25 * random_num * how_many_repetitive))
                     new_note.offset = 0.25 * temp_i * 2
-                    new_note.storedInstrument = music21.instrument.Piano()
+                    new_note.storedInstrument = midi_inst.string2instrument(instrument)()
                     output_notes.append(new_note)
                 else:
                     i += 1
@@ -114,7 +114,7 @@ def matrix_to_midi(matrix, random=0):
                     new_note = music21.note.Note(int_to_note(y_axis_num),
                                                  duration=music21.duration.Duration(0.25 * how_many_repetitive))
                     new_note.offset = 0.25 * temp_i
-                    new_note.storedInstrument = music21.instrument.Piano()
+                    new_note.storedInstrument = midi_inst.string2instrument(instrument)()
                     output_notes.append(new_note)
                 else:
                     i += 1
@@ -159,11 +159,13 @@ def save_midi(output_notes_list, instruments, path):
     """
     midi_stream = music21.stream.Stream()
     for i in range(len(instruments)):
-        p = music21.stream.Part()
-        p.append(output_notes_list[i])
+        s = music21.stream.Stream()
+        for n in output_notes_list[i]:
+
+            s.insert(n.offset, n)
         # p.insert(0, midi.instrument.Instrument(instrumentName=instruments[i]))
-        p.insert(midi_inst.string2instrument(instruments[i])())
-        midi_stream.insert(0, p)
+        s.insert(midi_inst.string2instrument(instruments[i])())
+        midi_stream.insert(0, s)
     midi_stream.write('midi', fp=path)
     print(path, 'saved')
 

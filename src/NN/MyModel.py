@@ -322,24 +322,27 @@ class MyModel():
                 samples = generated[:, np.newaxis, l:, :]
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.nn_model.predict(list(samples), verbose=0)
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 128, 1)
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128)
 
+                next_array = np.zeros(preds.shape)
+                for inst in range(next_array.shape[0]):
+                    next_array[inst] = midi_create.sample(preds[inst][0], temperature)[np.newaxis, :]
                 # next_array = midi.sample(preds, temperature)
-                next_array = preds  # Without temperature
+                # next_array = preds  # Without temperature
 
                 # generated_list = []
                 # generated_list.append(generated)
                 # generated_list.append(next_array)
                 # generated = np.vstack(generated_list)
-                generated = np.concatenate((generated, preds), axis=1)
+                generated = np.concatenate((generated, next_array), axis=1)      # (nb_instruments, nb_steps, 128)
 
                 bar.update(l + 1)
             bar.finish()
 
-            generated_midi_final = np.transpose(generated, (0, 2, 1))  # (nb_instruments, nb_steps, 128)
+            generated_midi_final = np.transpose(generated, (0, 2, 1))  # (nb_instruments, 128, nb_steps)
             output_notes_list = []
             for i in range(self.input_param['nb_instruments']):
-                output_notes_list.append(midi_create.matrix_to_midi(generated_midi_final[i], random=1))
+                output_notes_list.append(midi_create.matrix_to_midi(generated_midi_final[i], random=False, instrument=self.instruments[i]))
             # find the name for the mide_file
             i = 0
             m_str = "lstm_out_t({0})_({1}).mid".format(temperature, i)

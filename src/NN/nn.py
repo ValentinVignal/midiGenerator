@@ -74,7 +74,6 @@ def create_model(input_param):
     outputs = []        # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
         output = tf.keras.layers.Dense(input_size, activation='softmax')(x)
-        output = tf.keras.layers.LeakyReLU()(output)
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
