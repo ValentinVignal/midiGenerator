@@ -300,7 +300,7 @@ class MyModel():
                 high=g.max_value,
                 size=(self.input_param['nb_instruments'], self.input_param['nb_steps'], self.input_param['input_size']))
         temperatures = temperatures if temperatures is not None else [0.7, 2.7]
-        length = length if length is not None else 100
+        length = length if length is not None else 200
         # For save midi path
         if type(new_save_path) is str or (
                 type(new_save_path) is bool and new_save_path) or (
