@@ -11,7 +11,7 @@ import src.global_variables as g
 import src.midi.create as midi_create
 
 
-class MyModel():
+class MyModel:
     """
 
     """
@@ -284,11 +284,10 @@ class MyModel():
             self.save_midis_pathlib = Path(path)
         print('new save path for midi files :', str(self.save_midis_pathlib))
 
-    def generate(self, seed=None, temperatures=None, length=None, new_save_path=None):
+    def generate(self, seed=None, length=None, new_save_path=None):
         """
         Generate midi file from the seed and the trained model
         :param seed: seed for the generation
-        :param temperatures:
         :param length: Length of th generation
         :param new_save_path:
         :return:
@@ -299,7 +298,6 @@ class MyModel():
                 low=g.min_value,
                 high=g.max_value,
                 size=(self.input_param['nb_instruments'], self.input_param['nb_steps'], self.input_param['input_size']))
-        temperatures = temperatures if temperatures is not None else [0.7, 2.7]
         length = length if length is not None else 200
         # For save midi path
         if type(new_save_path) is str or (
@@ -310,47 +308,41 @@ class MyModel():
 
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
         print('Start generating ...')
-        print('--- Temperatures : {0} ---'.format(temperatures))
-        for temperature in temperatures:
-            generated = seed
-            print('Temperature :', temperature)
-            bar = progressbar.ProgressBar(maxval=length,
-                                          widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
-                                                   progressbar.ETA()])
-            bar.start()  # To see it working
-            for l in range(length):
-                samples = generated[:, np.newaxis, l:, :]
-                # expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.nn_model.predict(list(samples), verbose=0)
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128)
+        generated = seed
+        bar = progressbar.ProgressBar(maxval=length,
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        bar.start()  # To see it working
+        for l in range(length):
+            samples = generated[:, np.newaxis, l:, :]
+            # expanded_samples = np.expand_dims(samples, axis=0)
+            preds = self.nn_model.predict(list(samples), verbose=0)
+            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128)
 
-                next_array = np.zeros(preds.shape)
-                for inst in range(next_array.shape[0]):
-                    next_array[inst] = midi_create.sample(preds[inst][0], temperature)[np.newaxis, :]
-                # next_array = midi.sample(preds, temperature)
-                # next_array = preds  # Without temperature
+            # next_array = np.zeros(preds.shape)
+            # for inst in range(next_array.shape[0]):
+            #     next_array[inst] = midi_create.sample(preds[inst][0], temperature)[np.newaxis, :]
+            next_array = preds  # Without temperature
 
-                # generated_list = []
-                # generated_list.append(generated)
-                # generated_list.append(next_array)
-                # generated = np.vstack(generated_list)
-                generated = np.concatenate((generated, next_array), axis=1)      # (nb_instruments, nb_steps, 128)
+            # generated_list = []
+            # generated_list.append(generated)
+            # generated_list.append(next_array)
+            # generated = np.vstack(generated_list)
+            generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128)
 
-                bar.update(l + 1)
-            bar.finish()
+            bar.update(l + 1)
+        bar.finish()
 
-            generated_midi_final = np.transpose(generated, (0, 2, 1))  # (nb_instruments, 128, nb_steps)
-            output_notes_list = []
-            for i in range(self.input_param['nb_instruments']):
-                output_notes_list.append(midi_create.matrix_to_midi(generated_midi_final[i], random=False, instrument=self.instruments[i]))
-            # find the name for the mide_file
-            i = 0
-            m_str = "lstm_out_t({0})_({1}).mid".format(temperature, i)
-            while (self.save_midis_pathlib / m_str).exists():
-                i += 1
-                m_str = "lstm_out_t({0})_({1}).mid".format(temperature, i)
-            path_to_save = str(self.save_midis_pathlib / m_str)
+        generated_midi_final = np.transpose(generated, (0, 2, 1))  # (nb_instruments, 128, nb_steps)
+        output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
+        # --- find the name for the midi_file ---
+        i = 0
+        m_str = "lstm_out_t({0}).mid".format(i)
+        while (self.save_midis_pathlib / m_str).exists():
+            i += 1
+            m_str = "lstm_out_({0}).mid".format(i)
+        path_to_save = str(self.save_midis_pathlib / m_str)
 
-            # Saving the midi file
-            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+        # Saving the midi file
+        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
         print('Done Generating')
