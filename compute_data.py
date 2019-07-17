@@ -9,7 +9,7 @@ import shutil
 import src.midi.open as midi_open
 
 
-def allMidiFiles(path, small_data):
+def all_midi_files(path, small_data):
     """
 
     :param path: the root path
@@ -92,7 +92,7 @@ def main():
             all_midi_paths_dataset = d[
                 'midi']  # All the path for every files in the dataset (including the ones with errors)
     else:
-        all_midi_paths_dataset = allMidiFiles(data_path, args.pc)
+        all_midi_paths_dataset = all_midi_files(data_path, args.pc)
         with open(all_dataset_p, 'wb') as dump_file:
             pickle.dump({
                 'midi': all_midi_paths_dataset,
