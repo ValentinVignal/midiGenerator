@@ -16,7 +16,7 @@ def matrix_rest(dims, rest=g.rest):
     return rest * np.ones(dims)
 
 
-def notes_to_matrix_val(notes, durations, offsets, first_touch=g.first_touch, continuation=g.contination, rest=g.rest):
+def notes_to_matrix(notes, durations, offsets, first_touch=g.first_touch, continuation=g.contination, rest=g.rest):
     """
 
     :param notes: The notes
@@ -141,7 +141,7 @@ def midi_to_matrix(filename, instruments, length=None):
                     durations.append(check_float(duration))
                     offsets.append(element.offset)
 
-            our_matrix = notes_to_matrix_val(notes, durations, offsets)
+            our_matrix = notes_to_matrix(notes, durations, offsets)
 
             try:
                 freq, time = our_matrix.shape
