@@ -26,7 +26,7 @@ class MyModel:
         # ----- General -----
         self.total_epochs = 0
         self.name = 'default_name'
-        self.model = ''  # Id of the model used
+        self.model_id = ''  # Id of the model used
         self.full_name = ''  # Id of this MyModel instance
         self.get_new_full_name()
 
@@ -48,8 +48,6 @@ class MyModel:
         self.nn_model = None  # Our neural network
         self.optimizer = None
         self.lr = None
-
-        self.model_id = None
 
         # ------ save_midi_path -----
         self.save_midis_pathlib = None  # Where to save the generated midi files
@@ -82,7 +80,7 @@ class MyModel:
         :param i: index
         :return: set up the full name and the path to save the trained model
         """
-        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
+        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i)
         saved_model_path = os.path.join('saved_models', full_name)
         saved_model_pathlib = Path(saved_model_path)
         self.full_name = full_name
@@ -96,12 +94,12 @@ class MyModel:
         :return: set up a new unique full name and the corresponding path to save the trained model
         """
         i = 0
-        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
+        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i)
         saved_model_path = os.path.join('saved_models', full_name)
         saved_model_pathlib = Path(saved_model_path)
         while saved_model_pathlib.exists():
             i += 1
-            full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, i)
+            full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i)
             saved_model_path = os.path.join('saved_models', full_name)
             saved_model_pathlib = Path(saved_model_path)
         self.saved_model_path = saved_model_path
@@ -144,6 +142,7 @@ class MyModel:
 
         self.model_id = model_id
         self.input_param['nb_steps'] = nb_steps
+        self.get_new_full_name()
 
         self.nn_model = nn.create_nn_model(
             model_id=self.model_id,
@@ -164,14 +163,14 @@ class MyModel:
         :param keep_name: if true keep the name, if not, get a new index at the and of the full name
         :return: load a model
         """
-        self.name, self.model, total_epochs, indice = id.split('-')
+        self.name, self.model_id, total_epochs, indice = id.split('-')
         self.total_epochs = int(total_epochs)
         if keep_name:
             self.get_full_name(indice)
         else:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
-                            '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, indice))
+                            '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
         self.nn_model = tf.keras.models.load_model(str(path_to_load / 'm.h5'))
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
@@ -188,14 +187,14 @@ class MyModel:
         :param keep_name: if true keep the name, if not, get a new index at the and of the full name
         :return: load the weights of a model
         """
-        self.name, self.model, total_epochs, indice = id.split('-')
+        self.name, self.model_id, total_epochs, indice = id.split('-')
         self.total_epochs = int(total_epochs)
         if keep_name:
             self.get_full_name(indice)
         else:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
-                            '{0}-m({1})-e({2})-({3})'.format(self.name, self.model, self.total_epochs, indice))
+                            '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
         self.nn_model.load_weights(str(path_to_load / 'm_weights.h5'))
         print('Weights of the {0} model loaded'.format(id))
 
@@ -251,7 +250,7 @@ class MyModel:
         with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
             pickle.dump({
                 'name': self.name,
-                'model': self.model,
+                'model_id': self.model_id,
                 'full_name': self.full_name,
                 'nn': {
                     'epochs': self.total_epochs,
