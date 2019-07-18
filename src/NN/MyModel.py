@@ -153,7 +153,7 @@ class MyModel:
             lr=self.lr) if optimizer is not None \
             else tf.keras.optimizers.Adam(lr=self.lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1,
                                           amsgrad=False)  # tf.keras.optimizers.SGD(lr=self.lr)
-        m_loss = loss if loss is not None else 'categorical_crossentropy'
+        m_loss = loss if loss is not None else 'mean_squared_error'      # 'categorical_crossentropy'
         self.nn_model.compile(loss=m_loss, optimizer=self.optimizer)
 
     def load_model(self, id, keep_name=True):

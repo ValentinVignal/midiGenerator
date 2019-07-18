@@ -34,6 +34,7 @@ def create_model(input_param, model_param):
         # ------ Level of dense layers -------
         # 1
         x = layers.Dense(256, activation='elu')(inputs_midi[instrument])        # (batch, nb_steps, 256)
+        # TODO: Add regularizer in Dense Layer
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
         # 2
@@ -54,6 +55,7 @@ def create_model(input_param, model_param):
         # 2
         x = layers.LSTM(512, return_sequences=True, unit_forget_bias=True,
                         dropout=0.1, recurrent_dropout=0.1)(x)
+        # TODO: Add regularizer in LSTM
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
@@ -125,7 +127,7 @@ def create_model(input_param, model_param):
     # ---------- Instruments separately ----------
     outputs = []        # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
-        output = tf.keras.layers.Dense(input_size, activation='softmax')(x)
+        output = tf.keras.layers.Dense(input_size, activation='tanh')(x)
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
