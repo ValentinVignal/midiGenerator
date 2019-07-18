@@ -24,8 +24,10 @@ def main():
                         help='to work on a small computer with a cpu')
     parser.add_argument('-n', '--name', type=str, default='default_name',
                         help='how many batch to wait before logging training status')
+    parser.add_argument('-s', '--nb-steps', type=int, default=18,
+                            help='The model of the Neural Network used for the interpolation')
     load_group = parser.add_mutually_exclusive_group()
-    load_group.add_argument('-m', '--model', type=str, default='18',
+    load_group.add_argument('-m', '--model-id', type=str, default='',
                             help='The model of the Neural Network used for the interpolation')
     load_group.add_argument('-l', '--load', type=str, default='',
                             help='The name of the trained model to load')
@@ -44,9 +46,9 @@ def main():
     my_model = MyModel()
     my_model.load_data(data_transformed_path=data_transformed_path)
 
-    if args.model != '':
-        nb_steps = int(args.model)
-        my_model.new_nn_model(nb_steps=nb_steps)
+    args.model_id = 'pc/0' if (args.model_id == '' and args.load == '') else args.model_id
+    if args.model_id != '':
+        my_model.new_nn_model(model_id=args.model_id, nb_steps=args.nb_steps)
     elif args.load != '':
         my_model.load_model(args.load)
 

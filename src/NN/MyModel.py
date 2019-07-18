@@ -49,6 +49,8 @@ class MyModel:
         self.optimizer = None
         self.lr = None
 
+        self.model_id = None
+
         # ------ save_midi_path -----
         self.save_midis_pathlib = None  # Where to save the generated midi files
 
@@ -124,9 +126,10 @@ class MyModel:
             self.instruments = d['instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
-    def new_nn_model(self, nb_steps, lr=None, optimizer=None, loss=None):
+    def new_nn_model(self, model_id, nb_steps, lr=None, optimizer=None, loss=None):
         """
 
+        :param model_id:
         :param nb_steps: Size for the RNN
         :param lr:
         :param optimizer:
@@ -139,10 +142,12 @@ class MyModel:
         except KeyError:
             print('Load the data before creating a new model')
 
+        self.model_id = model_id
         self.input_param['nb_steps'] = nb_steps
 
-        self.nn_model = nn.create_model(
-            self.input_param)
+        self.nn_model = nn.create_nn_model(
+            model_id=self.model_id,
+            input_param=self.input_param)
 
         self.lr = lr if lr is not None else 0.001
         self.optimizer = optimizer(
