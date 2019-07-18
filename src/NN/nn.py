@@ -21,6 +21,8 @@ def create_nn_model(model_id, input_param):
     nn_model = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(nn_model)
 
+    # TODO: load the parameters if model_param != None
+
     return nn_model.create_model(
         input_param=input_param,
         model_param=model_param)
