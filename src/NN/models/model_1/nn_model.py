@@ -33,17 +33,17 @@ def create_model(input_param, model_param):
         # TODO loop on array or dictionnary
         # ------ Level of dense layers -------
         # 1
-        x = layers.Dense(256, activation='elu')(inputs_midi[instrument])
+        x = layers.Dense(256, activation='elu')(inputs_midi[instrument])        # (batch, nb_steps, 256)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
         # 2
-        x = layers.Dense(512, activation='elu')(x)
+        x = layers.Dense(512, activation='elu')(x)      # (batch, nb_steps, 512)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
 
         # ------ LSTM ------
         # 1
-        x = layers.LSTM(1024, return_sequence=True, unit_forget_bias=True,
+        x = tf.keras.layers.LSTM(1024, return_sequences=True, unit_forget_bias=True,
                         dropout=0.1, recurrent_dropout=0.1)(x)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
@@ -52,14 +52,14 @@ def create_model(input_param, model_param):
         # TODO: Put self attention between LSTM layers
 
         # 2
-        x = layers.LSTM(512, return_sequence=True, unit_forget_bias=True,
+        x = layers.LSTM(512, return_sequences=True, unit_forget_bias=True,
                         dropout=0.1, recurrent_dropout=0.1)(x)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
 
         # 3
-        x = layers.LSTM(256, return_sequence=True, unit_forget_bias=True,
+        x = layers.LSTM(256, return_sequences=True, unit_forget_bias=True,
                         dropout=0.1, recurrent_dropout=0.1)(x)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
