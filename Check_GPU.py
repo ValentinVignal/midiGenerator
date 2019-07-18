@@ -11,7 +11,8 @@ def get_available_gpus():
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset')
+    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-l', '--list-local-devices', default=False, action='store_true',
                         help='Use tf.python.client.device_lib.list_local_devices()')
     parser.add_argument('-g', '--gpu-device-name', default=False, action='store_true',

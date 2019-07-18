@@ -9,7 +9,8 @@ def main():
         Entry point
     """
 
-    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset')
+    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('load', type=str, default='',
                         help='The model of the Neural Network ot load')
     parser.add_argument('--data', type=str, default='lmd_matched_mini',
