@@ -16,16 +16,17 @@ class MyModel:
 
     """
 
-    def __init__(self, load_model=None, model_infos=None, data=None):
+    def __init__(self, name='default_name', load_model=None, model_infos=None, data=None):
         """
 
+        :param name: The name of the model
         :param load_model: if not None, load the model
         :param model_infos: if load_model is None and model_infos is not None : create a new model with model_infos parameters
         :param data: if not None, load the data
         """
         # ----- General -----
         self.total_epochs = 0
-        self.name = 'default_name'
+        self.name = name
         self.model_id = ''  # Id of the model used
         self.full_name = ''  # Id of this MyModel instance
         self.get_new_full_name()
@@ -108,6 +109,15 @@ class MyModel:
         print('Got new full_name : {0}'.format(self.full_name))
 
         self.save_midis_pathlib = None
+
+    def set_name(self, name=None):
+        """
+
+        :param name:
+        :return:
+        """
+        self.name = self.name if name is None else name
+        self.get_new_full_name()
 
     def load_data(self, data_transformed_path):
         """

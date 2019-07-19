@@ -46,7 +46,7 @@ def main():
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
 
-    my_model = MyModel()
+    my_model = MyModel(name=args.name)
     my_model.load_data(data_transformed_path=data_transformed_path)
 
     args.model_id = 'pc/0' if (args.model_id == '' and args.load == '') else args.model_id
