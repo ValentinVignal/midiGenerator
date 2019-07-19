@@ -7,17 +7,17 @@ Model gave by the tutorial
 """
 
 
-def create_model(input_param, model_param):
+def create_model(input_param, model_param, nb_steps):
     """
 
     :param input_param:
     :param model_param:
+    :param nb_steps:
     :return: the neural network
     """
     print('Definition of the graph ...')
 
     nb_instruments = input_param['nb_instruments']
-    nb_steps = input_param['nb_steps']
     input_size = input_param['input_size']
 
     midi_shape = (nb_steps, input_size)  # (batch, nb_step, input_size)

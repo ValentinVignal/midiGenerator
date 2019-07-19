@@ -134,11 +134,10 @@ class MyModel:
             self.instruments = d['instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
-    def new_nn_model(self, model_id, nb_steps, lr=None, optimizer=None, loss=None):
+    def new_nn_model(self, model_id, lr=None, optimizer=None, loss=None):
         """
 
-        :param model_id:
-        :param nb_steps: Size for the RNN
+        :param model_id: MODELNAME;MODELPARAM;NBSTEPS
         :param lr:
         :param optimizer:
         :param loss:
@@ -151,7 +150,6 @@ class MyModel:
             print('Load the data before creating a new model')
 
         self.model_id = model_id
-        self.input_param['nb_steps'] = nb_steps
         self.get_new_full_name()
 
         self.nn_model = nn.create_nn_model(
@@ -232,7 +230,7 @@ class MyModel:
         if flag_new_sequence:
             self.my_sequence = MySequence(
                 path=str(self.data_transformed_pathlib),
-                nb_steps=self.input_param['nb_steps'],
+                nb_steps=int(self.model_id.split(';')[2]),
                 batch_size=self.batch
             )
 
@@ -351,7 +349,7 @@ class MyModel:
         output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
         # --- find the name for the midi_file ---
         i = 0
-        m_str = "lstm_out_t({0}).mid".format(i)
+        m_str = "lstm_out_({0}).mid".format(i)
         while (self.save_midis_pathlib / m_str).exists():
             i += 1
             m_str = "lstm_out_({0}).mid".format(i)

@@ -25,11 +25,11 @@ def main():
                         help='to work on a small computer with a cpu')
     parser.add_argument('-n', '--name', type=str, default='default_name',
                         help='Name given to the model')
-    parser.add_argument('-s', '--nb-steps', type=int, default=32,
-                        help='The number of steps used in NNetwork')
+    # parser.add_argument('-s', '--nb-steps', type=int, default=32,
+    #                     help='The number of steps used in NNetwork')
     load_group = parser.add_mutually_exclusive_group()
     load_group.add_argument('-m', '--model-id', type=str, default='',
-                            help='The model id MODEL_NAME;MODEL_PARAM')
+                            help='The model id modelName;modelParam;nbSteps')
     load_group.add_argument('-l', '--load', type=str, default='',
                             help='The name of the trained model to load')
     parser.add_argument('--gpu', type=str, default='0',
@@ -41,7 +41,6 @@ def main():
         data_path = os.path.join('../Dataset', args.data)
         args.epochs = 1
         args.batch = 1
-        args.nb_steps = 16
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
@@ -51,7 +50,7 @@ def main():
 
     args.model_id = 'pc/0' if (args.model_id == '' and args.load == '') else args.model_id
     if args.model_id != '':
-        my_model.new_nn_model(model_id=args.model_id, nb_steps=args.nb_steps)
+        my_model.new_nn_model(model_id=args.model_id)
     elif args.load != '':
         my_model.load_model(args.load)
 

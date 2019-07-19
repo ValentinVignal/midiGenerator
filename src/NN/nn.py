@@ -5,12 +5,13 @@ import os
 def create_nn_model(model_id, input_param):
     """
 
-    :param model_id:
+    :param model_id: model_name;model_param;nb_steps
     :param input_param:
     :return: the neural network
     """
 
-    model_name, model_param = model_id.split(';')
+    model_name, model_param, nb_steps = model_id.split(';')
+    nb_steps = int(nb_steps)
 
     path = os.path.join('src',
                         'NN',
@@ -25,7 +26,8 @@ def create_nn_model(model_id, input_param):
 
     return nn_model.create_model(
         input_param=input_param,
-        model_param=model_param)
+        model_param=model_param,
+        nb_steps=nb_steps)
 
 
 
