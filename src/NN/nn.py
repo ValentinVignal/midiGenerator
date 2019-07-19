@@ -10,7 +10,7 @@ def create_nn_model(model_id, input_param):
     :return: the neural network
     """
 
-    model_name, model_param = model_id.split('/')
+    model_name, model_param = model_id.split(';')
 
     path = os.path.join('src',
                         'NN',
