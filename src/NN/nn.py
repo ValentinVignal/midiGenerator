@@ -2,11 +2,12 @@ import importlib.util
 import os
 
 
-def create_nn_model(model_id, input_param):
+def create_nn_model(model_id, input_param, optimizer):
     """
 
     :param model_id: model_name;model_param;nb_steps
     :param input_param:
+    :param optimizer:
     :return: the neural network
     """
 
@@ -27,7 +28,8 @@ def create_nn_model(model_id, input_param):
     return nn_model.create_model(
         input_param=input_param,
         model_param=model_param,
-        nb_steps=nb_steps)
+        nb_steps=nb_steps,
+        optimizer=optimizer)
 
 
 

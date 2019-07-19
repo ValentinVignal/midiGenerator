@@ -48,7 +48,7 @@ def main():
     my_model = MyModel(name=args.name)
     my_model.load_data(data_transformed_path=data_transformed_path)
 
-    args.model_id = 'pc/0' if (args.model_id == '' and args.load == '') else args.model_id
+    args.model_id = 'pc;0;8' if (args.model_id == '' and args.load == '') else args.model_id
     if args.model_id != '':
         my_model.new_nn_model(model_id=args.model_id)
     elif args.load != '':

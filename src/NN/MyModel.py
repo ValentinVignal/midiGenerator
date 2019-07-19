@@ -56,7 +56,7 @@ class MyModel:
         if load_model is not None:
             self.load_model(load_model)
         elif model_infos is not None:
-            def getValue(key):
+            def get_value(key):
                 """
 
                 :param key: key in the dictionary "model_infos"
@@ -67,10 +67,8 @@ class MyModel:
 
             self.input_param = model_infos['input_param']
             self.new_nn_model(
-                nb_steps=model_infos['nb_steps'],
-                lr=getValue('lr'),
-                optimizer=getValue('optimizer'),
-                loss=getValue('loss')
+                lr=get_value('lr'),
+                optimizer=get_value('optimizer'),
             )
         if data is not None:
             self.load_data(data)
@@ -134,13 +132,12 @@ class MyModel:
             self.instruments = d['instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
-    def new_nn_model(self, model_id, lr=None, optimizer=None, loss=None):
+    def new_nn_model(self, model_id, lr=None, optimizer=None):
         """
 
-        :param model_id: MODELNAME;MODELPARAM;NBSTEPS
+        :param model_id: modelName;modelParam;nbSteps
         :param lr:
         :param optimizer:
-        :param loss:
         :return: set up the neural network
         """
         try:
@@ -152,17 +149,16 @@ class MyModel:
         self.model_id = model_id
         self.get_new_full_name()
 
-        self.nn_model = nn.create_nn_model(
-            model_id=self.model_id,
-            input_param=self.input_param)
-
         self.lr = lr if lr is not None else 0.001
         self.optimizer = optimizer(
             lr=self.lr) if optimizer is not None \
             else tf.keras.optimizers.Adam(lr=self.lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1,
                                           amsgrad=False)  # tf.keras.optimizers.SGD(lr=self.lr)
-        m_loss = loss if loss is not None else 'mean_squared_error'      # 'categorical_crossentropy'
-        self.nn_model.compile(loss=m_loss, optimizer=self.optimizer)
+
+        self.nn_model = nn.create_nn_model(
+            model_id=self.model_id,
+            input_param=self.input_param,
+            optimizer=self.optimizer)
 
     def load_model(self, id, keep_name=True):
         """
@@ -185,7 +181,7 @@ class MyModel:
             self.lr = d['nn']['lr']
             self.input_param = d['nn']['input_param']
             self.instruments = d['instruments']
-        self.optimizer = self.nn_model.optimizer  # not sure about this part, we need to compile again ? I can load it with the pickle file
+        self.optimizer = self.nn_model.optimizer
         print('Model {0} loaded'.format(id))
 
     def load_weights(self, id, keep_name=True):

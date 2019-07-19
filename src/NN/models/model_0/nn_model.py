@@ -7,15 +7,20 @@ Model gave by the tutorial
 """
 
 
-def create_model(input_param, model_param, nb_steps):
+def create_model(input_param, model_param, nb_steps, optimizer):
     """
 
     :param input_param:
     :param model_param:
     :param nb_steps:
+    :param optimizer:
     :return: the neural network
     """
     print('Definition of the graph ...')
+
+    # ---------------------------------------
+    # ----------- Neural network ------------
+    # ---------------------------------------
 
     nb_instruments = input_param['nb_instruments']
     input_size = input_param['input_size']
@@ -84,5 +89,7 @@ def create_model(input_param, model_param, nb_steps):
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
+
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
 
     return model

@@ -9,7 +9,7 @@ First personal model
 """
 
 
-def create_model(input_param, model_param, nb_steps):
+def create_model(input_param, model_param, nb_steps, optimizer):
     """
 
     :param input_param:
@@ -131,5 +131,7 @@ def create_model(input_param, model_param, nb_steps):
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
+
+    model.compile(loss='mean_squarred_eror', optimizer=optimizer)
 
     return model
