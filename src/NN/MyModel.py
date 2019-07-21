@@ -302,11 +302,12 @@ class MyModel:
         :return:
         """
         # --- Verify the inputs ---
+        nb_steps = int(self.model_id.split(';')[2])
         if seed is None:
             seed = np.random.uniform(
                 low=g.min_value,
                 high=g.max_value,
-                size=(self.input_param['nb_instruments'], self.input_param['nb_steps'], self.input_param['input_size']))
+                size=(self.input_param['nb_instruments'], nb_steps, self.input_param['input_size'], 2))
         length = length if length is not None else 200
         # For save midi path
         if type(new_save_path) is str or (
@@ -326,7 +327,7 @@ class MyModel:
             samples = generated[:, np.newaxis, l:, :]
             # expanded_samples = np.expand_dims(samples, axis=0)
             preds = self.nn_model.predict(list(samples), verbose=0)
-            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128)
+            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128, 2)
 
             # next_array = np.zeros(preds.shape)
             # for inst in range(next_array.shape[0]):
@@ -337,12 +338,12 @@ class MyModel:
             # generated_list.append(generated)
             # generated_list.append(next_array)
             # generated = np.vstack(generated_list)
-            generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128)
+            generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128, 2)
 
             bar.update(l + 1)
         bar.finish()
 
-        generated_midi_final = np.transpose(generated, (0, 2, 1))  # (nb_instruments, 128, nb_steps)
+        generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 128, nb_steps, 2)
         output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
         # --- find the name for the midi_file ---
         i = 0
