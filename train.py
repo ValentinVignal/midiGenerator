@@ -29,7 +29,7 @@ def main():
     #                     help='The number of steps used in NNetwork')
     load_group = parser.add_mutually_exclusive_group()
     load_group.add_argument('-m', '--model-id', type=str, default='',
-                            help='The model id modelName;modelParam;nbSteps')
+                            help='The model id modelName,modelParam,nbSteps')
     load_group.add_argument('-l', '--load', type=str, default='',
                             help='The name of the trained model to load')
     parser.add_argument('--gpu', type=str, default='0',

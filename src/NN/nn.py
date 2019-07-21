@@ -11,7 +11,7 @@ def create_nn_model(model_id, input_param, optimizer):
     :return: the neural network
     """
 
-    model_name, model_param, nb_steps = model_id.split(';')
+    model_name, model_param, nb_steps = model_id.split(',')
     nb_steps = int(nb_steps)
 
     path = os.path.join('src',

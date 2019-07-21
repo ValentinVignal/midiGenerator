@@ -227,7 +227,7 @@ class MyModel:
         if flag_new_sequence:
             self.my_sequence = MySequence(
                 path=str(self.data_transformed_pathlib),
-                nb_steps=int(self.model_id.split(';')[2]),
+                nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch
             )
 
