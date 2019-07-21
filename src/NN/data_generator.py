@@ -32,7 +32,7 @@ class MySequence(tf.keras.utils.Sequence):
         self.npy_loaded = None  # npy file already loaded
         self.nb_file_per_npy = 100
 
-        self.nb_elements = self.return_nb_elements(self.all_shapes)        # nb element available in the generator
+        self.nb_elements = self.return_nb_elements(self.all_shapes)  # nb element available in the generator
         self.nb_elements = int(self.nb_elements / self.batch_size)
         self.all_len = self.know_all_len()
         print('MySequence instance initiated on the data {0}'.format(self.path))
@@ -42,9 +42,9 @@ class MySequence(tf.keras.utils.Sequence):
 
     def __getitem__(self, item):
         i_start = item * self.batch_size
-        i, j, k = self.return_IJK(i_start)
-        x = []      # (batch, nb_steps, nb_instruments, input_size)
-        y = []      # (batch, nb_instruments, input_size)
+        i, j, k = self.return_ijk(i_start)
+        x = []  # (batch, nb_steps, nb_instruments, input_size)
+        y = []  # (batch, nb_instruments, input_size)
         for s in range(self.batch_size):
             if i != self.i_loaded:
                 self.i_loaded = i
@@ -60,12 +60,12 @@ class MySequence(tf.keras.utils.Sequence):
                     i += 1
         x, y = np.asarray(x), np.asarray(y)
 
-        x = np.transpose(x, (2, 0, 1, 3))       # (nb_instruments, batch, nb_steps, input_size)
-        y = np.transpose(y, (1, 0, 2))      # (nb_instruments, batch, input_size)
+        x = np.transpose(x, (2, 0, 1, 3, 4))  # (nb_instruments, batch, nb_steps, input_size, 2)
+        y = np.transpose(y, (1, 0, 2, 3))  # (nb_instruments, batch, input_size, 2)
 
         return list(x), list(y)
 
-    def return_IJK(self, i_start):
+    def return_ijk(self, i_start):
         """
 
         :param i_start:
@@ -105,18 +105,19 @@ class MySequence(tf.keras.utils.Sequence):
                 acc += self.return_nb_elements(l2)
             return acc
         else:
-            return l[0] - self.nb_steps     # not -self.nb_steps + 1 because of the y (true tab)
+            return l[0] - self.nb_steps  # not -self.nb_steps + 1 because of the y (true tab)
 
     def know_all_len(self):
         """
 
         :return: all the length of all files
         """
+
         def f_map(l):
-            return functools.reduce(lambda x, y: x + y[0] - self.nb_steps, l, 0)    # not -self.nb_steps + 1 because of the y (true tab)
+            return functools.reduce(lambda x, y: x + y[0] - self.nb_steps,
+                                    l,
+                                    0)  # not -self.nb_steps + 1 because of the y (true tab)
 
         all_len = list(map(f_map, self.all_shapes))
 
         return all_len
-
-

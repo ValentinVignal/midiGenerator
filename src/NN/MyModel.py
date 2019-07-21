@@ -202,7 +202,7 @@ class MyModel:
         self.nn_model.load_weights(str(path_to_load / 'm_weights.h5'))
         print('Weights of the {0} model loaded'.format(id))
 
-    def train(self, epochs=50, batch=None, verbose=1, shuffle=True):
+    def train(self, epochs=None, batch=None, verbose=1, shuffle=True):
         """
 
         :param epochs:
@@ -214,6 +214,7 @@ class MyModel:
 
         # Do we have to create a new MySequence Object ?
         flag_new_sequence = False
+        epochs = 50 if epochs is None else epochs
         if batch is None and self.batch is None:
             self.batch = 1,
             flag_new_sequence = True
