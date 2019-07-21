@@ -108,10 +108,32 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     for instrument in range(nb_instruments):
         output = layers.Dense(2 * input_size, activation='tanh')(x)
         output = layers.Reshape((input_size, 2))(output)
+        output = layers.Layer(name='Output_{0}'.format(instrument))(output)
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
 
-    model.compile(loss='mean_squared_error', optimizer=optimizer)
+    # ------------------ Loss -----------------
+
+    def loss_function(y_true, y_pred):
+        y_true_a = Lambda(lambda x: x[:, :, 0])(y_true)
+        y_true_d = Lambda(lambda x: x[:, :, 1])(y_true)
+        y_pred_a = Lambda(lambda x: x[:, :, 0])(y_pred)
+        y_pred_d = Lambda(lambda x: x[:, :, 1])(y_pred)
+
+        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
+        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
+
+        loss = loss_d + loss_a
+
+        return loss
+
+    def custom_loss(y_trues, y_preds):
+        print(y_trues)
+        print('shapesss', y_trues.get_shape(), y_preds.get_shape())
+        loss = loss_function(y_trues, y_preds)
+        return loss
+
+    model.compile(loss=custom_loss, optimizer=optimizer)
 
     return model
