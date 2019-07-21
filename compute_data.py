@@ -113,7 +113,7 @@ def main():
 
     all_shapes = []
 
-    ##### Actualy compute the datas #####
+    # ----- Actually compute the datas -----
     if all_midi_paths is not None:
         # We already know what are the good files
         print('Compute the data in {0}'.format(data_path))
@@ -127,9 +127,10 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths:
-            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments, length=args.length)
-            matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1))
-            matrix_of_all_midis.append(matrix_of_single_midi)  # (length, nb_instruments, 128)
+            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
+                                                             length=args.length)  # (nb_instruments, 128, nb_steps, 2)
+            matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1, 3))
+            matrix_of_all_midis.append(matrix_of_single_midi)  # (length, nb_instruments, 128, 2)
             # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
             bar.update(i)
             i += 1
@@ -163,10 +164,12 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths_dataset:
-            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments, length=args.length)
+            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
+                                                             length=args.length)  # (nb_instruments, 128, nb_steps, 2)
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
-                matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1))
+                matrix_of_single_midi = np.transpose(matrix_of_single_midi,
+                                                     (2, 0, 1, 3))  # (length, nb_instruments, 128, 3)
                 matrix_of_all_midis.append(matrix_of_single_midi)
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
                 i += 1
@@ -203,7 +206,7 @@ def main():
             'instruments': instruments,
             'nb_instruments': len(instruments),
             'all_shapes': all_shapes,
-            'input_size': all_shapes[0][0][2]       # The number of notes
+            'input_size': all_shapes[0][0][2]  # The number of notes
         }, dump_file)
 
     print('Number of songs : {0}'.format(nb_valid_files))
