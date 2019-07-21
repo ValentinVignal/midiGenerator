@@ -106,8 +106,11 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     # ---------- Instruments separately ----------
     outputs = []        # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
-        output = layers.Dense(2 * input_size, activation='tanh')(x)
-        output = layers.Reshape((input_size, 2))(output)
+        output_a = layers.Dense(input_size, activation='sigmoid')(x)    # (batch, input_size)
+        output_a = layers.Reshape((input_size, 1))(output_a)        # (batch, input_size, 1)
+        output_d = layers.Dense(input_size, activation='elu')(x)      # (batch, input_size)
+        output_d = layers.Reshape((input_size, 1))(output_d)        # (batch, input_size, 1)
+        output = layers.concatenate([output_a, output_d], axis=2)      # (batch, input_size, 2)
         output = layers.Layer(name='Output_{0}'.format(instrument))(output)
         outputs.append(output)
 
@@ -115,25 +118,23 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     # ------------------ Loss -----------------
 
-    def loss_function(y_true, y_pred):
-        y_true_a = Lambda(lambda x: x[:, :, 0])(y_true)
-        y_true_d = Lambda(lambda x: x[:, :, 1])(y_true)
-        y_pred_a = Lambda(lambda x: x[:, :, 0])(y_pred)
-        y_pred_d = Lambda(lambda x: x[:, :, 1])(y_pred)
+    def custom_loss(lambda_a, lambda_d):
 
-        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
-        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
+        def loss_function(y_true, y_pred):
+            y_true_a = Lambda(lambda x: x[:, :, 0])(y_true)
+            y_true_d = Lambda(lambda x: x[:, :, 1])(y_true)
+            y_pred_a = Lambda(lambda x: x[:, :, 0])(y_pred)
+            y_pred_d = Lambda(lambda x: x[:, :, 1])(y_pred)
 
-        loss = loss_d + loss_a
+            loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
+            loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
 
-        return loss
+            loss = lambda_a * loss_a + lambda_d * loss_d
 
-    def custom_loss(y_trues, y_preds):
-        print(y_trues)
-        print('shapesss', y_trues.get_shape(), y_preds.get_shape())
-        loss = loss_function(y_trues, y_preds)
-        return loss
+            return loss
 
-    model.compile(loss=custom_loss, optimizer=optimizer)
+        return loss_function
+
+    model.compile(loss=custom_loss(10, 1), optimizer=optimizer)
 
     return model

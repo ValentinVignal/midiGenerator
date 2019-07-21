@@ -70,9 +70,6 @@ def notes_to_matrix_v2(notes, durations, offsets):
     :param notes: The notes
     :param durations: The duration of the notes
     :param offsets: The offset of the notes
-    :param first_touch: Value to code first touch in the array (=1)
-    :param continuation: Value to code the continuation of a note in the array (=0)
-    :param rest: Value to code the rest in the array (=-1)
     :return: The matrix corresponding to the notes
     """
     try:
@@ -82,7 +79,7 @@ def notes_to_matrix_v2(notes, durations, offsets):
         return None, None, None
     total_offset_axis = last_offset * 4 + (
             8 * 4)  # nb times * 4 because quarter note + 2 measures (max length of a note)
-    our_matrix = matrix_rest((128, int(total_offset_axis), 2))  # (128, nb_times, 2)
+    our_matrix = np.zeros((128, int(total_offset_axis), 2))  # (128, nb_times, 2)
 
     for (note, duration, offset) in zip(notes, durations, offsets):
         #how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
