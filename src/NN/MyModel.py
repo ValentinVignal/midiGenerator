@@ -1,13 +1,11 @@
 import os
 from pathlib import Path
-import tensorflow as tf
 import pickle
 import numpy as np
 import progressbar
 
 from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
-import src.global_variables as g
 import src.midi.create as midi_create
 
 
@@ -130,12 +128,11 @@ class MyModel:
             self.instruments = d['instruments']
         print('data at {0} loaded'.format(data_transformed_path))
 
-    def new_nn_model(self, model_id, lr=None, optimizer=None):
+    def new_nn_model(self, model_id, opt_param=None):
         """
 
         :param model_id: modelName;modelParam;nbSteps
-        :param lr:
-        :param optimizer:
+        :param opt_param:
         :return: set up the neural network
         """
         try:
@@ -147,16 +144,12 @@ class MyModel:
         self.model_id = model_id
         self.get_new_full_name()
 
-        lr = lr if lr is not None else 0.001
-        optimizer = optimizer(
-            lr=lr) if optimizer is not None \
-            else tf.keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1,
-                                          amsgrad=False)  # tf.keras.optimizers.SGD(lr=self.lr)
+        opt_param = {'lr': 0.001, 'name':'adam'} if opt_param is None else opt_param
 
         self.my_nn = MyNN()
         self.my_nn.new_model(model_id=self.model_id,
                              input_param=self.input_param,
-                             optimizer=optimizer)
+                             opt_param=opt_param)
 
     def load_model(self, id, keep_name=True):
         """

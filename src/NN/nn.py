@@ -3,8 +3,6 @@ import os
 import tensorflow as tf
 from pathlib import Path
 import pickle
-import marshal
-import types
 import dill
 
 
@@ -20,12 +18,12 @@ class MyNN:
         self.input_param = None
         self.nb_steps = None
 
-    def new_model(self, model_id, input_param, optimizer):
+    def new_model(self, model_id, input_param, opt_param):
         """
 
         :param model_id: model_name;model_param;nb_steps
         :param input_param:
-        :param optimizer:
+        :param opt_param: {'lr', 'name'}
         :return: the neural network
         """
 
@@ -43,6 +41,8 @@ class MyNN:
 
         # TODO: load the parameters if model_param != None
 
+        optimizer = self.create_optimizer(opt_param)
+
         self.model, self.loss = nn_model.create_model(
             input_param=input_param,
             model_param=model_param,
@@ -51,6 +51,21 @@ class MyNN:
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps
+
+    def create_optimizer(self, opt_param):
+        """
+
+        :param opt_param:
+        :return:
+        """
+        name = opt_param['name']
+        lr = opt_param['lr']
+
+        if name == 'adam':
+            return tf.keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1, amsgrad=False)
+        elif name == 'sgd':
+            return tf.keras.optimizers.SGD(lr=lr)
+
 
     def train_seq(self, epochs, generator):
         """
