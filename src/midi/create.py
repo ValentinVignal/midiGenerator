@@ -22,7 +22,22 @@ def converter_func(arr):
     durations = np.ceil(durations * g.max_length_note)
     durations = np.maximum(durations, 1)
 
-    return np.multiply(activations, durations)
+    matrix_norm = np.multiply(activations, durations)       # (nb_instruments, 128, nb_steps)
+
+    # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+
+    nb_instruments, nb_notes, nb_steps = matrix_norm.shape
+    for instrument in range(nb_instruments - 1, -1, -1):
+        for note in range(nb_notes - 1, -1, -1):
+            duration = 1
+            for step in range(nb_steps - 1, -1, -1):
+                if matrix_norm[instrument, note, step] == 0:
+                    duration += 1
+                else:
+                    matrix_norm[instrument, note, step] = min(matrix_norm[instrument, note, step], duration)
+                    duration = 1
+
+    return matrix_norm
 
 
 def int_to_note(integer):
@@ -85,33 +100,6 @@ def matrix_to_midi(matrix, instruments=None):
         output_notes_instruments.append(output_notes)
 
     return output_notes_instruments
-
-
-def sample(preds, temperature=1.0):
-    preds = np.asarray(preds).astype('float64')
-    preds = np.log(preds) / temperature
-    exp_preds = np.exp(preds)
-    preds = exp_preds / np.sum(exp_preds)
-
-    num_of_top = 15
-    num_of_first = np.random.randint(1, 3)
-
-    # preds[0:48] = 0  # eliminate notes with low octaves
-    # preds[100:] = 0  # eliminate notes with very high octaves
-
-    ind = np.argpartition(preds, -1 * num_of_top)[-1 * num_of_top:]
-    top_indices_sorted = ind[np.argsort(preds[ind])]  # 15 biggest number
-
-    array = np.random.uniform(0.0, 0.0, (128))
-    array[top_indices_sorted[0:num_of_first]] = 1.0
-    array[top_indices_sorted[num_of_first:num_of_first + 3]] = 0.5
-
-    return array
-
-
-#       ############################################
-#       ################ Valentin ##################
-#       ############################################
 
 
 def save_midi(output_notes_list, instruments, path):
