@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import numpy as np
 from src.NN.MyModel import MyModel
 
 

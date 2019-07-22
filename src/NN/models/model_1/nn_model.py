@@ -35,12 +35,14 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         x_d = Lambda(lambda x: x[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
 
         # 1
-        x = layers.Conv2D(filters=8, kernel_size=(3, 3), padding='same', activation='elu')(inputs_midi[instrument])
+        x = layers.Conv2D(filters=8, kernel_size=(3, 3), padding='same')(inputs_midi[instrument])
+        x = layers.LeakyReLU()(x)
         x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.1)(x)
         # 2
-        x = layers.Conv2D(filters=16, kernel_size=(3, 3), padding='same', activation='elu')(x)
+        x = layers.Conv2D(filters=16, kernel_size=(3, 3), padding='same')(x)
+        x = layers.LeakyReLU()(x)
         x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.1)(x)
@@ -108,7 +110,8 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     for instrument in range(nb_instruments):
         output_a = layers.Dense(input_size, activation='sigmoid')(x)    # (batch, input_size)
         output_a = layers.Reshape((input_size, 1))(output_a)        # (batch, input_size, 1)
-        output_d = layers.Dense(input_size, activation='elu')(x)      # (batch, input_size)
+        output_d = layers.Dense(input_size, activation='sigmoid')(x)      # (batch, input_size)
+        output_d = layers.LeakyReLU()(output_d)
         output_d = layers.Reshape((input_size, 1))(output_d)        # (batch, input_size, 1)
         output = layers.concatenate([output_a, output_d], axis=2)      # (batch, input_size, 2)
         output = layers.Layer(name='Output_{0}'.format(instrument))(output)
@@ -137,4 +140,4 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     model.compile(loss=custom_loss(10, 1), optimizer=optimizer)
 
-    return model
+    return model, custom_loss(10, 1)

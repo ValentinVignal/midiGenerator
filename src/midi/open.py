@@ -2,69 +2,11 @@ import src.global_variables as g
 import numpy as np
 import music21
 import functools
-import math
 
 import src.midi.instruments as midi_inst
 
 
-def matrix_rest(dims, rest=g.rest):
-    """
-
-    :param dims: Dimension of the matrix
-    :param rest: Value to code rest in the matrix (=-1)
-    :return: A np array of shape dims and with every element with the value rest
-    """
-    return rest * np.ones(dims)
-
-
-def notes_to_matrix_v1(notes, durations, offsets, first_touch=g.first_touch, continuation=g.contination, rest=g.rest):
-    """
-
-    :param notes: The notes
-    :param durations: The duration of the notes
-    :param offsets: The offset of the notes
-    :param first_touch: Value to code first touch in the array (=1)
-    :param continuation: Value to code the continuation of a note in the array (=0)
-    :param rest: Value to code the rest in the array (=-1)
-    :return: The matrix corresponding to the notes
-    """
-    try:
-        last_offset = max(map(lambda x: int(x), offsets))
-    except ValueError:
-        print('Value Error')
-        return None, None, None
-    total_offset_axis = last_offset * 4 + (
-            8 * 4)  # nb times * 4 because quarter note + 2 measures (max length of a note)
-    our_matrix = matrix_rest((128, int(total_offset_axis)))  # (128, nb_times)
-
-    for (note, duration, offset) in zip(notes, durations, offsets):
-        how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
-        start = int(offset * 4)
-        start_c = int((offset * 4) + 1)
-        end = int((offset * 4 + how_many))
-        if '.' not in str(note):  # it is not chord. Single note.
-            our_matrix[note, start] = first_touch
-            if start_c < end:  # Continuation is needed to be coded
-                our_matrix[note, start_c: end] = np.maximum(
-                    our_matrix[note, start_c: end],
-                    np.array(continuation))  # np maximum to keep information first touch if some notes cover themselves
-
-        else:  # For chord
-            chord_notes_str = [note for note in note.split('.')]
-            chord_notes_float = list(map(int, chord_notes_str))  # take notes in chord one by one
-
-            for chord_note_float in chord_notes_float:
-                our_matrix[chord_note_float, start] = first_touch
-                if start_c < end:  # continuation is needed to be coded
-                    our_matrix[chord_note_float, start_c: end] = np.maximum(
-                        our_matrix[chord_notes_float, start_c: end],
-                        np.array(
-                            continuation))  # np maximum to keep information first touch if some notes cover themselves
-
-    return our_matrix
-
-
-def notes_to_matrix_v2(notes, durations, offsets):
+def notes_to_matrix(notes, durations, offsets):
     """
 
     :param notes: The notes
@@ -86,7 +28,7 @@ def notes_to_matrix_v2(notes, durations, offsets):
         start = int(offset * 4)
         if '.' not in str(note):  # it is not chord. Single note.
             our_matrix[note, start, 0] = 1
-            our_matrix[note, start, 1] = math.ceil(float(duration))
+            our_matrix[note, start, 1] = float(duration) / g.max_length_note
 
         else:  # For chord
             chord_notes_str = [note for note in note.split('.')]
@@ -94,7 +36,7 @@ def notes_to_matrix_v2(notes, durations, offsets):
 
             for chord_note_float in chord_notes_float:
                 our_matrix[chord_note_float, start, 0] = 1
-                our_matrix[chord_note_float, start, 1] = math.ceil(float(duration))
+                our_matrix[chord_note_float, start, 1] = float(duration) / g.max_length_note
 
     return our_matrix       # (128, nb_steps, 2)
 
@@ -178,7 +120,7 @@ def midi_to_matrix(filename, instruments, length=None):
                     durations.append(check_float(duration))
                     offsets.append(element.offset)
 
-            our_matrix = notes_to_matrix_v2(notes, durations, offsets)      # (128, nb_steps, 2
+            our_matrix = notes_to_matrix(notes, durations, offsets)      # (128, nb_steps, 2
 
             try:
                 freq, time, _ = our_matrix.shape

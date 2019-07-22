@@ -50,11 +50,11 @@ def main():
 
     args.model_id = 'pc;0;8' if (args.model_id == '' and args.load == '') else args.model_id
     if args.model_id != '':
-        my_model.new_nn_model(model_id=args.model_id)
+        my_model.new_nn_model(model_id=args.model_id, lr=args.lr)
     elif args.load != '':
         my_model.load_model(args.load)
 
-    my_model.train(epochs=args.epochs, batch=args.batch, verbose=1, shuffle=True)
+    my_model.train(epochs=args.epochs, batch=args.batch)
 
     my_model.save_model()
 

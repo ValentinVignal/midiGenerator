@@ -13,35 +13,16 @@ def converter_func(arr):
     :param arr: (nb_instruments, 128, nb_steps, 2)
     :return:
     """
-
     activations = arr[:, :, :, 0]
     durations = arr[:, :, :, 1]
 
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
 
-    durations = np.ceil(durations)
+    durations = np.ceil(durations * g.max_length_note)
     durations = np.maximum(durations, 1)
 
     return np.multiply(activations, durations)
-
-
-def how_many_repetitive_func(array, from_where=0, continuation=g.contination):
-    """
-
-    :param array: shape (nb_steps,)
-    :param from_where: indice
-    :param continuation: value of coded continuation
-    :return: how many continuations from from_where + 1 ( == length of the note (first touch included))
-    """
-    new_array = array[from_where:]
-    count_repetitive = 1
-    for i in new_array:
-        if i != continuation:
-            return count_repetitive
-        else:
-            count_repetitive += 1
-    return count_repetitive
 
 
 def int_to_note(integer):

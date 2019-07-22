@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 import tensorflow as tf
-import src.NN.nn as nn
 import pickle
 import numpy as np
 import progressbar
 
+from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
 import src.global_variables as g
 import src.midi.create as midi_create
@@ -46,9 +46,7 @@ class MyModel:
 
         # ----- Neural Network -----
         self.input_param = None  # The parameters for the neural network
-        self.nn_model = None  # Our neural network
-        self.optimizer = None
-        self.lr = None
+        self.my_nn = None  # Our neural network
 
         # ------ save_midi_path -----
         self.save_midis_pathlib = None  # Where to save the generated midi files
@@ -149,16 +147,16 @@ class MyModel:
         self.model_id = model_id
         self.get_new_full_name()
 
-        self.lr = lr if lr is not None else 0.001
-        self.optimizer = optimizer(
-            lr=self.lr) if optimizer is not None \
-            else tf.keras.optimizers.Adam(lr=self.lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1,
+        lr = lr if lr is not None else 0.001
+        optimizer = optimizer(
+            lr=lr) if optimizer is not None \
+            else tf.keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1,
                                           amsgrad=False)  # tf.keras.optimizers.SGD(lr=self.lr)
 
-        self.nn_model = nn.create_nn_model(
-            model_id=self.model_id,
-            input_param=self.input_param,
-            optimizer=self.optimizer)
+        self.my_nn = MyNN()
+        self.my_nn.new_model(model_id=self.model_id,
+                             input_param=self.input_param,
+                             optimizer=optimizer)
 
     def load_model(self, id, keep_name=True):
         """
@@ -175,13 +173,12 @@ class MyModel:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
                             '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
-        self.nn_model = tf.keras.models.load_model(str(path_to_load / 'm.h5'))
+        self.my_nn = MyNN()
+        self.my_nn.load(str(path_to_load / 'MyNN'))
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
-            self.lr = d['nn']['lr']
             self.input_param = d['nn']['input_param']
             self.instruments = d['instruments']
-        self.optimizer = self.nn_model.optimizer
         print('Model {0} loaded'.format(id))
 
     def load_weights(self, id, keep_name=True):
@@ -199,10 +196,10 @@ class MyModel:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
                             '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
-        self.nn_model.load_weights(str(path_to_load / 'm_weights.h5'))
+        self.my_nn.load_weights(str(path_to_load / 'MyNN.h5'))
         print('Weights of the {0} model loaded'.format(id))
 
-    def train(self, epochs=None, batch=None, verbose=1, shuffle=True):
+    def train(self, epochs=None, batch=None):
         """
 
         :param epochs:
@@ -233,8 +230,7 @@ class MyModel:
 
         # Actual train
         print('Training...')
-        self.nn_model.fit_generator(generator=self.my_sequence, epochs=epochs,
-                                    shuffle=shuffle, verbose=verbose)
+        self.my_nn.train_seq(epochs = epochs, generator=self.my_sequence)
 
         # Update parameters
         self.total_epochs += epochs
@@ -250,8 +246,7 @@ class MyModel:
         path_to_save = self.saved_model_pathlib if path is None else Path(path)
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
         self.saved_model_pathlib.mkdir(parents=True, exist_ok=True)
-        self.nn_model.save_weights(str(path_to_save / 'm_weights.h5'))
-        self.nn_model.save(str(path_to_save / 'm.h5'))
+        self.my_nn.save(str(path_to_save / 'MyNN'))
         with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
             pickle.dump({
                 'name': self.name,
@@ -260,8 +255,6 @@ class MyModel:
                 'nn': {
                     'epochs': self.total_epochs,
                     'input_param': self.input_param,
-                    'lr': self.lr
-                    # 'optimizer': self.optimizer,
                 },
                 'instruments': self.instruments
             }, dump_file)
@@ -272,7 +265,7 @@ class MyModel:
         Print the weights
         :return:
         """
-        for layer in self.nn_model.layers:
+        for layer in self.my_nn.model.layers:
             lstm_weights = layer.get_weights()  # list of numpy arrays
             print('Lstm weights:', lstm_weights)
 
@@ -302,11 +295,11 @@ class MyModel:
         :return:
         """
         # --- Verify the inputs ---
-        nb_steps = int(self.model_id.split(';')[2])
+        nb_steps = int(self.model_id.split(',')[2])
         if seed is None:
             seed = np.random.uniform(
-                low=g.min_value,
-                high=g.max_value,
+                low=0,
+                high=1,
                 size=(self.input_param['nb_instruments'], nb_steps, self.input_param['input_size'], 2))
         length = length if length is not None else 200
         # For save midi path
@@ -326,8 +319,14 @@ class MyModel:
         for l in range(length):
             samples = generated[:, np.newaxis, l:, :]
             # expanded_samples = np.expand_dims(samples, axis=0)
-            preds = self.nn_model.predict(list(samples), verbose=0)
+            preds = self.my_nn.generate(input=list(samples))
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128, 2)
+            if (not np.any(np.isnan(samples))) and np.any(np.isnan(preds)):
+                print('nan apparition')
+                print('step :', l)
+                print('nans index', np.argwhere(np.isnan(preds)))
+                print('sample', samples)
+                print('preds', preds)
 
             # next_array = np.zeros(preds.shape)
             # for inst in range(next_array.shape[0]):
