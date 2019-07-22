@@ -26,7 +26,7 @@ def main():
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
                         help='Name of the optimizer')
     # ----------------
-    parser.add_argument('-n', '--name', type=str, default='default_name',
+    parser.add_argument('-n', '--name', type=str, default='defaultName',
                         help='Name given to the model')
     # ----------------
     load_group = parser.add_mutually_exclusive_group()
