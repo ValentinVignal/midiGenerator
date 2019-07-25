@@ -3,6 +3,7 @@ from pathlib import Path
 import pickle
 import numpy as np
 import progressbar
+import random
 
 from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
@@ -36,6 +37,8 @@ class MyModel:
         self.data_transformed_path = None  # Where are the data to train on
         self.data_transformed_pathlib = None
 
+        self.data_seed_pathlib = None
+
         self.instruments = None  # List of instruments used
 
         # ----- MySequence -----
@@ -62,9 +65,10 @@ class MyModel:
                 return value
 
             self.input_param = model_infos['input_param']
+            self.model_id = model_infos['model_id']
             self.new_nn_model(
-                lr=get_value('lr'),
-                optimizer=get_value('optimizer'),
+                model_id=self.model_id,
+                opt_param=get_value('opt_param'),
             )
         if data is not None:
             self.load_data(data)
@@ -144,7 +148,7 @@ class MyModel:
         self.model_id = model_id
         self.get_new_full_name()
 
-        opt_param = {'lr': 0.001, 'name':'adam'} if opt_param is None else opt_param
+        opt_param = {'lr': 0.001, 'name': 'adam'} if opt_param is None else opt_param
 
         self.my_nn = MyNN()
         self.my_nn.new_model(model_id=self.model_id,
@@ -172,6 +176,7 @@ class MyModel:
             d = pickle.load(dump_file)
             self.input_param = d['nn']['input_param']
             self.instruments = d['instruments']
+            self.data_seed_pathlib = Path(d['data_seed_pathlib'])
         print('Model {0} loaded'.format(id))
 
     def load_weights(self, id, keep_name=True):
@@ -227,6 +232,7 @@ class MyModel:
 
         # Update parameters
         self.total_epochs += epochs
+        self.data_seed_pathlib = self.data_transformed_pathlib
         self.get_new_full_name()
         print('Training done')
 
@@ -249,7 +255,8 @@ class MyModel:
                     'epochs': self.total_epochs,
                     'input_param': self.input_param,
                 },
-                'instruments': self.instruments
+                'instruments': self.instruments,
+                'data_seed_pathlib': str(self.data_seed_pathlib)
             }, dump_file)
         print('Model saved in {0}'.format(path_to_save))
 
@@ -289,11 +296,12 @@ class MyModel:
         """
         # --- Verify the inputs ---
         nb_steps = int(self.model_id.split(',')[2])
-        if seed is None:
-            seed = np.random.uniform(
-                low=0,
-                high=1,
-                size=(self.input_param['nb_instruments'], nb_steps, self.input_param['input_size'], 2))
+        if type(seed) is list:
+            pass
+        elif seed is None:
+            seed = 1
+        elif type(seed) is int:
+            seed = self.get_seed(nb_steps=nb_steps, number=seed)
         length = length if length is not None else 200
         # For save midi path
         if type(new_save_path) is str or (
@@ -304,47 +312,65 @@ class MyModel:
 
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
         print('Start generating ...')
-        generated = seed
-        bar = progressbar.ProgressBar(maxval=length,
-                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
-                                               progressbar.ETA()])
-        bar.start()  # To see it working
-        for l in range(length):
-            samples = generated[:, np.newaxis, l:, :]
-            # expanded_samples = np.expand_dims(samples, axis=0)
-            preds = self.my_nn.generate(input=list(samples))
-            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128, 2)
-            if (not np.any(np.isnan(samples))) and np.any(np.isnan(preds)):
-                print('nan apparition')
-                print('step :', l)
-                print('nans index', np.argwhere(np.isnan(preds)))
-                print('sample', samples)
-                print('preds', preds)
+        for s in range(len(seed)):
+            print('Generation {0}/{1}'.format(s, len(seed)))
+            generated = seed[s]
+            bar = progressbar.ProgressBar(maxval=length,
+                                          widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                                   progressbar.ETA()])
+            bar.start()  # To see it working
+            for l in range(length):
+                samples = generated[:, np.newaxis, l:, :]
+                # expanded_samples = np.expand_dims(samples, axis=0)
+                preds = self.my_nn.generate(input=list(samples))
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128, 2)
+                # next_array = np.zeros(preds.shape)
+                # for inst in range(next_array.shape[0]):
+                #     next_array[inst] = midi_create.sample(preds[inst][0], temperature)[np.newaxis, :]
+                next_array = preds  # Without temperature
 
-            # next_array = np.zeros(preds.shape)
-            # for inst in range(next_array.shape[0]):
-            #     next_array[inst] = midi_create.sample(preds[inst][0], temperature)[np.newaxis, :]
-            next_array = preds  # Without temperature
+                # generated_list = []
+                # generated_list.append(generated)
+                # generated_list.append(next_array)
+                # generated = np.vstack(generated_list)
+                generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128, 2)
 
-            # generated_list = []
-            # generated_list.append(generated)
-            # generated_list.append(next_array)
-            # generated = np.vstack(generated_list)
-            generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128, 2)
+                bar.update(l + 1)
+            bar.finish()
 
-            bar.update(l + 1)
-        bar.finish()
-
-        generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 128, nb_steps, 2)
-        output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
-        # --- find the name for the midi_file ---
-        i = 0
-        m_str = "lstm_out_({0}).mid".format(i)
-        while (self.save_midis_pathlib / m_str).exists():
-            i += 1
+            generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 128, nb_steps, 2)
+            output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
+            # --- find the name for the midi_file ---
+            i = 0
             m_str = "lstm_out_({0}).mid".format(i)
-        path_to_save = str(self.save_midis_pathlib / m_str)
+            while (self.save_midis_pathlib / m_str).exists():
+                i += 1
+                m_str = "lstm_out_({0}).mid".format(i)
+            path_to_save = str(self.save_midis_pathlib / m_str)
 
-        # Saving the midi file
-        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+            # Saving the midi file
+            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
         print('Done Generating')
+
+    def get_seed(self, nb_steps, number=1):
+        """
+
+        :param nb_steps:
+        :param number:
+        :return:
+        """
+        seeds = []
+        with open(self.data_seed_pathlib / 'infos_dataset.p', 'rb') as dump_file:
+            d = pickle.load(dump_file)
+            all_shapes = d['all_shapes']
+        for i in range(number):
+            array_list = np.load(str(self.data_seed_pathlib / 'npy' / '{0}.npy'.format(
+                random.randint(0, len(all_shapes) - 1)
+            )), allow_pickle=True).item()['list']
+            array = array_list[random.randint(0, len(array_list) - 1)]
+            start = random.randint(0, len(array) - nb_steps - 1)
+            seed = array[start: start + nb_steps]       # (nb_steps, nb_intruments, input_size, 2)
+            seed = np.transpose(seed, (1, 0, 2, 3))       # (nb_instruments, nb_steps, input_size, 2)
+            seeds.append(seed)
+        return seeds
+

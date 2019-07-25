@@ -20,7 +20,7 @@ def main():
                         help='to work on a small computer with a cpu')
     parser.add_argument('--gpu', type=str, default='0',
                         help='What GPU to use')
-    parser.add_argument('-l', '--length', type=int, default=None,
+    parser.add_argument('-l', '--length', type=int, default=200,
                         help='The length of the generated music')
 
     args = parser.parse_args()
@@ -32,7 +32,7 @@ def main():
     data_transformed_path = data_path + '_transformed'
 
     my_model = MyModel(load_model=args.load)     # Load the model
-    my_model.generate(length=args.length)
+    my_model.generate(length=args.length, seed=5)
 
     print('Done')
 
