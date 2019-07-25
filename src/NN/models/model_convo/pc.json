@@ -1,0 +1,13 @@
+{
+  "separated1": {
+    "filters": [[4], [8]]
+  },
+  "common": {
+    "fc": [
+      "nb_instruments * input_size"
+    ]
+  },
+  "separated2": {
+    "fc": []
+  }
+}

@@ -4,6 +4,7 @@ import tensorflow as tf
 from pathlib import Path
 import pickle
 import dill
+import json
 
 
 class MyNN:
@@ -27,9 +28,10 @@ class MyNN:
         :return: the neural network
         """
 
-        model_name, model_param, nb_steps = model_id.split(',')
+        model_name, model_param_s, nb_steps = model_id.split(',')
         nb_steps = int(nb_steps)
 
+        # Load .py file with the model in it
         path = os.path.join('src',
                             'NN',
                             'models',
@@ -39,7 +41,14 @@ class MyNN:
         nn_model = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(nn_model)
 
-        # TODO: load the parameters if model_param != None
+        # Load model param .json file
+        json_path = os.path.join('src',
+                                 'NN',
+                                 'models',
+                                 'model_{0}'.format(model_name),
+                                 '{0}.json'.format(model_param_s))
+        with open(json_path) as json_file:
+            model_param = json.load(json_file)
 
         optimizer = self.create_optimizer(opt_param)
 

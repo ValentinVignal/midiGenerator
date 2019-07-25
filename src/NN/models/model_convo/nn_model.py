@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+import src.eval_string as es
+
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
 
@@ -18,10 +20,17 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     :param model_param:
     :return: the neural network
     """
+
     print('Definition of the graph ...')
 
     nb_instruments = input_param['nb_instruments']
     input_size = input_param['input_size']
+
+    env = {
+        'nb_instruments': nb_instruments,
+        'input_size': input_size,
+        'nb_steps': nb_steps
+    }
 
     midi_shape = (nb_steps, input_size, 2)  # (batch, nb_step, input_size, 2)
     inputs_midi = []
@@ -30,24 +39,22 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     # ---------- Separated network for instruments ----------
     first_layer = []
+    separated = model_param['separated1']
     for instrument in range(nb_instruments):
-        x_a = Lambda(lambda x: x[:, :, :, 0])(inputs_midi[instrument])  # activation (batch, nb_steps, input_size)
-        x_d = Lambda(lambda x: x[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
+        x_a = Lambda(lambda xl: xl[:, :, :, 0])(inputs_midi[instrument])  # activation (batch, nb_steps, input_size)
+        x_d = Lambda(lambda xl: xl[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
 
-        # 1
-        x = layers.Conv2D(filters=8, kernel_size=(3, 3), padding='same')(inputs_midi[instrument])
-        x = layers.LeakyReLU()(x)
-        x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(0.1)(x)
-        # 2
-        x = layers.Conv2D(filters=16, kernel_size=(3, 3), padding='same')(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(0.1)(x)
+        x = inputs_midi[instrument]
 
-
+        for i in range(len(separated['filters'])):
+            for j in range(len(separated['filters'][i])):
+                x = layers.Conv2D(filters=es.eval_all(separated['filters'][i][j], env=env),
+                                  kernel_size=(3, 3),
+                                  padding='same')(x)
+                x = layers.LeakyReLU()(x)
+                x = layers.BatchNormalization()(x)
+                x = layers.Dropout(0.1)(x)
+            x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
 
         """
         # from tutorial :
@@ -101,16 +108,25 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     # ---------- All together ----------
     x = layers.Flatten()(x)
 
-    x = layers.Dense(nb_instruments * input_size)(x)
-    x = layers.LeakyReLU()(x)
-    x = layers.Dropout(0.4)(x)
+    common = model_param['common']
+    for i in range(len(common['fc'])):
+        x = layers.Dense(es.eval_all(common['fc'][i], env=env))(x)
+        x = layers.LeakyReLU()(x)
+        x = layers.Dropout(0.4)(x)
 
     # ---------- Instruments separately ----------
+    separated2 = model_param['separated2']
     outputs = []        # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
-        output_a = layers.Dense(input_size, activation='sigmoid')(x)    # (batch, input_size)
+        o = x
+        for i in range(len(separated2['fc'])):
+            o = layers.Dense(es.eval_all(separated2['fc'][i], env=env))(o)
+            o = layers.LeakyReLU()(o)
+            o = layers.BatchNormalization()(o)
+            o = layers.Dropout(0.3)(o)
+        output_a = layers.Dense(input_size, activation='sigmoid')(o)    # (batch, input_size)
         output_a = layers.Reshape((input_size, 1))(output_a)        # (batch, input_size, 1)
-        output_d = layers.Dense(input_size, activation='sigmoid')(x)      # (batch, input_size)
+        output_d = layers.Dense(input_size, activation='sigmoid')(o)      # (batch, input_size)
         output_d = layers.LeakyReLU()(output_d)
         output_d = layers.Reshape((input_size, 1))(output_d)        # (batch, input_size, 1)
         output = layers.concatenate([output_a, output_d], axis=2)      # (batch, input_size, 2)
