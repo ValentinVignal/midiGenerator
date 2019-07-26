@@ -313,7 +313,7 @@ class MyModel:
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
         print('Start generating ...')
         for s in range(len(seed)):
-            print('Generation {0}/{1}'.format(s, len(seed)))
+            print('Generation {0}/{1}'.format(s+1, len(seed)+1))
             generated = seed[s]
             bar = progressbar.ProgressBar(maxval=length,
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
