@@ -1,17 +1,13 @@
 import tensorflow as tf
 
-import src.eval_string as es
-
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
 
 """
 
-First personal model
+DenseNet model
 
 """
-
-
 
 
 def create_model(input_param, model_param, nb_steps, optimizer):
@@ -24,7 +20,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     """
 
     # ---------- Functions for DenseNet ----------
-    def denseBlock(k, nb_conv):
+    def dense_block(k, nb_conv):
         """
 
         :param k:
@@ -35,7 +31,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             output = input
             for conv in range(nb_conv):
                 o = layers.BatchNormalization()(output)
-                o = layers.ReLu()(o)
+                o = layers.ReLU()(o)
                 o = layers.Conv2D(filters=k, kernel_size=(3, 3), padding='same')(o)
                 o = layers.Dropout(0.2)(o)
                 output = layers.concatenate([output, o], axis=3)
@@ -43,7 +39,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             return output
         return f
 
-    def denseTransitionBlock(k):
+    def dense_transition_block(k):
         """
 
         :param k:
@@ -51,13 +47,13 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         """
         def f(input):
             output = layers.BatchNormalization()(input)
-            output = layers.RELU()(output)
+            output = layers.ReLU()(output)
             output = layers.Conv2D(filters=k,
                                    kernel_size=(1, 1),
                                    padding='same')(output)
             output = layers.Dropout(0.2)(output)
             output = layers.MaxPool2D(pool_size=(3, 3),
-                                      stride=(2, 2),
+                                      strides=(2, 2),
                                       padding='same')(output)
             return output
         return f
@@ -67,12 +63,6 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     nb_instruments = input_param['nb_instruments']
     input_size = input_param['input_size']
-
-    env = {
-        'nb_instruments': nb_instruments,
-        'input_size': input_size,
-        'nb_steps': nb_steps
-    }
 
     midi_shape = (nb_steps, input_size, 2)  # (batch, nb_step, input_size, 2)
     inputs_midi = []
@@ -87,28 +77,35 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     # ---------- All together ----------
     dense_param = model_param['dense_param']
-    x = denseBlock(k=dense_param['k'][0],
-                   nb_conv=dense_param['nb_conv'][0])()
+
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    x = layers.Conv2D(filters=
+                      dense_param['k'][0] * nb_instruments,
+                      kernel_size=(3, 3),
+                      padding='same')(x)
+    x = layers.Dropout(0.2)(x)
+    x = dense_block(k=dense_param['k'][0] * nb_instruments,
+                   nb_conv=dense_param['nb_conv'][0])(x)
     for i in range(1, len(dense_param['k'])):
-        x = denseTransitionBlock(k=dense_param['k'][i])
-        x = denseBlock(
+        x = dense_transition_block(k=dense_param['k'][i] * nb_instruments)(x)
+        x = dense_block(
             k=dense_param['k'][i],
             nb_conv=dense_param['nb_conv'][i])(x)
 
     x = layers.Flatten()(x)
 
-    for i in range(len(model_param['fc_common'])):
-        x = layers.Dense(es.eval_all(common['fc'][i], env=env))(x)
+    for i in model_param['fc_common']:
+        x = layers.Dense(i * input_size * nb_instruments)(x)
         x = layers.LeakyReLU()(x)
         x = layers.Dropout(0.4)(x)
 
     # ---------- Instruments separately ----------
-    separated2 = model_param['separated2']
     outputs = []        # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
         o = x
-        for i in range(len(separated2['fc'])):
-            o = layers.Dense(es.eval_all(separated2['fc'][i], env=env))(o)
+        for i in model_param['fc_separated']:
+            o = layers.Dense(i * input_size)(o)
             o = layers.LeakyReLU()(o)
             o = layers.BatchNormalization()(o)
             o = layers.Dropout(0.3)(o)

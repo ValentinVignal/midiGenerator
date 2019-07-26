@@ -1,16 +1,8 @@
 {
-  "separated1": {
-    "filters": [[16, 32], [32, 64], [64, 32]]
+  "dense_param": {
+    "k": [4, 8, 16],
+    "nb_conv": [4, 4, 4]
   },
-  "common": {
-    "fc": [
-      "4 * nb_instruments * input_size",
-      "2 * nb_instruments * input_size"
-    ]
-  },
-  "separated2": {
-    "fc": [
-      "2 * nb_instruments * input_size"
-    ]
-  }
+  "fc_common": [4, 2, 4],
+  "fc_separated": [4, 2]
 }
