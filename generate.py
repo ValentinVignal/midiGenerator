@@ -21,7 +21,7 @@ def main():
                         help='What GPU to use')
     parser.add_argument('-s', '--seed', default=10,
                        help='number of seeds or the path to the folder with the seeds')
-    parser.add_argument('-l', '--length', type=int, default=200,
+    parser.add_argument('-l', '--length', type=int, default=300,
                         help='The length of the generated music')
 
     args = parser.parse_args()
