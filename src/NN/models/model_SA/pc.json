@@ -1,0 +1,5 @@
+{
+  "LSTM": [1, 1],
+  "fc_common": [1],
+  "fc_separated": [1]
+}
