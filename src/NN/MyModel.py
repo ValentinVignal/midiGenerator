@@ -313,7 +313,7 @@ class MyModel:
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
         print('Start generating ...')
         for s in range(len(seed)):
-            print('Generation {0}/{1}'.format(s+1, len(seed)+1))
+            print('Generation {0}/{1}'.format(s+1, len(seed)))
             generated = seed[s]
             bar = progressbar.ProgressBar(maxval=length,
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
@@ -324,15 +324,7 @@ class MyModel:
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128, 2)
-                # next_array = np.zeros(preds.shape)
-                # for inst in range(next_array.shape[0]):
-                #     next_array[inst] = midi_create.sample(preds[inst][0], temperature)[np.newaxis, :]
                 next_array = preds  # Without temperature
-
-                # generated_list = []
-                # generated_list.append(generated)
-                # generated_list.append(next_array)
-                # generated = np.vstack(generated_list)
                 generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128, 2)
 
                 bar.update(l + 1)
