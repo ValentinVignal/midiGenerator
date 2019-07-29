@@ -57,7 +57,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         attention = layers.Flatten()(attention)
         attention = layers.Activation('softmax')(attention)
         attention = layers.Reshape((nb_steps, 1))(attention)
-        
+
         multiplied = layers.Multiply()([x, attention])
         x = tf.keras.layers.Dense(size)(multiplied)
     x = layers.Flatten()(x)
