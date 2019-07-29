@@ -1,5 +1,0 @@
-{
-  "LSTM": [4, 3, 2, 1],
-  "fc_common": [3, 2],
-  "fc_separated": [2, 2]
-}
