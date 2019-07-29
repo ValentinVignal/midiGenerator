@@ -16,7 +16,7 @@ def main():
     parser.add_argument('-d', '--data', type=str, default='lmd_matched_mini',
                         help='The name of the data')
     # ----------------
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('-e', '--epochs', type=int, default=50,
                         help='number of epochs to train')
     parser.add_argument('-b', '--batch', type=int, default=4,
                         help='The number of the batches')
