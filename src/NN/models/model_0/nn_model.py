@@ -71,6 +71,46 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
         first_layer.append(x)
 
+        """
+        # from tutorial :
+        
+        x = tf.keras.layers.LSTM(1024, return_sequences=True, unit_forget_bias=True)(
+            inputs_midi[instrument])  # (batch, nb_steps, 512)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+
+        # compute importance for each step
+        attention = tf.keras.layers.Dense(1, activation='tanh')(x)
+        attention = tf.keras.layers.Flatten()(attention)
+        attention = tf.keras.layers.Activation('softmax')(attention)
+        attention = tf.keras.layers.RepeatVector(1024)(attention)
+        attention = tf.keras.layers.Permute([2, 1])(attention)
+
+        multiplied = tf.keras.layers.Multiply()([x, attention])
+        sent_representation = tf.keras.layers.Dense(512)(multiplied)
+
+        x = tf.keras.layers.Dense(512)(sent_representation)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.22)(x)
+
+        # compute importance for each step
+        attention = tf.keras.layers.Dense(1, activation='tanh')(x)
+        attention = tf.keras.layers.Flatten()(attention)
+        attention = tf.keras.layers.Activation('softmax')(attention)
+        attention = tf.keras.layers.RepeatVector(512)(attention)
+        attention = tf.keras.layers.Permute([2, 1])(attention)
+
+        multiplied = tf.keras.layers.Multiply()([x, attention])
+        sent_representation = tf.keras.layers.Dense(256)(multiplied)
+
+        x = tf.keras.layers.Dense(256)(sent_representation)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.22)(x)
+        """
+
     # Concatenation
     for instrument in range(nb_instruments):
         first_layer[instrument] = tf.keras.layers.Reshape((nb_steps, 1, 256))(
