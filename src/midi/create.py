@@ -3,6 +3,7 @@ import numpy as np
 import music21
 import progressbar
 import functools
+from termcolor import colored
 
 import src.midi.instruments as midi_inst
 
@@ -55,11 +56,12 @@ def int_to_note(integer):
 def matrix_to_midi(matrix, instruments=None):
     """
 
-    :param matrix: shape (nb_instruments, 128, nb_steps)
+    :param matrix: shape (nb_instruments, 128, nb_steps, 2)
     :param instruments: The instruments
     :return:
     """
     nb_instuments, nb_notes, nb_steps, _ = matrix.shape
+    print('shape', matrix.shape)
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
 
     matrix_norm = converter_func(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
@@ -131,4 +133,4 @@ def save_midi(output_notes_list, instruments, path):
         midi_stream.insert(0, s)
     midi_stream.write('midi', fp=path)
     bar.finish()
-    print(path, 'saved')
+    print(colored(path + ' saved', 'green'))

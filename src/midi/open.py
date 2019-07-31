@@ -2,6 +2,7 @@ import src.global_variables as g
 import numpy as np
 import music21
 import functools
+from termcolor import colored
 
 import src.midi.instruments as midi_inst
 
@@ -58,7 +59,7 @@ def check_float(duration):
         return str(float(duration))
 
 
-def midi_to_matrix(filename, instruments, length=None):
+def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     """
     convert midi file to matrix for DL architecture.
     :param filename: path to the midi file
@@ -78,8 +79,9 @@ def midi_to_matrix(filename, instruments, length=None):
             # name = (str(instrument).split(' ')[-1])[
             #        :-1]  # str(instrument) = "<midi.stream.Part object Electric Bass>"
             instrument_names.append(name)
+        if print_instruments: print('instruments :', instrument_names)
     except TypeError:
-        print('Type is not iterable.')
+        print(colored('Type is not iterable.', 'red'))
         return None
 
     # just take instruments desired parts
@@ -88,7 +90,7 @@ def midi_to_matrix(filename, instruments, length=None):
         similar_instruments = midi_inst.return_similar_instruments(instrument)
         at_least_one = functools.reduce(lambda x, y: (x or (y in instrument_names)), similar_instruments, False)
         if not at_least_one:
-            print('{0} have not any {1} part'.format(filename, instrument))
+            print(colored('{0} have not any {1} part'.format(filename, instrument), 'red'))
             return None
         else:  # We know there is a similar instrument in it
             notes_to_parse = None
@@ -125,7 +127,7 @@ def midi_to_matrix(filename, instruments, length=None):
             try:
                 freq, time, _ = our_matrix.shape
             except AttributeError:
-                print("'tuple' object has no attribute 'shape'")
+                print(colored("'tuple' object has no attribute 'shape'", 'red'))
                 return None
 
             # To change shape
@@ -133,7 +135,7 @@ def midi_to_matrix(filename, instruments, length=None):
                 try:
                     our_matrix = our_matrix[:, :length, :]
                 except IndexError:
-                    print('{0} is not long enough, shape : {1}'.format(filename, our_matrix.shape))
+                    print(colored('{0} is not long enough, shape : {1}'.format(filename, our_matrix.shape), 'red'))
 
             our_matrixes.append(our_matrix)
 
