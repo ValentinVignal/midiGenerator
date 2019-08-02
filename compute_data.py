@@ -45,7 +45,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-d', '--data', type=str, default='lmd_matched_mini',
+    parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
                         help='The name of the data')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
@@ -57,6 +57,7 @@ def main():
     args = parser.parse_args()
 
     if args.pc:
+        args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)

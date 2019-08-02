@@ -13,7 +13,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-d', '--data', type=str, default='lmd_matched_mini',
+    parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
                         help='The name of the data')
     # ----------------
     parser.add_argument('-e', '--epochs', type=int, default=50,
@@ -43,6 +43,7 @@ def main():
     args = parser.parse_args()
 
     if args.pc:
+        args.data = 'lmd_matched_small'
         data_path = os.path.join('../Dataset', args.data)
         args.epochs = 1
         args.batch = 1
