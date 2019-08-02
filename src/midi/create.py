@@ -61,7 +61,6 @@ def matrix_to_midi(matrix, instruments=None):
     :return:
     """
     nb_instuments, nb_notes, nb_steps, _ = matrix.shape
-    print('shape', matrix.shape)
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
 
     matrix_norm = converter_func(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)

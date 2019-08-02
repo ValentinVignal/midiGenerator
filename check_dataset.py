@@ -70,7 +70,7 @@ def main():
         midi_path = Path(all_midi_paths[i])
         checked_file_name = Path(midi_path.parent, midi_path.stem +  '_checked' + midi_path.suffix)
         print(colored("-- {0}/{1} ----- : ----- Checking {2} ----------".format(i+1, nb_files, midi_path), 'white', 'on_blue'))
-        matrix_midi = midi_open.midi_to_matrix(midi_path, instruments, print_instruments=True)  # (nb_instruments, 128, nb_steps, 2)
+        matrix_midi = midi_open.midi_to_matrix(midi_path.as_posix(), instruments, print_instruments=True)  # (nb_instruments, 128, nb_steps, 2)
         if matrix_midi is None: continue
         #matrix_midi = np.transpose(matrix_midi, , 3))
         output_notes = midi_create.matrix_to_midi(matrix_midi, instruments=instruments)

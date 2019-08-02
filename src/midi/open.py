@@ -59,6 +59,46 @@ def check_float(duration):
         return str(float(duration))
 
 
+def midifile_to_stream(filename, keep_drums=False):
+    """
+
+    :param filename:
+    :param keep_drums:
+    :return:
+    """
+    mf = music21.midi.MidiFile()
+    mf.open(filename)
+    mf.read()
+    mf.close()
+    # Look for the track with percussion (always channel 10)
+    has_drums = False
+    drums_tracks_indexes = []
+    for t in range(len(mf.tracks)):
+        for c in mf.tracks[t].getChannels():
+            if c == 10:
+                has_drums = True
+                drums_tracks_indexes.append(t)
+    drums_tracks = []
+    for dti in sorted(drums_tracks_indexes, reverse=True):
+        drums_tracks.append(mf.tracks.pop(dti))
+    # Now there is no percussions in mf
+
+    if keep_drums and has_drums:
+        raise NotImplementedError("Can't keep drums for now")
+    try:
+        return music21.midi.translate.midiFileToStream(mf)
+    except IndexError:
+        if has_drums and not keep_drums:
+            print(colored('Only drums in file {0}'.format(filename), 'red'))
+        else:
+            print(colored('File is empty {0}'.format(filename), 'red'))
+        return None
+    except music21.exceptions21.StreamException:
+        print(colored('There is no tracks in file {0}'.format(filename), 'red'))
+        return None
+
+
+
 def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     """
     convert midi file to matrix for DL architecture.
@@ -67,12 +107,15 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     :param length: length max of the song
     :return: matrix with shape
     """
-    midi = music21.converter.parse(filename)  # Load the file
+    midi = midifile_to_stream(filename)  # Load the file
+    if midi is None:
+        return None
     parts = music21.instrument.partitionByInstrument(midi)
 
     # --- Get the instruments names in the file ---
     instrument_names = []  # Name of the instruments in the file
     try:
+        print('parts', parts)
         for instrument in parts:
             # learn names of instruments
             name = instrument.partName
@@ -90,7 +133,8 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
         similar_instruments = midi_inst.return_similar_instruments(instrument)
         at_least_one = functools.reduce(lambda x, y: (x or (y in instrument_names)), similar_instruments, False)
         if not at_least_one:
-            print(colored('{0} have not any {1} part'.format(filename, instrument), 'red'))
+            print(colored('{0} doesn t have any {1} part'.format(filename, instrument), 'red'))
+
             return None
         else:  # We know there is a similar instrument in it
             notes_to_parse = None
