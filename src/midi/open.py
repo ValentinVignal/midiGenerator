@@ -18,7 +18,7 @@ def notes_to_matrix(notes, durations, offsets):
     try:
         last_offset = max(map(lambda x: int(x), offsets))
     except ValueError:
-        print('Value Error')
+        print(colored('Value Error', 'red'))
         return None, None, None
     total_offset_axis = last_offset * 4 + (
             8 * 4)  # nb times * 4 because quarter note + 2 measures (max length of a note)
@@ -115,7 +115,6 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     # --- Get the instruments names in the file ---
     instrument_names = []  # Name of the instruments in the file
     try:
-        print('parts', parts)
         for instrument in parts:
             # learn names of instruments
             name = instrument.partName
@@ -142,9 +141,9 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
                 if similar_instrument in instrument_names:
                     instrument_index = instrument_names.index(similar_instrument)
                     if notes_to_parse is None:
-                        notes_to_parse = parts.parts[instrument_index]
+                        notes_to_parse = parts.parts[instrument_index].recurse()
                     else:
-                        notes_to_parse.append(parts.parts[instrument_index])
+                        notes_to_parse.append(parts.parts[instrument_index].recurse())
             notes_to_parse = notes_to_parse.recurse()
             duration = float(check_float(notes_to_parse._getDuration().quarterLength))
 
@@ -165,7 +164,6 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
                     duration = str(element.duration)[27:-1]
                     durations.append(check_float(duration))
                     offsets.append(element.offset)
-
             our_matrix = notes_to_matrix(notes, durations, offsets)      # (128, nb_steps, 2
 
             try:
