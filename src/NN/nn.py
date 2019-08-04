@@ -19,6 +19,9 @@ class MyNN:
         self.input_param = None
         self.nb_steps = None
 
+        # Spare GPU
+        MyNN.allow_growth()
+
     def new_model(self, model_id, input_param, opt_param):
         """
 
@@ -75,7 +78,6 @@ class MyNN:
         elif name == 'sgd':
             return tf.keras.optimizers.SGD(lr=lr)
 
-
     def train_seq(self, epochs, generator):
         """
 
@@ -83,6 +85,7 @@ class MyNN:
         :param generator:
         :return:
         """
+        self.allow_growth()
         self.model.fit_generator(epochs=epochs, generator=generator,
                                  shuffle=True, verbose=1)
 
@@ -139,3 +142,20 @@ class MyNN:
         :return:
         """
         return self.model.predict(input, verbose=0)
+
+    @staticmethod
+    def allow_growth():
+        """
+
+        :return:
+        """
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        config.log_device_placement = True
+        sess = tf.Session(config=config)
+        tf.keras.backend.set_session(sess)
+
+    @staticmethod
+    def choose_gpu(gpu):
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpu
+

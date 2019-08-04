@@ -53,6 +53,9 @@ def main():
 
     my_model = MyModel(name=args.name)
     my_model.load_data(data_transformed_path=data_transformed_path)
+    # Choose GPU
+    if not args.pc:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     args.model_id = 'pc;0;8' if (args.model_id == '' and args.load == '') else args.model_id
     if args.model_id != '':
