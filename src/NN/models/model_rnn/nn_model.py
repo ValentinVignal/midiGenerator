@@ -46,7 +46,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         x = layers.Reshape((nb_steps, input_size * 2))(inputs_midi[instrument])  # (batch, nb_steps, 2 * input_size)
 
         for s in model_param['LSTM_separated']:
-            size = s * nb_steps * input_size
+            size = int(s * nb_steps * input_size)
             x = tf.keras.layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
             x = tf.keras.layers.LeakyReLU()(x)
             x = tf.keras.layers.BatchNormalization()(x)
@@ -103,7 +103,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     # ---------- All together ----------
     for s in model_param['LSTM_common']:
-        size = s * nb_steps * input_size * nb_instruments
+        size = int(s * nb_steps * input_size * nb_instruments)
         x = layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
@@ -120,7 +120,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     for instrument in range(nb_instruments):
         o = x
         for s in model_param['fc_separated']:
-            size = s * input_size
+            size = int(s * input_size)
             o = layers.Dense(size)(o)
             o = layers.LeakyReLU()(o)
             o = layers.BatchNormalization()(o)
