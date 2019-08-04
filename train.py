@@ -43,7 +43,7 @@ def main():
     args = parser.parse_args()
 
     if args.pc:
-        args.data = 'lmd_matched_small'
+        args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
         args.epochs = 1
         args.batch = 1

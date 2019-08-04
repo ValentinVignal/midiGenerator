@@ -12,7 +12,6 @@ class MyNN:
 
     """
 
-
     def __init__(self):
         self.model = None
         self.loss = None
@@ -54,7 +53,7 @@ class MyNN:
         with open(json_path) as json_file:
             model_param = json.load(json_file)
 
-        optimizer = self.create_optimizer(opt_param)
+        optimizer = MyNN.create_optimizer(opt_param)
 
         self.model, self.loss = nn_model.create_model(
             input_param=input_param,
@@ -65,7 +64,8 @@ class MyNN:
         self.input_param = input_param
         self.nb_steps = nb_steps
 
-    def create_optimizer(self, opt_param):
+    @staticmethod
+    def create_optimizer(opt_param):
         """
 
         :param opt_param:
@@ -152,7 +152,6 @@ class MyNN:
         """
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        config.log_device_placement = True
         sess = tf.Session(config=config)
         tf.keras.backend.set_session(sess)
 

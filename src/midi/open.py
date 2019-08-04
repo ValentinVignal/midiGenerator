@@ -39,7 +39,8 @@ def notes_to_matrix(notes, durations, offsets):
                 our_matrix[chord_note_float, start, 0] = 1
                 our_matrix[chord_note_float, start, 1] = float(duration) / g.max_length_note
 
-    return our_matrix       # (128, nb_steps, 2)
+    # our_matrix is (128, nb_steps, 2)
+    return our_matrix[21:109]       # From A0 to C8 (88, nb_steps, 2)
 
 
 def check_float(duration):
@@ -98,13 +99,13 @@ def midifile_to_stream(filename, keep_drums=False):
         return None
 
 
-
 def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     """
     convert midi file to matrix for DL architecture.
     :param filename: path to the midi file
     :param instruments: instruments to train on
     :param length: length max of the song
+    :param print_instruments: bool
     :return: matrix with shape
     """
     midi = midifile_to_stream(filename)  # Load the file
@@ -164,7 +165,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
                     duration = str(element.duration)[27:-1]
                     durations.append(check_float(duration))
                     offsets.append(element.offset)
-            our_matrix = notes_to_matrix(notes, durations, offsets)      # (128, nb_steps, 2
+            our_matrix = notes_to_matrix(notes, durations, offsets)      # (88, nb_steps, 2
 
             try:
                 freq, time, _ = our_matrix.shape
@@ -184,10 +185,10 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     # Normalization of the duration : make them all finish at the same time
     max_len = 0
     for matrix in our_matrixes:
-        if len(matrix[0]) > max_len:  # matrix has shape : (128, length, 2)
+        if len(matrix[0]) > max_len:  # matrix has shape : (88, length, 2)
             max_len = len(matrix[0])
 
-    final_matrix = np.zeros((len(our_matrixes), 128, max_len, 2))  # (nb_instruments, 128, max_len, 2)
+    final_matrix = np.zeros((len(our_matrixes), 88, max_len, 2))  # (nb_instruments, 88, max_len, 2)
     for i in range(len(our_matrixes)):
         final_matrix[i, :, :len(our_matrixes[i][0]), :] = our_matrixes[i]
     return final_matrix
