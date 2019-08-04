@@ -12,6 +12,7 @@ class MyNN:
 
     """
 
+
     def __init__(self):
         self.model = None
         self.loss = None

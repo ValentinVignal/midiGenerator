@@ -34,6 +34,9 @@ def main():
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
 
+    if not args.pc:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
     my_model = MyModel(load_model=args.load)     # Load the model
     my_model.generate(length=args.length, seed=args.seed)
 
