@@ -8,6 +8,7 @@ import random
 from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
+import src.image.image as image
 
 
 class MyModel:
@@ -286,12 +287,13 @@ class MyModel:
             self.save_midis_pathlib = Path(path)
         print('new save path for midi files :', str(self.save_midis_pathlib))
 
-    def generate(self, seed=None, length=None, new_save_path=None):
+    def generate(self, seed=None, length=None, new_save_path=None, save_images=False):
         """
         Generate midi file from the seed and the trained model
         :param seed: seed for the generation
         :param length: Length of th generation
         :param new_save_path:
+        :param save_images:
         :return:
         """
         # --- Verify the inputs ---
@@ -320,28 +322,43 @@ class MyModel:
                                                    progressbar.ETA()])
             bar.start()  # To see it working
             for l in range(length):
-                samples = generated[:, np.newaxis, l:, :]
+                samples = generated[:, np.newaxis, l:, :]       # (nb_instruments, 1, nb_steps, 88, 2)
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 128, 2)
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 88, 2)
                 next_array = preds  # Without temperature
-                generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 128, 2)
+                generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 88, 2)
 
                 bar.update(l + 1)
             bar.finish()
 
-            generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 128, nb_steps, 2)
+            generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps, 2)
             output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
-            # --- find the name for the midi_file ---
-            i = 0
-            m_str = "lstm_out_({0}).mid".format(i)
-            while (self.save_midis_pathlib / m_str).exists():
-                i += 1
-                m_str = "lstm_out_({0}).mid".format(i)
-            path_to_save = str(self.save_midis_pathlib / m_str)
+            if save_images:
+                # --- find the name for the midi_file ---
+                i = 0
+                m_str = "lstm_out_({0})".format(i)
+                while (self.save_midis_pathlib / m_str).exists():
+                    i += 1
+                    m_str = "lstm_out_({0})".format(i)
+                path_to_save = str(self.save_midis_pathlib / m_str / 'midi.mid')
 
-            # Saving the midi file
-            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+                # Save image
+                image.save_img(generated_midi_final, str(self.save_midis_pathlib / m_str))
+                # Saving the midi file
+                midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+            else:
+                # --- find the name for the midi_file ---
+                i = 0
+                m_str = "lstm_out_({0}).mid".format(i)
+                while (self.save_midis_pathlib / m_str).exists():
+                    i += 1
+                    m_str = "lstm_out_({0}).mid".format(i)
+                path_to_save = str(self.save_midis_pathlib / m_str)
+
+                # Saving the midi file
+                midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+
         print('Done Generating')
 
     def get_seed(self, nb_steps, number=1):

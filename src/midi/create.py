@@ -7,11 +7,12 @@ from termcolor import colored
 
 import src.midi.instruments as midi_inst
 
+from PIL import Image
 
 def converter_func(arr):
     """
 
-    :param arr: (nb_instruments, 128, nb_steps, 2)
+    :param arr: (nb_instruments, 88, nb_steps, 2)
     :return:
     """
     activations = arr[:, :, :, 0]

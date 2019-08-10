@@ -23,6 +23,8 @@ def main():
                        help='number of seeds or the path to the folder with the seeds')
     parser.add_argument('-l', '--length', type=int, default=300,
                         help='The length of the generated music')
+    parser.add_argument('-i', '--images', action='store_true', default=False,
+                        help='Save the images for each instruments')
 
     args = parser.parse_args()
 
@@ -38,7 +40,7 @@ def main():
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     my_model = MyModel(load_model=args.load)     # Load the model
-    my_model.generate(length=args.length, seed=args.seed)
+    my_model.generate(length=args.length, seed=args.seed, save_images=args.images)
 
     print('Done')
 
