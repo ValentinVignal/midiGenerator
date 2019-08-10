@@ -62,7 +62,7 @@ def main():
     shutil.copytree(src=data_path.as_posix(), dst=data_checked_path)
 
     # Instruments :
-    instruments = ['Acoustic Bass']
+    instruments = ['Piano', 'Acoustic Bass']
 
     all_midi_paths = all_midi_files(data_checked_path.as_posix(), False)
     nb_files = len(all_midi_paths)
