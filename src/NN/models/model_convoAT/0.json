@@ -1,16 +1,4 @@
 {
-  "separated1": {
-    "filters": [[16, 32], [32, 64], [64, 32]]
-  },
-  "common": {
-    "fc": [
-      "4 * nb_instruments * input_size",
-      "2 * nb_instruments * input_size"
-    ]
-  },
-  "separated2": {
-    "fc": [
-      "2 * nb_instruments * input_size"
-    ]
-  }
+  "convo": [[4, 8], [16], [8, 4]],
+  "fc": [48, 24, 48]
 }
