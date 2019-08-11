@@ -75,7 +75,7 @@ class MyNN:
         lr = opt_param['lr']
 
         if name == 'adam':
-            return tf.keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.1, amsgrad=False)
+            return tf.keras.optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.4, amsgrad=False)
         elif name == 'sgd':
             return tf.keras.optimizers.SGD(lr=lr)
 
