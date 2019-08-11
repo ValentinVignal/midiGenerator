@@ -43,8 +43,8 @@ class MySequence(tf.keras.utils.Sequence):
     def __getitem__(self, item):
         i_start = item * self.batch_size
         i, j, k = self.return_ijk(i_start)
-        x = []  # (batch, nb_steps, nb_instruments, input_size)
-        y = []  # (batch, nb_instruments, input_size)
+        x = []  # (batch, nb_steps, nb_instruments, input_size, 2)
+        y = []  # (batch, nb_instruments, input_size, 2)
         for s in range(self.batch_size):
             if i != self.i_loaded:
                 self.i_loaded = i

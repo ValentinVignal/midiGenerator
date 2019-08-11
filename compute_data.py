@@ -58,7 +58,7 @@ def main():
     args = parser.parse_args()
 
     if args.pc:
-        args.data = 'lmd_matched_mini'
+        #args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
@@ -74,7 +74,7 @@ def main():
         args.length = int(args.length)
 
     # Instruments :
-    instruments = ['Piano', 'Acoustic Bass']
+    instruments = ['Piano', 'Trombone']
 
     all_dataset_p = os.path.join(data_transformed_path,
                                  'all_dataset.p')  # Pickle file with the informations of the data set
@@ -166,11 +166,11 @@ def main():
         all_shapes_npy = []
         for single_midi_path in all_midi_paths_dataset:
             matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
-                                                             length=args.length)  # (nb_instruments, 128, nb_steps, 2)
+                                                             length=args.length)  # (nb_instruments, 88, nb_steps, 2)
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
                 matrix_of_single_midi = np.transpose(matrix_of_single_midi,
-                                                     (2, 0, 1, 3))  # (length, nb_instruments, 128, 3)
+                                                     (2, 0, 1, 3))  # (length, nb_instruments, 88, 3)
                 matrix_of_all_midis.append(matrix_of_single_midi)
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
                 i += 1
