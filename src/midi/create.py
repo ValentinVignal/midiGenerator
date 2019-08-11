@@ -21,7 +21,7 @@ def converter_func(arr):
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
 
-    durations = np.ceil(durations * g.max_length_note)
+    durations = np.ceil(durations * g.max_length_note_array)
     durations = np.maximum(durations, 1)
 
     matrix_norm = np.multiply(activations, durations)       # (nb_instruments, 128, nb_steps)
@@ -95,8 +95,8 @@ def matrix_to_midi(matrix, instruments=None):
                 length_note = matrix_norm[inst, note, step]
                 if length_note > 0:    # This is a new note !!
                     new_note = music21.note.Note(pitch=(note + 21),
-                                                 duration=music21.duration.Duration(0.25 * length_note))
-                    new_note.offset = 0.25 * step
+                                                 duration=music21.duration.Duration(length_note / g.step_per_beat))
+                    new_note.offset = step / g.step_per_beat
                     new_note.storedInstrument = midi_inst.string2instrument(instruments[inst])()
                     output_notes.append(new_note)
         output_notes_instruments.append(output_notes)
