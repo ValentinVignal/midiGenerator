@@ -9,9 +9,7 @@ def save_img(array, path):
     :param array: shape (nb_instruments, 128, nb_steps, 2)
     :return:
     """
-    print('array', array.shape)
     activations = array[:, :, :, 0]      # (nb_instruments, 128, nb_steps)
-    print('shape', activations.shape)
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
     path = Path(path)
@@ -24,11 +22,10 @@ def save_img(array, path):
             for k in range(len(activations[i][j])):
                 if a[j][k] not in values:
                     values.append(a[j][k])
-        print('values', values)
         img = Image.fromarray(
             (255 * np.flip(activations[i], axis=0)).astype(np.uint8),
             mode='L')
-        img.show()
+        #img.show()
         img.save(save_path)
 
 

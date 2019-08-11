@@ -94,7 +94,7 @@ def matrix_to_midi(matrix, instruments=None):
             for step in range(nb_steps):
                 length_note = matrix_norm[inst, note, step]
                 if length_note > 0:    # This is a new note !!
-                    new_note = music21.note.Note(int_to_note(note),
+                    new_note = music21.note.Note(pitch=(note + 21),
                                                  duration=music21.duration.Duration(0.25 * length_note))
                     new_note.offset = 0.25 * step
                     new_note.storedInstrument = midi_inst.string2instrument(instruments[inst])()

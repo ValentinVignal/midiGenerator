@@ -149,7 +149,7 @@ class MyModel:
         self.model_id = model_id
         self.get_new_full_name()
 
-        opt_param = {'lr': 0.001, 'name': 'adam'} if opt_param is None else opt_param
+        opt_param = {'lr': 0.01, 'name': 'adam'} if opt_param is None else opt_param
 
         self.my_nn = MyNN()
         self.my_nn.new_model(model_id=self.model_id,
