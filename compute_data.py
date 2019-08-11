@@ -7,6 +7,7 @@ import progressbar
 import shutil
 
 import src.midi.open as midi_open
+import src.global_variables as g
 
 
 
@@ -110,8 +111,6 @@ def main():
     npy_pathlib = Path(npy_path)
     npy_pathlib.mkdir(parents=True, exist_ok=True)
 
-    nb_file_per_npy = 100
-
     all_shapes = []
 
     # ----- Actually compute the datas -----
@@ -136,16 +135,16 @@ def main():
             bar.update(i)
             i += 1
             all_shapes_npy.append(matrix_of_single_midi.shape)
-            if i % nb_file_per_npy == 0:  # Save a npy file with 100 songs in it
-                np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), {
+            if i % g.nb_file_per_npy == 0:  # Save a npy file with 100 songs in it
+                np.save(str(npy_pathlib / '{0}.npy'.format(int(i / g.nb_file_per_npy) - 1)), {
                     'list': matrix_of_all_midis,
                     'shapes': all_shapes_npy
                 })
                 matrix_of_all_midis = []
                 all_shapes.append(all_shapes_npy)
                 all_shapes_npy = []
-        if i % nb_file_per_npy != 0:  # If some songs are missing
-            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), {
+        if i % g.nb_file_per_npy != 0:  # If some songs are missing
+            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / g.nb_file_per_npy))), {
                 'list': matrix_of_all_midis,
                 'shapes': all_shapes_npy
             })
@@ -175,8 +174,8 @@ def main():
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
                 i += 1
                 all_shapes_npy.append(matrix_of_single_midi.shape)
-                if i % nb_file_per_npy == 0:  # Save 1 npy file with 100 songs in it
-                    np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy) - 1)), {
+                if i % g.nb_file_per_npy == 0:  # Save 1 npy file with 100 songs in it
+                    np.save(str(npy_pathlib / '{0}.npy'.format(int(i / g.nb_file_per_npy) - 1)), {
                         'list': matrix_of_all_midis,
                         'shapes': all_shapes_npy
                     })
@@ -185,8 +184,8 @@ def main():
                     matrix_of_all_midis = []
             bar.update(i_bar)
             i_bar += 1
-        if i % nb_file_per_npy != 0:  # If some songs are missing
-            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / nb_file_per_npy))), {
+        if i % g.nb_file_per_npy != 0:  # If some songs are missing
+            np.save(str(npy_pathlib / '{0}.npy'.format(int(i / g.nb_file_per_npy))), {
                 'list': matrix_of_all_midis,
                 'shapes': all_shapes_npy
             })

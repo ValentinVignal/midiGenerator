@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import functools
 
+import src.global_variables as g
 
 class MySequence(tf.keras.utils.Sequence):
     """
@@ -30,7 +31,7 @@ class MySequence(tf.keras.utils.Sequence):
 
         self.i_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded
-        self.nb_file_per_npy = 100
+        self.nb_file_per_npy = g.nb_file_per_npy
 
         self.nb_elements = self.return_nb_elements(self.all_shapes)  # nb element available in the generator
         self.nb_elements = int(self.nb_elements / self.batch_size)
