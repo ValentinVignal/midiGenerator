@@ -140,7 +140,6 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
             notes_to_parse = None
             for similar_instrument in similar_instruments:
                 if similar_instrument in instrument_names:
-                    print('instrument in file :', similar_instrument)
                     instrument_index = instrument_names.index(similar_instrument)
                     if notes_to_parse is None:
                         notes_to_parse = parts.parts[instrument_index].recurse()

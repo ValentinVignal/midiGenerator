@@ -136,6 +136,8 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
 
     # ------------------ Loss -----------------
+    lambda_activation = 20
+    lambda_duration = 1
 
     def custom_loss(lambda_a, lambda_d):
 
@@ -154,6 +156,11 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
         return loss_function
 
-    model.compile(loss=custom_loss(10, 1), optimizer=optimizer)
+    # Define losses dict
+    losses = {}
+    for i in range(nb_instruments):
+        losses['Output_{0}'.format(i)] = custom_loss(lambda_activation, lambda_duration)
+
+    model.compile(loss=losses, optimizer=optimizer)
 
     return model, custom_loss(10, 1)
