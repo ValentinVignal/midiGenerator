@@ -61,7 +61,10 @@ def main():
     shutil.copytree(src=data_path.as_posix(), dst=data_checked_path)
 
     # Instruments :
-    instruments = ['Piano', 'Trombone']
+    instruments = ['Piano', 'Tuba', 'Flute', 'Violin']
+    print('\t', colored('Check_dataset with instruments : ', 'cyan', 'on_white') +
+          colored('{0}'.format(instruments), 'magenta', 'on_white'), '\n')
+
 
     all_midi_paths = all_midi_files(data_checked_path.as_posix(), False)
     nb_files = len(all_midi_paths)

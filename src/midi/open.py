@@ -119,6 +119,11 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
         for instrument in parts:
             # learn names of instruments
             name = instrument.partName
+            if name is None:
+                if len(instrument_names) > 0:
+                    name = instrument_names[-1]
+                else:
+                    name = 'Piano'
             # name = (str(instrument).split(' ')[-1])[
             #        :-1]  # str(instrument) = "<midi.stream.Part object Electric Bass>"
             instrument_names.append(name)
@@ -137,14 +142,12 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
 
             return None
         else:  # We know there is a similar instrument in it
-            notes_to_parse = None
+            notes_to_parse = music21.stream.Stream()
             for similar_instrument in similar_instruments:
-                if similar_instrument in instrument_names:
-                    instrument_index = instrument_names.index(similar_instrument)
-                    if notes_to_parse is None:
-                        notes_to_parse = parts.parts[instrument_index].recurse()
-                    else:
-                        notes_to_parse.append(parts.parts[instrument_index].recurse())
+                for instrument_index, instrument_name in enumerate(instrument_names):
+                    if similar_instrument == instrument_name:
+                        notes_to_parse.append(parts.parts[instrument_index])
+
             notes_to_parse = notes_to_parse.recurse()
             duration = float(check_float(notes_to_parse._getDuration().quarterLength))
 

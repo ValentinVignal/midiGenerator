@@ -53,26 +53,35 @@ class MyModel:
         # ------ save_midi_path -----
         self.save_midis_pathlib = None  # Where to save the generated midi files
 
-        if load_model is not None:
-            self.load_model(load_model)
-        elif model_infos is not None:
-            def get_value(key):
-                """
-
-                :param key: key in the dictionary "model_infos"
-                :return: the value in model_infos or None if it doesn't exist
-                """
-                value = None if key not in model_infos else model_infos[key]
-                return value
-
-            self.input_param = model_infos['input_param']
-            self.model_id = model_infos['model_id']
-            self.new_nn_model(
-                model_id=self.model_id,
-                opt_param=get_value('opt_param'),
-            )
         if data is not None:
             self.load_data(data)
+
+    @classmethod
+    def from_model(cls, id, name='defaultName', data=None):
+        myModel = cls(name=name, data=data)
+        myModel.load_model(id=id)
+        return myModel
+
+    @classmethod
+    def with_model(cls, model_infos, name='defaultName', data=None):
+        myModel = cls(name=name, data=data)
+
+        def get_value(key):
+            """
+
+            :param key: key in the dictionary "model_infos"
+            :return: the value in model_infos or None if it doesn't exist
+            """
+            value = None if key not in model_infos else model_infos[key]
+            return value
+
+        myModel.input_param = model_infos['input_param']
+        myModel.model_id = model_infos['model_id']
+        myModel.new_nn_model(
+            model_id=model_infos['model_id'],
+            opt_param=get_value('opt_param'),
+        )
+        return myModel
 
     def get_full_name(self, i):
         """
@@ -118,12 +127,12 @@ class MyModel:
         self.name = self.name if name is None else name
         self.get_new_full_name()
 
-    def load_data(self, data_transformed_path):
+    def load_data(self, data_transformed_path=None):
         """
 
         :return: load the data
         """
-        self.data_transformed_path = data_transformed_path
+        self.data_transformed_path = data_transformed_path if data_transformed_path is not None else self.data_transformed_path
         self.data_transformed_pathlib = Path(self.data_transformed_path)
         self.input_param = {}
         with open(str(self.data_transformed_pathlib / 'infos_dataset.p'), 'rb') as dump_file:
