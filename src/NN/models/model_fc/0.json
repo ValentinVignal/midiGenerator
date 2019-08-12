@@ -1,5 +1,5 @@
 {
-  "separated1": [],
-  "common": [],
-  "separated2": []
+  "separated1": [48, 24],
+  "common": [64, 48, 24],
+  "separated2": [48, 24]
 }
