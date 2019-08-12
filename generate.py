@@ -39,7 +39,7 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    my_model = MyModel(load_model=args.load)     # Load the model
+    my_model = MyModel.from_model(id=args.load)     # Load the model
     my_model.generate(length=args.length, seed=args.seed, save_images=args.images)
 
     print('Done')
