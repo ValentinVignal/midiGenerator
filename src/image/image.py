@@ -37,3 +37,18 @@ def show_image(array):
     img.show()
 
 
+def see_MySequence(x, y):
+    """
+    To see the output of MySequence class
+    can use : see_MySequence(*mySequence[i])
+    :param x:
+    :param y:
+    :return:
+    """
+    x, y = np.array(x)[0,0,:,:,0], np.array([y])[0,0,0,np.newaxis,:,0]
+    all = np.zeros((x.shape[0] + 1, x.shape[1], 3))
+    all[:-1, :, 0] = x
+    all[-1, :, 1] = y
+    all = (255 * np.transpose(all, (1,0,2))).astype(np.uint8)
+    img = Image.fromarray(all, mode='RGB')
+    img.show()
