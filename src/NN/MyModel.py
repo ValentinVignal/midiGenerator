@@ -8,7 +8,7 @@ import random
 from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
-import src.image.image as image
+import src.image.pianoroll as pianoroll
 
 
 class MyModel:
@@ -238,7 +238,7 @@ class MyModel:
 
         # Actual train
         print('Training...')
-        self.my_nn.train_seq(epochs = epochs, generator=self.my_sequence)
+        self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence)
 
         # Update parameters
         self.total_epochs += epochs
@@ -324,14 +324,14 @@ class MyModel:
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
         print('Start generating ...')
         for s in range(len(seed)):
-            print('Generation {0}/{1}'.format(s+1, len(seed)))
+            print('Generation {0}/{1}'.format(s + 1, len(seed)))
             generated = seed[s]
             bar = progressbar.ProgressBar(maxval=length,
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                    progressbar.ETA()])
             bar.start()  # To see it working
             for l in range(length):
-                samples = generated[:, np.newaxis, l:, :]       # (nb_instruments, 1, nb_steps, 88, 2)
+                samples = generated[:, np.newaxis, l:, :]  # (nb_instruments, 1, nb_steps, 88, 2)
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 88, 2)
@@ -343,30 +343,23 @@ class MyModel:
 
             generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps, 2)
             output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
-            if save_images:
-                # --- find the name for the midi_file ---
-                i = 0
-                m_str = "lstm_out_({0})".format(i)
-                while (self.save_midis_pathlib / m_str).exists():
-                    i += 1
-                    m_str = "lstm_out_({0})".format(i)
-                path_to_save = str(self.save_midis_pathlib / m_str / 'midi.mid')
 
-                # Save image
-                image.save_img(generated_midi_final, str(self.save_midis_pathlib / m_str))
-                # Saving the midi file
-                midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
-            else:
-                # --- find the name for the midi_file ---
-                i = 0
+            # --- find the name for the midi_file ---
+            i = 0
+            m_str = "lstm_out_({0}).mid".format(i)
+            while (self.save_midis_pathlib / m_str).exists():
+                i += 1
                 m_str = "lstm_out_({0}).mid".format(i)
-                while (self.save_midis_pathlib / m_str).exists():
-                    i += 1
-                    m_str = "lstm_out_({0}).mid".format(i)
-                path_to_save = str(self.save_midis_pathlib / m_str)
+            path_to_save = str(self.save_midis_pathlib / m_str)
+            path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg')
 
-                # Saving the midi file
-                midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+            # Saving the midi file
+            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+            if save_images:
+                pianoroll.save_pianoroll(array=generated_midi_final,
+                                         path=path_to_save_img,
+                                         seed_length=nb_steps,
+                                         instruments=self.instruments)
 
         print('Done Generating')
 
@@ -387,8 +380,7 @@ class MyModel:
             )), allow_pickle=True).item()['list']
             array = array_list[random.randint(0, len(array_list) - 1)]
             start = random.randint(0, len(array) - nb_steps - 1)
-            seed = array[start: start + nb_steps]       # (nb_steps, nb_intruments, input_size, 2)
-            seed = np.transpose(seed, (1, 0, 2, 3))       # (nb_instruments, nb_steps, input_size, 2)
+            seed = array[start: start + nb_steps]  # (nb_steps, nb_intruments, input_size, 2)
+            seed = np.transpose(seed, (1, 0, 2, 3))  # (nb_instruments, nb_steps, input_size, 2)
             seeds.append(seed)
         return seeds
-
