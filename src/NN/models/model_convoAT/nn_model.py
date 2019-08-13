@@ -94,4 +94,4 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     model.compile(loss=losses, optimizer=optimizer)
 
-    return model, custom_loss(10, 1)
+    return model, custom_loss(lambda_activation, lambda_duration)

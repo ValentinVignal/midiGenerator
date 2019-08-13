@@ -46,51 +46,11 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         x = layers.Reshape((nb_steps, input_size * 2))(inputs_midi[instrument])  # (batch, nb_steps, 2 * input_size)
 
         for s in model_param['LSTM_separated']:
-            size = int(s * nb_steps * input_size)
-            x = tf.keras.layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
+            size = int(s * nb_steps)
+            x = tf.keras.layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x_a)  # (batch, nb_steps, size)
             x = tf.keras.layers.LeakyReLU()(x)
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.Dropout(0.3)(x)
-
-        """
-        # from tutorial :
-        
-        x = tf.keras.layers.LSTM(1024, return_sequences=True, unit_forget_bias=True)(
-            inputs_midi[instrument])  # (batch, nb_steps, 512)
-        x = tf.keras.layers.LeakyReLU()(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
-
-        # compute importance for each step
-        attention = tf.keras.layers.Dense(1, activation='tanh')(x)
-        attention = tf.keras.layers.Flatten()(attention)
-        attention = tf.keras.layers.Activation('softmax')(attention)
-        attention = tf.keras.layers.RepeatVector(1024)(attention)
-        attention = tf.keras.layers.Permute([2, 1])(attention)
-
-        multiplied = tf.keras.layers.Multiply()([x, attention])
-        sent_representation = tf.keras.layers.Dense(512)(multiplied)
-
-        x = tf.keras.layers.Dense(512)(sent_representation)
-        x = tf.keras.layers.LeakyReLU()(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.22)(x)
-
-        # compute importance for each step
-        attention = tf.keras.layers.Dense(1, activation='tanh')(x)
-        attention = tf.keras.layers.Flatten()(attention)
-        attention = tf.keras.layers.Activation('softmax')(attention)
-        attention = tf.keras.layers.RepeatVector(512)(attention)
-        attention = tf.keras.layers.Permute([2, 1])(attention)
-
-        multiplied = tf.keras.layers.Multiply()([x, attention])
-        sent_representation = tf.keras.layers.Dense(256)(multiplied)
-
-        x = tf.keras.layers.Dense(256)(sent_representation)
-        x = tf.keras.layers.LeakyReLU()(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.22)(x)
-        """
 
         first_layer.append(x)
 
@@ -103,14 +63,14 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     # ---------- All together ----------
     for s in model_param['LSTM_common']:
-        size = int(s * nb_steps * input_size * nb_instruments)
+        size = int(s * nb_steps * nb_instruments)
         x = layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
     x = layers.Flatten()(x)
     for s in model_param['fc_common']:
-        size = s * input_size * nb_instruments
+        size = s * nb_instruments
         x = layers.Dense(size)(x)
         x = layers.LeakyReLU()(x)
         x = layers.Dropout(0.4)(x)
@@ -120,8 +80,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     for instrument in range(nb_instruments):
         o = x
         for s in model_param['fc_separated']:
-            size = int(s * input_size)
-            o = layers.Dense(size)(o)
+            o = layers.Dense(s)(o)
             o = layers.LeakyReLU()(o)
             o = layers.BatchNormalization()(o)
             o = layers.Dropout(0.3)(o)
@@ -136,7 +95,9 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
 
-    # ------------------ Loss -----------------
+    # ------------------ Losses -----------------
+    lambda_activation = 20
+    lambda_duration = 0
 
     def custom_loss(lambda_a, lambda_d):
 
@@ -155,6 +116,11 @@ def create_model(input_param, model_param, nb_steps, optimizer):
 
         return loss_function
 
-    model.compile(loss=custom_loss(10, 1), optimizer=optimizer)
+    # Define losses dict
+    losses = {}
+    for i in range(nb_instruments):
+        losses['Output_{0}'.format(i)] = custom_loss(lambda_activation, lambda_duration)
 
-    return model, custom_loss(10, 1)
+    model.compile(loss=losses, optimizer=optimizer)
+
+    return model, custom_loss(lambda_activation, lambda_duration)
