@@ -66,21 +66,21 @@ def save_pianoroll(array, path, seed_length, instruments):
     """
     # Colors
     colors = [Color(pick_for=instrument) for instrument in instruments]
-    colors_rgb = map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors)
+    colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
 
     activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
     all = np.zeros((input_size, nb_steps, 3))  # RGB
-    all[:, :seed_length] = 50  # So seed is visible (grey)
+    all[:, :seed_length] = 25  # So seed is visible (grey)
     for inst in range(nb_instruments):
         for i in range(input_size):
             for j in range(nb_steps):
-                if activations[inst] == 1:
+                if activations[inst, i, j] == 1:
                     all[i, j] = colors_rgb[inst]
     img = Image.fromarray(
-        np.transpose(all, (1, 0, 2)).astype(np.uint8),
+        np.flip(all, axis=0).astype(np.uint8),
         mode='RGB'
     )
     img.save(path)

@@ -351,7 +351,7 @@ class MyModel:
                 i += 1
                 m_str = "lstm_out_({0}).mid".format(i)
             path_to_save = str(self.save_midis_pathlib / m_str)
-            path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg')
+            path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg'.format(i))
 
             # Saving the midi file
             midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
