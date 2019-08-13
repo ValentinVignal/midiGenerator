@@ -1,6 +1,6 @@
 {
-  "LSTM_separated": [48, 24],
-  "LSTM_common": [48, 24],
-  "fc_common": [48, 24],
+  "LSTM_separated": [48],
+  "LSTM_common": [24],
+  "fc_common": [48],
   "fc_separated": [24]
 }
