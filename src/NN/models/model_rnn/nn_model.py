@@ -53,7 +53,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             x = tf.keras.layers.Dropout(0.3)(x)
 
         first_layer.append(x)
-
+    """
     # ---------- Concatenation ----------
     # for instrument in range(nb_instruments):
     #     first_layer[instrument] = tf.keras.layers.Reshape((nb_steps, 1, 256))(
@@ -74,11 +74,12 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         x = layers.Dense(size)(x)
         x = layers.LeakyReLU()(x)
         x = layers.Dropout(0.4)(x)
+    """
 
     # ---------- Instruments separately ----------
     outputs = []  # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
-        o = x
+        o = first_layer[instrument]
         for s in model_param['fc_separated']:
             o = layers.Dense(s)(o)
             o = layers.LeakyReLU()(o)
