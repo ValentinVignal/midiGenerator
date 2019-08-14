@@ -226,7 +226,7 @@ def main():
             'notes_range': args.notes_range
         }, dump_file)
 
-    summary.summarise_compute_data(data_transformed_path,
+    summary.summarize_compute_data(data_transformed_path,
                                    **{
                                        'data_name': args.data,
                                        'nb_files': nb_valid_files,

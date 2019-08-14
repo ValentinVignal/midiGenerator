@@ -9,6 +9,7 @@ from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
+import src.text.summary as summary
 
 
 class MyModel:
@@ -271,6 +272,14 @@ class MyModel:
                 'data_seed_pathlib': str(self.data_seed_pathlib),
                 'notes_range': self.notes_range
             }, dump_file)
+        summary.summarize_train(path_to_save, **{
+            'full_name': self.full_name,
+            'epochs': self.total_epochs,
+            'input_param': self.input_param,
+            'instruments': self.instruments,
+            'notes_range': self.notes_range
+        })
+
         print('Model saved in {0}'.format(path_to_save))
 
     def print_weights(self):
