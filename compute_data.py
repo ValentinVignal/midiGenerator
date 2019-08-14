@@ -9,6 +9,7 @@ from termcolor import colored
 
 import src.midi.open as midi_open
 import src.global_variables as g
+import src.text.summary as summary
 
 
 
@@ -224,6 +225,16 @@ def main():
             'input_size': all_shapes[0][0][2],  # The number of notes
             'notes_range': args.notes_range
         }, dump_file)
+
+    summary.summarise_compute_data(data_transformed_path,
+                                   **{
+                                       'data_name': args.data,
+                                       'nb_files': nb_valid_files,
+                                       'nb_instruments':  len(args.instruments),
+                                       'instruments': args.instruments,
+                                       'input_size': all_shapes[0][0][2],
+                                       'notes_range': args.notes_range
+                                   })
 
     print('Number of songs :', colored('{0}'.format(nb_valid_files), 'blue'))
 
