@@ -374,6 +374,15 @@ class MyModel:
                                          seed_length=nb_steps,
                                          instruments=self.instruments)
 
+        summary.summarize_generation(str(self.save_midis_pathlib), **{
+            'full_name': self.full_name,
+            'epochs': self.total_epochs,
+            'input_param': self.input_param,
+            'instruments': self.instruments,
+            'notes_range': self.notes_range
+        })
+
+
         print('Done Generating')
 
     def get_seed(self, nb_steps, number=1):

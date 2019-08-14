@@ -25,3 +25,14 @@ def summarize_train(path, **d):
             'notes_range :' + str(d['notes_range']) + '\n'
     with open(str(path / 'Summary.txt'), 'a') as f:
         f.write(text)
+
+
+def summarize_generation(path, **d):
+    path = Path(path)
+    text = '\t\t' + d['full_name'] + '\n\n' \
+            'epochs :' + str(d['epochs']) + '\n' \
+            'input_param :' + str(d['input_param']) + '\n' \
+            'instruments :' + str(d['instruments']) + '\n' \
+            'notes_range :' + str(d['notes_range']) + '\n'
+    with open(str(path / 'Summary.txt'), 'a') as f:
+        f.write(text)
