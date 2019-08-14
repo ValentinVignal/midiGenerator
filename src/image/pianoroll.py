@@ -67,6 +67,19 @@ def save_pianoroll(array, path, seed_length, instruments):
     # Colors
     colors = [Color(pick_for=instrument) for instrument in instruments]
     colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
+    for i in range(len(colors_rgb)):        # Make a light color
+        m = min(colors_rgb[i])
+        M = max(colors_rgb[i])
+        print('coucou')
+        if M <= 80:     # If the color is too dark
+            print('prout')
+            for j in range(3):
+                if colors_rgb[i][j] == M:
+                    colors_rgb[i][j] = 50 + 3 * colors_rgb[i][j]
+                elif colors_rgb[i][j] == m:
+                    colors_rgb[i][j] = 10 + colors_rgb[i][j]
+                else:
+                    colors_rgb[i][j] = 25 + 2 * colors_rgb[i][j]
 
     activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape
