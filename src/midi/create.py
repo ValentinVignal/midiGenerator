@@ -1,13 +1,10 @@
 import src.global_variables as g
 import numpy as np
 import music21
-import progressbar
-import functools
 from termcolor import colored
 
 import src.midi.instruments as midi_inst
 
-from PIL import Image
 
 def converter_func(arr):
     """
@@ -113,24 +110,14 @@ def save_midi(output_notes_list, instruments, path):
     :return:
     """
     print('Converting to midi ...')
-    nb_notes = functools.reduce(lambda x, y: x + len(y), output_notes_list, 0)
-    bar = progressbar.ProgressBar(maxval=nb_notes,
-                                  widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
-                                           progressbar.ETA()])
-    bar.start()  # To see it working
-    e = 0
-
     midi_stream = music21.stream.Stream()
     for i in range(len(instruments)):
         s = music21.stream.Stream()
         for n in output_notes_list[i]:
             s.insert(n.offset, n)
-            e += 1
-            bar.update(e)
         # p.insert(0, midi.instrument.Instrument(instrumentName=instruments[i]))
         s.insert(0, midi_inst.string2instrument(instruments[i])())
         s.partName = instruments[i]
         midi_stream.insert(0, s)
     midi_stream.write('midi', fp=path)
-    bar.finish()
     print(colored(path + ' saved', 'green'))
