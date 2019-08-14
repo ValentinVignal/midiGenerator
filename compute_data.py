@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 import progressbar
 import shutil
+from termcolor import colored
 
 import src.midi.open as midi_open
 import src.global_variables as g
@@ -55,6 +56,8 @@ def main():
                         help='If data already exists, erase it and reconstruct it')
     parser.add_argument('-l', '--length', type=str, default='',
                         help='The length of the data')
+    parser.add_argument('--notes_range', type=str, default='',
+                        help='The length of the data')
 
     args = parser.parse_args()
 
@@ -73,6 +76,12 @@ def main():
         args.length = None
     else:
         args.length = int(args.length)
+
+    if args.notes_range == '':
+        args.notes_range = (0, 88)
+    else:
+        s = args.notes_range.split(':')
+        args.notes_range = (int(s[0]), int(s[1]))
 
     # Instruments :
     instruments = ['Piano', 'Trombone']
@@ -128,7 +137,8 @@ def main():
         all_shapes_npy = []
         for single_midi_path in all_midi_paths:
             matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
-                                                             length=args.length)  # (nb_instruments, 128, nb_steps, 2)
+                                                             length=args.length,
+                                                             notes_range=args.notes_range)  # (nb_instruments, 88, nb_steps, 2)
             matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1, 3))
             matrix_of_all_midis.append(matrix_of_single_midi)  # (length, nb_instruments, 128, 2)
             # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
@@ -165,7 +175,8 @@ def main():
         all_shapes_npy = []
         for single_midi_path in all_midi_paths_dataset:
             matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
-                                                             length=args.length)  # (nb_instruments, 88, nb_steps, 2)
+                                                             length=args.length,
+                                                             notes_range=args.notes_range)  # (nb_instruments, 88, nb_steps, 2)
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
                 matrix_of_single_midi = np.transpose(matrix_of_single_midi,
@@ -206,10 +217,11 @@ def main():
             'instruments': instruments,
             'nb_instruments': len(instruments),
             'all_shapes': all_shapes,
-            'input_size': all_shapes[0][0][2]  # The number of notes
+            'input_size': all_shapes[0][0][2],  # The number of notes
+            'notes_range': args.notes_range
         }, dump_file)
 
-    print('Number of songs : {0}'.format(nb_valid_files))
+    print('Number of songs :', colored('{0}'.format(nb_valid_files), 'blue'))
 
 
 if __name__ == '__main__':

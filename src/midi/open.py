@@ -99,7 +99,7 @@ def midifile_to_stream(filename, keep_drums=False):
         return None
 
 
-def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
+def midi_to_matrix(filename, instruments, length=None, print_instruments=False, notes_range=None):
     """
     convert midi file to matrix for DL architecture.
     :param filename: path to the midi file
@@ -112,6 +112,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
     if midi is None:
         return None
     parts = music21.instrument.partitionByInstrument(midi)
+    notes_range = (0, 88) if notes_range is None else notes_range
 
     # --- Get the instruments names in the file ---
     instrument_names = []  # Name of the instruments in the file
@@ -168,7 +169,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
                     duration = str(element.duration)[27:-1]
                     durations.append(check_float(duration))
                     offsets.append(element.offset)
-            our_matrix = notes_to_matrix(notes, durations, offsets)      # (88, nb_steps, 2
+            our_matrix = notes_to_matrix(notes, durations, offsets)      # (88, nb_steps, 2)
 
             try:
                 freq, time, _ = our_matrix.shape
@@ -183,7 +184,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
                 except IndexError:
                     print(colored('{0} is not long enough, shape : {1}'.format(filename, our_matrix.shape), 'red'))
 
-            our_matrixes.append(our_matrix)
+            our_matrixes.append(our_matrix[notes_range[0]:notes_range[1]])
 
     # Normalization of the duration : make them all finish at the same time
     max_len = 0
@@ -191,7 +192,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False):
         if len(matrix[0]) > max_len:  # matrix has shape : (88, length, 2)
             max_len = len(matrix[0])
 
-    final_matrix = np.zeros((len(our_matrixes), 88, max_len, 2))  # (nb_instruments, 88, max_len, 2)
+    final_matrix = np.zeros((len(our_matrixes), notes_range[1]-notes_range[0], max_len, 2))  # (nb_instruments, 88, max_len, 2)
     for i in range(len(our_matrixes)):
         final_matrix[i, :, :len(our_matrixes[i][0]), :] = our_matrixes[i]
     return final_matrix

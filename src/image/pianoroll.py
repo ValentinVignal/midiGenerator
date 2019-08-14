@@ -70,9 +70,7 @@ def save_pianoroll(array, path, seed_length, instruments):
     for i in range(len(colors_rgb)):        # Make a light color
         m = min(colors_rgb[i])
         M = max(colors_rgb[i])
-        print('coucou')
         if M <= 80:     # If the color is too dark
-            print('prout')
             for j in range(3):
                 if colors_rgb[i][j] == M:
                     colors_rgb[i][j] = 50 + 3 * colors_rgb[i][j]

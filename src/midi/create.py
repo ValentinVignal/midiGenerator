@@ -51,15 +51,17 @@ def int_to_note(integer):
     return note
 
 
-def matrix_to_midi(matrix, instruments=None):
+def matrix_to_midi(matrix, instruments=None, notes_range=None):
     """
 
     :param matrix: shape (nb_instruments, 128, nb_steps, 2)
-    :param instruments: The instruments
+    :param instruments: The instruments,
+    :param notes_range:
     :return:
     """
     nb_instuments, nb_notes, nb_steps, _ = matrix.shape
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
+    notes_range = (0, 88) if notes_range is None else notes_range
 
     matrix_norm = converter_func(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     # ---- Delete silence in the beginning of the song ----
@@ -91,7 +93,7 @@ def matrix_to_midi(matrix, instruments=None):
             for step in range(nb_steps):
                 length_note = matrix_norm[inst, note, step]
                 if length_note > 0:    # This is a new note !!
-                    new_note = music21.note.Note(pitch=(note + 21),
+                    new_note = music21.note.Note(pitch=(note + 21 + notes_range[0]),
                                                  duration=music21.duration.Duration(length_note / g.step_per_beat))
                     new_note.offset = step / g.step_per_beat
                     new_note.storedInstrument = midi_inst.string2instrument(instruments[inst])()

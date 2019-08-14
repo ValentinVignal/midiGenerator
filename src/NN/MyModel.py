@@ -41,6 +41,7 @@ class MyModel:
         self.data_seed_pathlib = None
 
         self.instruments = None  # List of instruments used
+        self.notes_range = None
 
         # ----- MySequence -----
         self.my_sequence = None  # Instance of MySequence Generator
@@ -140,6 +141,7 @@ class MyModel:
             self.input_param['input_size'] = d['input_size']
             self.input_param['nb_instruments'] = d['nb_instruments']
             self.instruments = d['instruments']
+            self.notes_range = d['notes_range']
         print('data at {0} loaded'.format(data_transformed_path))
 
     def new_nn_model(self, model_id, opt_param=None):
@@ -266,7 +268,8 @@ class MyModel:
                     'input_param': self.input_param,
                 },
                 'instruments': self.instruments,
-                'data_seed_pathlib': str(self.data_seed_pathlib)
+                'data_seed_pathlib': str(self.data_seed_pathlib),
+                'notes_range': self.notes_range
             }, dump_file)
         print('Model saved in {0}'.format(path_to_save))
 
@@ -342,7 +345,8 @@ class MyModel:
             bar.finish()
 
             generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps, 2)
-            output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments)
+            output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
+                                                           notes_range=self.notes_range)
 
             # --- find the name for the midi_file ---
             i = 0
