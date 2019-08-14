@@ -58,6 +58,8 @@ def main():
                         help='The length of the data')
     parser.add_argument('--notes_range', type=str, default='',
                         help='The length of the data')
+    parser.add_argument('-i', '--instruments', type=str, default='Piano,Trombone',
+                        help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
 
     args = parser.parse_args()
 
@@ -84,7 +86,9 @@ def main():
         args.notes_range = (int(s[0]), int(s[1]))
 
     # Instruments :
-    instruments = ['Piano', 'Trombone']
+    args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
+                                args.instruments.split(',')))
+    #instruments = ['Piano', 'Trombone']
 
     all_dataset_p = os.path.join(data_transformed_path,
                                  'all_dataset.p')  # Pickle file with the informations of the data set
@@ -136,7 +140,7 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths:
-            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
+            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, args.instruments,
                                                              length=args.length,
                                                              notes_range=args.notes_range)  # (nb_instruments, 88, nb_steps, 2)
             matrix_of_single_midi = np.transpose(matrix_of_single_midi, (2, 0, 1, 3))
@@ -174,7 +178,7 @@ def main():
         i = 0
         all_shapes_npy = []
         for single_midi_path in all_midi_paths_dataset:
-            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, instruments,
+            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, args.instruments,
                                                              length=args.length,
                                                              notes_range=args.notes_range)  # (nb_instruments, 88, nb_steps, 2)
             if matrix_of_single_midi is not None:
@@ -214,8 +218,8 @@ def main():
         # Save the information of the data in a smaller file (without all the big array)
         pickle.dump({
             'nb_files': nb_valid_files,
-            'instruments': instruments,
-            'nb_instruments': len(instruments),
+            'instruments': args.instruments,
+            'nb_instruments': len(args.instruments),
             'all_shapes': all_shapes,
             'input_size': all_shapes[0][0][2],  # The number of notes
             'notes_range': args.notes_range

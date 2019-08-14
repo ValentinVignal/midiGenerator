@@ -48,6 +48,8 @@ def main():
                         help='The name of the data')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
+    parser.add_argument('-i', '--instruments', type=str, default='Piano,Tuba',
+                        help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
 
     args = parser.parse_args()
 
@@ -62,8 +64,10 @@ def main():
 
     # Instruments :
     instruments = ['Piano', 'Tuba', 'Flute', 'Violin']
+    args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
+                                args.instruments.split(',')))
     print('\t', colored('Check_dataset with instruments : ', 'cyan', 'on_white') +
-          colored('{0}'.format(instruments), 'magenta', 'on_white'), '\n')
+          colored('{0}'.format(args.instruments), 'magenta', 'on_white'), '\n')
 
 
     all_midi_paths = all_midi_files(data_checked_path.as_posix(), False)
@@ -72,11 +76,11 @@ def main():
         midi_path = Path(all_midi_paths[i])
         checked_file_name = Path(midi_path.parent, midi_path.stem +  '_checked' + midi_path.suffix)
         print(colored("-- {0}/{1} ----- : ----- Checking {2} ----------".format(i+1, nb_files, midi_path), 'white', 'on_blue'))
-        matrix_midi = midi_open.midi_to_matrix(midi_path.as_posix(), instruments, print_instruments=True)  # (nb_instruments, 128, nb_steps, 2)
+        matrix_midi = midi_open.midi_to_matrix(midi_path.as_posix(), args.instruments, print_instruments=True)  # (nb_args.instruments, 128, nb_steps, 2)
         if matrix_midi is None: continue
         #matrix_midi = np.transpose(matrix_midi, , 3))
-        output_notes = midi_create.matrix_to_midi(matrix_midi, instruments=instruments)
-        midi_create.save_midi(output_notes, instruments, checked_file_name.as_posix())
+        output_notes = midi_create.matrix_to_midi(matrix_midi, instruments=args.instruments)
+        midi_create.save_midi(output_notes, args.instruments, checked_file_name.as_posix())
 
 
 
