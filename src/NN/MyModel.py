@@ -382,7 +382,6 @@ class MyModel:
             'notes_range': self.notes_range
         })
 
-
         print('Done Generating')
 
     def get_seed(self, nb_steps, number=1):

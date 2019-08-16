@@ -25,6 +25,10 @@ def main():
                         help='learning rate')
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
                         help='Name of the optimizer')
+    parser.add_argument('--epochs_drop', type=float, default=10,
+                        help='how long before a complete drop (decay)')
+    parser.add_argument('--decay_drop', type=float, default=0.5,
+                        help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='defaultName',
                         help='Name given to the model')
@@ -45,7 +49,7 @@ def main():
     if args.pc:
         #args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
-        args.epochs = 1
+        args.epochs = 2
         args.batch = 1
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
@@ -61,9 +65,10 @@ def main():
     if args.model_id != '':
         opt_param = {
             'lr': args.lr,
-            'name': args.optimizer
+            'name': args.optimizer,
+            'drop': float(args.decay_drop),
+            'epoch_drop': float(args.epochs_drop)
         }
-
         my_model.new_nn_model(model_id=args.model_id, opt_param=opt_param)
     elif args.load != '':
         my_model.load_model(args.load)
