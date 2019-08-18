@@ -25,6 +25,8 @@ def main():
                         help='The length of the generated music')
     parser.add_argument('-i', '--images', action='store_true', default=False,
                         help='Save the images for each instruments')
+    parser.add_argument('--no_duration', action='store_true', default=False,
+                        help='Generate only shortest notes possible')
 
     args = parser.parse_args()
 
@@ -40,7 +42,7 @@ def main():
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     my_model = MyModel.from_model(id=args.load)     # Load the model
-    my_model.generate(length=args.length, seed=args.seed, save_images=args.images)
+    my_model.generate(length=args.length, seed=args.seed, save_images=args.images, no_duration=args.no_duration)
 
     print('Done')
 

@@ -309,13 +309,14 @@ class MyModel:
             self.save_midis_pathlib = Path(path)
         print('new save path for midi files :', str(self.save_midis_pathlib))
 
-    def generate(self, seed=None, length=None, new_save_path=None, save_images=False):
+    def generate(self, seed=None, length=None, new_save_path=None, save_images=False, no_duration=False):
         """
         Generate midi file from the seed and the trained model
         :param seed: seed for the generation
         :param length: Length of th generation
         :param new_save_path:
-        :param save_images:
+        :param save_images: To save the pianoroll of the generation (.jpg images)
+        :param no_duration: if True : all notes will be the shortest length possible
         :return:
         """
         # --- Verify the inputs ---
@@ -356,7 +357,7 @@ class MyModel:
 
             generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps, 2)
             output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
-                                                           notes_range=self.notes_range)
+                                                           notes_range=self.notes_range, no_duration=no_duration)
 
             # --- find the name for the midi_file ---
             i = 0

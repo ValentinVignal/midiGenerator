@@ -6,10 +6,11 @@ from termcolor import colored
 import src.midi.instruments as midi_inst
 
 
-def converter_func(arr):
+def converter_func(arr, no_duration=False):
     """
 
     :param arr: (nb_instruments, 88, nb_steps, 2)
+    :param no_duration: if True : all notes will be the shortest length possible
     :return:
     """
     activations = arr[:, :, :, 0]
@@ -21,7 +22,12 @@ def converter_func(arr):
     durations = np.ceil(durations * g.max_length_note_array)
     durations = np.maximum(durations, 1)
 
-    matrix_norm = np.multiply(activations, durations)       # (nb_instruments, 128, nb_steps)
+    # If no duration then no nee to compute duration and return activation (all durations = 1)
+    if no_duration:
+        return activations
+
+    # Else we have to compute the durations
+    matrix_norm = np.multiply(activations, durations)  # (nb_instruments, 128, nb_steps)
 
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
@@ -51,19 +57,21 @@ def int_to_note(integer):
     return note
 
 
-def matrix_to_midi(matrix, instruments=None, notes_range=None):
+def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False):
     """
 
     :param matrix: shape (nb_instruments, 128, nb_steps, 2)
     :param instruments: The instruments,
     :param notes_range:
+    :param no_duration: if True : all notes will be the shortest length possible
     :return:
     """
     nb_instuments, nb_notes, nb_steps, _ = matrix.shape
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
     notes_range = (0, 88) if notes_range is None else notes_range
 
-    matrix_norm = converter_func(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
+    matrix_norm = converter_func(matrix,
+                                 no_duration=no_duration)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     # ---- Delete silence in the beginning of the song ----
     how_many_in_start_zeros = 0
     for step in range(nb_steps):
@@ -92,7 +100,7 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None):
         for note in range(nb_notes):
             for step in range(nb_steps):
                 length_note = matrix_norm[inst, note, step]
-                if length_note > 0:    # This is a new note !!
+                if length_note > 0:  # This is a new note !!
                     new_note = music21.note.Note(pitch=(note + 21 + notes_range[0]),
                                                  duration=music21.duration.Duration(length_note / g.step_per_beat))
                     new_note.offset = step / g.step_per_beat
