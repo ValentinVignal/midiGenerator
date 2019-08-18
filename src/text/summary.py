@@ -12,7 +12,10 @@ def summarize_compute_data(path, **d):
             'nb instruments :' + str(d['nb_instruments']) + '\n'\
             'nb files : ' + str(d['nb_files']) + '\n'\
 
-    with open(str(path / 'Summary.txt'), 'a') as f:
+    file_path = path / 'Summary.txt'
+    if file_path.exists():
+        file_path.unlink()
+    with open(str(file_path), 'a') as f:
         f.write(text)
 
 
@@ -23,7 +26,10 @@ def summarize_train(path, **d):
             'input_param :' + str(d['input_param']) + '\n'\
             'instruments :' + str(d['instruments']) + '\n'\
             'notes_range :' + str(d['notes_range']) + '\n'
-    with open(str(path / 'Summary.txt'), 'a') as f:
+    file_path = path / 'Summary.txt'
+    if file_path.exists():
+        file_path.unlink()
+    with open(str(file_path), 'a') as f:
         f.write(text)
 
 
@@ -34,5 +40,8 @@ def summarize_generation(path, **d):
             'input_param :' + str(d['input_param']) + '\n' \
             'instruments :' + str(d['instruments']) + '\n' \
             'notes_range :' + str(d['notes_range']) + '\n'
-    with open(str(path / 'Summary.txt'), 'a') as f:
+    file_path = path / 'Summary.txt'
+    if file_path.exists():
+        file_path.unlink()
+    with open(str(file_path), 'a') as f:
         f.write(text)

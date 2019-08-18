@@ -57,7 +57,7 @@ def main():
                         help='If data already exists, erase it and reconstruct it')
     parser.add_argument('-l', '--length', type=str, default='',
                         help='The length of the data')
-    parser.add_argument('--notes_range', type=str, default='',
+    parser.add_argument('--notes_range', type=str, default='0:88',
                         help='The length of the data')
     parser.add_argument('-i', '--instruments', type=str, default='Piano,Trombone',
                         help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
@@ -80,11 +80,9 @@ def main():
     else:
         args.length = int(args.length)
 
-    if args.notes_range == '':
-        args.notes_range = (0, 88)
-    else:
-        s = args.notes_range.split(':')
-        args.notes_range = (int(s[0]), int(s[1]))
+    s = args.notes_range.split(':')
+    args.notes_range = (int(s[0]), int(s[1]))
+    print('notes range', args.notes_range)
 
     # Instruments :
     args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),

@@ -190,6 +190,7 @@ class MyModel:
             self.input_param = d['nn']['input_param']
             self.instruments = d['instruments']
             self.data_seed_pathlib = Path(d['data_seed_pathlib'])
+            self.notes_range = d['notes_range']
         print('Model {0} loaded'.format(id))
 
     def load_weights(self, id, keep_name=True):
