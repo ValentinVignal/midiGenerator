@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import src.eval_string as es
+import src.NN.losses as l
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -139,6 +140,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     lambda_activation = 20
     lambda_duration = 1
 
+    """
     def custom_loss(lambda_a, lambda_d):
 
         def loss_function(y_true, y_pred):
@@ -155,12 +157,15 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             return loss
 
         return loss_function
+    """
+
 
     # Define losses dict
     losses = {}
     for i in range(nb_instruments):
-        losses['Output_{0}'.format(i)] = custom_loss(lambda_activation, lambda_duration)
+        key = 'Output_{0}'.format(i)
+        losses[key] = l.custom_loss(lambda_activation, lambda_duration)
 
     model.compile(loss=losses, optimizer=optimizer)
 
-    return model, custom_loss(10, 1)
+    return model, losses, (lambda_activation, lambda_duration)
