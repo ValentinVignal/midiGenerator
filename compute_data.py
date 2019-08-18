@@ -82,7 +82,6 @@ def main():
 
     s = args.notes_range.split(':')
     args.notes_range = (int(s[0]), int(s[1]))
-    print('notes range', args.notes_range)
 
     # Instruments :
     args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
