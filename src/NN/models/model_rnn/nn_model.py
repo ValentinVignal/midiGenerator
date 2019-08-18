@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import src.eval_string as es
+import src.NN.losses as l
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -43,11 +44,21 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         x_a = Lambda(lambda xl: xl[:, :, :, 0])(inputs_midi[instrument])  # activation (batch, nb_steps, input_size)
         x_d = Lambda(lambda xl: xl[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
 
-        x = layers.Reshape((nb_steps, input_size * 2))(inputs_midi[instrument])  # (batch, nb_steps, 2 * input_size)
+        # x = layers.Reshape((nb_steps, input_size * 2))(inputs_midi[instrument])  # (batch, nb_steps, 2 * input_size)
+        x = x_a
 
+        # ---- Fully Connected -----
+        for s in model_param['first_fc']:
+            size = es.eval_all(s, env)
+            x = layers.Dense(size)(x_a)
+            x = layers.LeakyReLU()(x)
+            x = layers.BatchNormalization()(x)
+            x = layers.Dropout(0.3)(x)
+
+        # ----- Convolutional layers ----
         for s in model_param['LSTM_separated']:
             size = int(s * nb_steps)
-            x = tf.keras.layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x_a)  # (batch, nb_steps, size)
+            x = tf.keras.layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
             x = tf.keras.layers.LeakyReLU()(x)
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.Dropout(0.3)(x)
@@ -79,7 +90,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     # ---------- Instruments separately ----------
     outputs = []  # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
-        o = first_layer[instrument]
+        o = layers.Flatten()(first_layer[instrument])
         for s in model_param['fc_separated']:
             o = layers.Dense(s)(o)
             o = layers.LeakyReLU()(o)
@@ -100,28 +111,11 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     lambda_activation = 20
     lambda_duration = 0
 
-    def custom_loss(lambda_a, lambda_d):
-
-        def loss_function(y_true, y_pred):
-            y_true_a = Lambda(lambda x: x[:, :, 0])(y_true)
-            y_true_d = Lambda(lambda x: x[:, :, 1])(y_true)
-            y_pred_a = Lambda(lambda x: x[:, :, 0])(y_pred)
-            y_pred_d = Lambda(lambda x: x[:, :, 1])(y_pred)
-
-            loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
-            loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
-
-            loss = lambda_a * loss_a + lambda_d * loss_d
-
-            return loss
-
-        return loss_function
-
     # Define losses dict
     losses = {}
     for i in range(nb_instruments):
-        losses['Output_{0}'.format(i)] = custom_loss(lambda_activation, lambda_duration)
+        losses['Output_{0}'.format(i)] = l.custom_loss(lambda_activation, lambda_duration)
 
     model.compile(loss=losses, optimizer=optimizer)
 
-    return model, custom_loss(lambda_activation, lambda_duration)
+    return model, losses, (lambda_activation, lambda_duration)

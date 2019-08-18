@@ -61,7 +61,6 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    args.model_id = 'pc;0;8' if (args.model_id == '' and args.load == '') else args.model_id
     if args.model_id != '':
         opt_param = {
             'lr': args.lr,
