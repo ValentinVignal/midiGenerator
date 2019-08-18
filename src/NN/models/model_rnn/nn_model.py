@@ -99,7 +99,6 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         output_a = layers.Dense(input_size, activation='sigmoid')(o)  # (batch, input_size)
         output_a = layers.Reshape((input_size, 1))(output_a)  # (batch, input_size, 1)
         output_d = layers.Dense(input_size, activation='sigmoid')(o)  # (batch, input_size)
-        output_d = layers.LeakyReLU()(output_d)
         output_d = layers.Reshape((input_size, 1))(output_d)  # (batch, input_size, 1)
         output = layers.concatenate([output_a, output_d], axis=2)  # (batch, input_size, 2)
         output = layers.Layer(name='Output_{0}'.format(instrument))(output)
