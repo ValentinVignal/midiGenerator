@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 from colour import Color
+import random
 
 
 def save_img(array, path):
@@ -65,15 +66,15 @@ def save_pianoroll(array, path, seed_length, instruments):
     :return:
     """
     # Colors
-    colors = [Color(pick_for=instrument) for instrument in instruments]
+    colors = [Color('#' + ''.join([random.choice('0123456789abcdef') for j in range(6)])) for i in instruments]
     colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
     for i in range(len(colors_rgb)):        # Make a light color
         m = min(colors_rgb[i])
         M = max(colors_rgb[i])
-        if M <= 80:     # If the color is too dark
+        if M <= 50:     # If the color is too dark
             for j in range(3):
                 if colors_rgb[i][j] == M:
-                    colors_rgb[i][j] = 50 + 3 * colors_rgb[i][j]
+                    colors_rgb[i][j] = min(50 + 3 * colors_rgb[i][j], 255)
                 elif colors_rgb[i][j] == m:
                     colors_rgb[i][j] = 10 + colors_rgb[i][j]
                 else:
