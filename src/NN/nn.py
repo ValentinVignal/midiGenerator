@@ -1,13 +1,15 @@
 import importlib.util
 import os
 import tensorflow as tf
+from tensorflow.python.keras.callbacks import TensorBoard
 from pathlib import Path
 import pickle
 import dill
 import json
 import math
+from time import time
 
-import src.NN.losses as l
+import src.NN.losses as nn_losses
 
 
 class MyNN:
@@ -28,6 +30,8 @@ class MyNN:
 
         # Spare GPU
         self.allow_growth()
+
+        self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
 
     def new_model(self, model_id, input_param, opt_param):
         """
@@ -119,7 +123,7 @@ class MyNN:
         :param generator:
         :return:
         """
-        callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay)]
+        callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard]
         self.model.fit_generator(epochs=epochs, generator=generator,
                                  shuffle=True, verbose=1, callbacks=callback_list)
 
@@ -169,7 +173,7 @@ class MyNN:
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
         self.model = tf.keras.models.load_model(str(path / 'm.h5'),
                                                 custom_objects={'losses': self.losses,
-                                                                'loss_function': l.custom_loss(*self.loss_lambdas),
+                                                                'loss_function': nn_losses.custom_loss(*self.loss_lambdas),
                                                                 'optimizer': optimizer})
 
     def load_weights(self, path):
