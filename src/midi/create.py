@@ -15,8 +15,8 @@ def normalize_activation(arr, threshold=0.5):
     """
     activations = arr[:, :, :, 0]
     for i in range(0, 20):
-        if arr[1, 1, -i, 0] >= threshold:
-            print(i, '0.5 <', arr[1, 1, -i, 0])
+        if arr[1, 0, -i, 0] >= threshold:
+            print(i, '0.5 <', arr[1, 0, -i, 0])
     np.place(activations, threshold <= activations, 1)
     np.place(activations, activations < threshold, 0)
     arr[:, :, :, 0] = activations
