@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 import progressbar
 import random
+from termcolor import colored, cprint
 
 from src.NN.nn import MyNN
 from src.NN.data_generator import MySequence
@@ -97,7 +98,7 @@ class MyModel:
         self.full_name = full_name
         self.saved_model_path = saved_model_path
         self.saved_model_pathlib = saved_model_pathlib
-        print('Get full_name : {0}'.format(self.full_name))
+        print('Get full_name :', colored(self.full_name, 'blue'))
 
     def get_new_full_name(self):
         """
@@ -116,7 +117,7 @@ class MyModel:
         self.saved_model_path = saved_model_path
         self.saved_model_pathlib = saved_model_pathlib
         self.full_name = full_name
-        print('Got new full_name : {0}'.format(self.full_name))
+        print('Got new full_name :', colored(self.full_name, 'blue'))
 
         self.save_midis_pathlib = None
 
@@ -143,7 +144,7 @@ class MyModel:
             self.input_param['nb_instruments'] = d['nb_instruments']
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
-        print('data at {0} loaded'.format(data_transformed_path))
+        print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def new_nn_model(self, model_id, opt_param=None):
         """
@@ -191,7 +192,7 @@ class MyModel:
             self.instruments = d['instruments']
             self.data_seed_pathlib = Path(d['data_seed_pathlib'])
             self.notes_range = d['notes_range']
-        print('Model {0} loaded'.format(id))
+        print('Model', colored(id, 'white', 'on_blue'), 'loaded')
 
     def load_weights(self, id, keep_name=True):
         """
@@ -209,7 +210,7 @@ class MyModel:
         path_to_load = Path('saved_models',
                             '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
         self.my_nn.load_weights(str(path_to_load / 'MyNN.h5'))
-        print('Weights of the {0} model loaded'.format(id))
+        print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
 
     def train(self, epochs=None, batch=None):
         """
@@ -241,14 +242,14 @@ class MyModel:
             )
 
         # Actual train
-        print('Training...')
+        print(colored('Training...', 'blue'))
         self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence)
 
         # Update parameters
         self.total_epochs += epochs
         self.data_seed_pathlib = self.data_transformed_pathlib
         self.get_new_full_name()
-        print('Training done')
+        print(colored('Training done', 'green'))
 
     def save_model(self, path=None):
         """
@@ -281,7 +282,7 @@ class MyModel:
             'notes_range': self.notes_range
         })
 
-        print('Model saved in {0}'.format(path_to_save))
+        print(colored('Model saved in {0}'.format(path_to_save), 'green'))
 
     def print_weights(self):
         """
@@ -307,7 +308,7 @@ class MyModel:
             self.save_midis_pathlib = Path('generated_midis', m_str)
         else:
             self.save_midis_pathlib = Path(path)
-        print('new save path for midi files :', str(self.save_midis_pathlib))
+        print('new save path for midi files :', colored(str(self.save_midis_pathlib), 'cyan'))
 
     def generate(self, seed=None, length=None, new_save_path=None, save_images=False, no_duration=False):
         """
@@ -336,9 +337,9 @@ class MyModel:
         # --- Done Verifying the inputs ---
 
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
-        print('Start generating ...')
+        cprint('Start generating ...', 'blue')
         for s in range(len(seed)):
-            print('Generation {0}/{1}'.format(s + 1, len(seed)))
+            cprint('Generation {0}/{1}'.format(s + 1, len(seed)), 'blue')
             generated = seed[s]
             bar = progressbar.ProgressBar(maxval=length,
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
@@ -384,7 +385,7 @@ class MyModel:
             'notes_range': self.notes_range
         })
 
-        print('Done Generating')
+        cprint('Done Generating', 'green')
 
     def get_seed(self, nb_steps, number=1):
         """

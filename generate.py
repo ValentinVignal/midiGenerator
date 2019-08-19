@@ -1,5 +1,6 @@
 import argparse
 import os
+from termcolor import cprint
 
 from src.NN.MyModel import MyModel
 
@@ -44,7 +45,7 @@ def main():
     my_model = MyModel.from_model(id=args.load)     # Load the model
     my_model.generate(length=args.length, seed=args.seed, save_images=args.images, no_duration=args.no_duration)
 
-    print('Done')
+    cprint('---------- Done ----------', 'grey', 'on_green')
 
 
 if __name__ == '__main__':

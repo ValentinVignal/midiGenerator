@@ -3,6 +3,7 @@ import tensorflow as tf
 from pathlib import Path
 import pickle
 import functools
+from termcolor import colored
 
 import src.global_variables as g
 
@@ -36,7 +37,7 @@ class MySequence(tf.keras.utils.Sequence):
         self.nb_elements = self.return_nb_elements(self.all_shapes)  # nb element available in the generator
         self.nb_elements = int(self.nb_elements / self.batch_size)
         self.all_len = self.know_all_len()
-        print('MySequence instance initiated on the data {0}'.format(self.path))
+        print('MySequence instance initiated on the data', colored(self.path, 'grey', 'on_white'))
 
     def __len__(self):
         return self.nb_elements

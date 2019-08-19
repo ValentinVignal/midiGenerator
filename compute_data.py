@@ -49,7 +49,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
+    parser.add_argument('data', type=str, default='lmd_matched_small',
                         help='The name of the data')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
@@ -125,9 +125,9 @@ def main():
     all_shapes = []
 
     # ----- Actually compute the datas -----
+    print('----- Compute the data in', colored(data_path, 'grey', 'on_white'), '-----')
     if all_midi_paths is not None:
         # We already know what are the good files
-        print('Compute the data in {0}'.format(data_path))
         matrix_of_all_midis = []
 
         # All midi have to be in same shape.
@@ -163,7 +163,6 @@ def main():
             all_shapes.append(all_shapes_npy)
         bar.finish()
     else:
-        print('Compute the data in {0}'.format(data_path))
         matrix_of_all_midis = []
         all_midi_paths = []
 
@@ -234,6 +233,7 @@ def main():
                                    })
 
     print('Number of songs :', colored('{0}'.format(nb_valid_files), 'blue'))
+    print(colored('---------- Done ----------', 'grey', 'on_green'))
 
 
 if __name__ == '__main__':

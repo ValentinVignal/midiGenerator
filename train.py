@@ -1,5 +1,6 @@
 import argparse
 import os
+from termcolor import cprint
 
 from src.NN.MyModel import MyModel
 
@@ -30,7 +31,7 @@ def main():
     parser.add_argument('--decay_drop', type=float, default=0.5,
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     # ----------------
-    parser.add_argument('-n', '--name', type=str, default='defaultName',
+    parser.add_argument('-n', '--name', type=str, default='',
                         help='Name given to the model')
     # ----------------
     load_group = parser.add_mutually_exclusive_group()
@@ -76,7 +77,7 @@ def main():
 
     my_model.save_model()
 
-    print('Done')
+    cprint('---------- Done ----------', 'grey', 'on_green')
 
 
 if __name__ == '__main__':
