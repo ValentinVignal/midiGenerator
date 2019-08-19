@@ -1,7 +1,7 @@
 {
-  "first_fc": ["2 * input_size", "input_size", "input_size / 2"],
+  "first_fc": ["input_size", "input_size / 2"],
   "LSTM_separated": [48],
   "LSTM_common": [],
   "fc_common": [],
-  "fc_separated": [24]
+  "fc_separated": [48, 24]
 }
