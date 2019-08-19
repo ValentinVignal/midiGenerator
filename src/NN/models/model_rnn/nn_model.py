@@ -58,10 +58,10 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         # ----- Convolutional layers ----
         for s in model_param['LSTM_separated']:
             size = int(s * nb_steps)
-            x = tf.keras.layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
-            x = tf.keras.layers.LeakyReLU()(x)
-            x = tf.keras.layers.BatchNormalization()(x)
-            x = tf.keras.layers.Dropout(0.3)(x)
+            x = layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
+            x = layers.LeakyReLU()(x)
+            x = layers.BatchNormalization()(x)
+            x = layers.Dropout(0.3)(x)
 
         first_layer.append(x)
     """
@@ -102,7 +102,6 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         output_d = layers.Reshape((input_size, 1))(output_d)  # (batch, input_size, 1)
         output = layers.concatenate([output_a, output_d], axis=2)  # (batch, input_size, 2)
         output = layers.Layer(name='Output_{0}'.format(instrument))(output)
-        print('output', output.shape)
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
