@@ -10,6 +10,7 @@ import math
 from time import time
 
 import src.NN.losses as nn_losses
+import src.global_variables as g
 
 
 class MyNN:
@@ -33,12 +34,13 @@ class MyNN:
 
         self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
 
-    def new_model(self, model_id, input_param, opt_param):
+    def new_model(self, model_id, input_param, opt_param, dropout=g.dropout):
         """
 
         :param model_id: model_name;model_param;nb_steps
         :param input_param:
         :param opt_param: {'lr', 'name'}
+        :param dropout: value of dropout
         :return: the neural network
         """
 
@@ -71,7 +73,8 @@ class MyNN:
             input_param=input_param,
             model_param=model_param,
             nb_steps=nb_steps,
-            optimizer=optimizer)
+            optimizer=optimizer,
+            dropout=dropout)
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps

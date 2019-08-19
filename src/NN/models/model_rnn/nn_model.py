@@ -2,6 +2,7 @@ import tensorflow as tf
 
 import src.eval_string as es
 import src.NN.losses as l
+import src.global_variables as g
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -13,12 +14,14 @@ First personal model
 """
 
 
-def create_model(input_param, model_param, nb_steps, optimizer):
+def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropout):
     """
 
     :param input_param:
     :param nb_steps:
     :param model_param:
+    :param optimizer:
+    :param dropout: value of the dropout
     :return: the neural network
     """
 
@@ -53,7 +56,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             x = layers.Dense(size)(x)
             x = layers.LeakyReLU()(x)
             x = layers.BatchNormalization()(x)
-            x = layers.Dropout(0.3)(x)
+            x = layers.Dropout(dropout)(x)
 
         # ----- Convolutional layers ----
         for s in model_param['LSTM_separated']:
@@ -61,7 +64,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             x = layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
             x = layers.LeakyReLU()(x)
             x = layers.BatchNormalization()(x)
-            x = layers.Dropout(0.3)(x)
+            x = layers.Dropout(dropout)(x)
 
         first_layer.append(x)
     """
@@ -95,7 +98,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
             o = layers.Dense(s)(o)
             o = layers.LeakyReLU()(o)
             o = layers.BatchNormalization()(o)
-            o = layers.Dropout(0.3)(o)
+            o = layers.Dropout(dropout)(o)
         output_a = layers.Dense(input_size, activation='sigmoid')(o)  # (batch, input_size)
         output_a = layers.Reshape((input_size, 1))(output_a)  # (batch, input_size, 1)
         output_d = layers.Dense(input_size, activation='sigmoid')(o)  # (batch, input_size)

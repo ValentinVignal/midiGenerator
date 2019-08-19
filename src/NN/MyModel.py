@@ -11,6 +11,7 @@ from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
 import src.text.summary as summary
+import src.global_variables as g
 
 
 class MyModel:
@@ -146,11 +147,12 @@ class MyModel:
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
-    def new_nn_model(self, model_id, opt_param=None):
+    def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout):
         """
 
         :param model_id: modelName;modelParam;nbSteps
         :param opt_param:
+        :param dropout: value of the dropout
         :return: set up the neural network
         """
         try:
@@ -167,7 +169,8 @@ class MyModel:
         self.my_nn = MyNN()
         self.my_nn.new_model(model_id=self.model_id,
                              input_param=self.input_param,
-                             opt_param=opt_param)
+                             opt_param=opt_param,
+                             dropout=dropout)
 
     def load_model(self, id, keep_name=True):
         """

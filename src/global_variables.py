@@ -6,3 +6,6 @@ max_length_note_array = max_length_note_music21 * step_per_beat
 
 # ---------- For the computed midi files ----------
 nb_file_per_npy = 20
+
+# ---------- Neural Network ----------
+dropout = 0.4

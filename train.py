@@ -3,8 +3,7 @@ import os
 from termcolor import cprint
 
 from src.NN.MyModel import MyModel
-
-
+import src.global_variables as g
 
 
 def main():
@@ -30,6 +29,8 @@ def main():
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay_drop', type=float, default=0.5,
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
+    parser.add_argument('--dropout', type=float, default=g.dropout,
+                        help='Value of the dropout')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
@@ -43,7 +44,7 @@ def main():
     parser.add_argument('--gpu', type=str, default='0',
                         help='What GPU to use')
     parser.add_argument('--pc', action='store_true', default=False,
-                        help='to work on a small computer with a cpu')
+                        help='To work on a small computer with a cpu')
 
     args = parser.parse_args()
 
@@ -69,7 +70,7 @@ def main():
             'drop': float(args.decay_drop),
             'epoch_drop': float(args.epochs_drop)
         }
-        my_model.new_nn_model(model_id=args.model_id, opt_param=opt_param)
+        my_model.new_nn_model(model_id=args.model_id, opt_param=opt_param, dropout=args.dropout)
     elif args.load != '':
         my_model.load_model(args.load)
 
