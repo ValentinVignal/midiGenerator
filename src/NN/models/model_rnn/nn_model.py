@@ -42,7 +42,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     first_layer = []
     for instrument in range(nb_instruments):
         x_a = Lambda(lambda xl: xl[:, :, :, 0])(inputs_midi[instrument])  # activation (batch, nb_steps, input_size)
-        x_d = Lambda(lambda xl: xl[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
+        # x_d = Lambda(lambda xl: xl[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
 
         # x = layers.Reshape((nb_steps, input_size * 2))(inputs_midi[instrument])  # (batch, nb_steps, 2 * input_size)
         x = x_a
@@ -50,7 +50,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         # ---- Fully Connected -----
         for s in model_param['first_fc']:
             size = es.eval_all(s, env)
-            x = layers.Dense(size)(x_a)
+            x = layers.Dense(size)(x)
             x = layers.LeakyReLU()(x)
             x = layers.BatchNormalization()(x)
             x = layers.Dropout(0.3)(x)
@@ -102,6 +102,7 @@ def create_model(input_param, model_param, nb_steps, optimizer):
         output_d = layers.Reshape((input_size, 1))(output_d)  # (batch, input_size, 1)
         output = layers.concatenate([output_a, output_d], axis=2)  # (batch, input_size, 2)
         output = layers.Layer(name='Output_{0}'.format(instrument))(output)
+        print('output', output.shape)
         outputs.append(output)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
