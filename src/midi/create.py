@@ -6,6 +6,20 @@ from termcolor import colored
 import src.midi.instruments as midi_inst
 
 
+def normalize_activation(arr, threshold=0.5):
+    """
+
+    :param arr: (nb_instruments, nb_steps, 88, 2)
+    :param threshold:
+    :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
+    """
+    activations = arr[:, :, :, 0]
+    np.place(activations, threshold <= activations, 1)
+    np.place(activations, activations < threshold, 0)
+    arr[:, :, :, 0] = activations
+    return arr
+
+
 def converter_func(arr, no_duration=False):
     """
 

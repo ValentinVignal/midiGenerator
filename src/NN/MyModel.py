@@ -349,7 +349,7 @@ class MyModel:
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 88, 2)
-                next_array = preds  # Without temperature
+                next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
                 generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 88, 2)
 
                 bar.update(l + 1)
