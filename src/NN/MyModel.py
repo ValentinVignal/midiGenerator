@@ -6,7 +6,7 @@ import progressbar
 import random
 from termcolor import colored, cprint
 
-from src.NN.nn import MyNN
+from src.NN.MyNN import MyNN
 from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll

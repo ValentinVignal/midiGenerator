@@ -171,10 +171,13 @@ class MyNN:
             self.opt_param = d['opt_param']
 
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
+        metrics = [nn_losses.acc_act, nn_losses.mae_dur]
         self.model = tf.keras.models.load_model(str(path / 'm.h5'),
                                                 custom_objects={'losses': self.losses,
                                                                 'loss_function': nn_losses.custom_loss(*self.loss_lambdas),
-                                                                'optimizer': optimizer})
+                                                                'optimizer': optimizer,
+                                                                'acc_act': nn_losses.acc_act,
+                                                                'mae_dur': nn_losses.mae_dur})
 
     def load_weights(self, path):
         """

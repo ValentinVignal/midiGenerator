@@ -115,6 +115,6 @@ def create_model(input_param, model_param, nb_steps, optimizer):
     for i in range(nb_instruments):
         losses['Output_{0}'.format(i)] = l.custom_loss(lambda_activation, lambda_duration)
 
-    model.compile(loss=losses, optimizer=optimizer)
+    model.compile(loss=losses, optimizer=optimizer, metrics=[l.acc_act, l.mae_dur])
 
-    return model, losses, (lambda_activation, lambda_duration)
+    return model, losses, (lambda_activation, lambda_duration),
