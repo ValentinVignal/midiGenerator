@@ -7,6 +7,21 @@ from termcolor import colored
 import src.midi.instruments as midi_inst
 
 
+def no_silence(matrix):
+    """
+    Erase silence at the begining and at the end of the matrix
+    :param matrix: np array (nb_instruments, input_size, nb_steps, 2)
+    :return:
+    """
+    start, end = 0, matrix.shape[2]
+    while start < end and np.all(matrix[:, :, start, 0] == 0):
+        start += 1
+    while start < end and np.all(matrix[:, :, end-1, 0] == 0):
+        end -= 1
+
+    return matrix[:, :, start:end, :]       # (nb_instruments, input_size, nb_steps, 2)
+
+
 def notes_to_matrix(notes, durations, offsets):
     """
 
@@ -38,6 +53,7 @@ def notes_to_matrix(notes, durations, offsets):
             for chord_note_float in chord_notes_float:
                 our_matrix[chord_note_float, start, 0] = 1
                 our_matrix[chord_note_float, start, 1] = float(duration) / g.max_length_note_music21
+
 
     # our_matrix is (128, nb_steps, 2)
     return our_matrix[21:109]       # From A0 to C8 (88, nb_steps, 2)
@@ -195,4 +211,5 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
     final_matrix = np.zeros((len(our_matrixes), notes_range[1]-notes_range[0], max_len, 2))  # (nb_instruments, 88, max_len, 2)
     for i in range(len(our_matrixes)):
         final_matrix[i, :, :len(our_matrixes[i][0]), :] = our_matrixes[i]
+    final_matrix = no_silence(final_matrix)
     return final_matrix

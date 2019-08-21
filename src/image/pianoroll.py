@@ -96,3 +96,5 @@ def save_pianoroll(array, path, seed_length, instruments):
         mode='RGB'
     )
     img.save(path)
+
+
