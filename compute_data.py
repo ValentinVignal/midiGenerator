@@ -57,7 +57,7 @@ def main():
                         help='If data already exists, erase it and reconstruct it')
     parser.add_argument('-l', '--length', type=str, default='',
                         help='The length of the data')
-    parser.add_argument('--notes_range', type=str, default='0:88',
+    parser.add_argument('--notes-range', type=str, default='0:88',
                         help='The length of the data')
     parser.add_argument('-i', '--instruments', type=str, default='Piano,Trombone',
                         help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')

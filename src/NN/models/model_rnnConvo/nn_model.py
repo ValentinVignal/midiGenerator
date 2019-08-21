@@ -9,7 +9,7 @@ Lambda = tf.keras.layers.Lambda
 
 """
 
-First personal model
+LSTM with encoder convolutional layers
 
 """
 
@@ -41,59 +41,62 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
     for instrument in range(nb_instruments):
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size, 2)]
 
-    # ---------- Separated network for instruments ----------
-    first_layer = []
+    # --------- Only activation ----------
+    inputs_activation = []
     for instrument in range(nb_instruments):
-        x_a = Lambda(lambda xl: xl[:, :, :, 0])(inputs_midi[instrument])  # activation (batch, nb_steps, input_size)
-        # x_d = Lambda(lambda xl: xl[:, :, :, 1])(inputs_midi[instrument])  # duration (batch, nb_steps, input_size)
-
-        # x = layers.Reshape((nb_steps, input_size * 2))(inputs_midi[instrument])  # (batch, nb_steps, 2 * input_size)
-        x = x_a
-
-        # ---- Fully Connected -----
-        for s in model_param['first_fc']:
-            size = es.eval_all(s, env)
-            x = layers.Dense(size)(x)
-            x = layers.LeakyReLU()(x)
-            x = layers.BatchNormalization()(x)
-            x = layers.Dropout(dropout)(x)
-
-        # ----- LSTM layers ----
-        for s in model_param['LSTM_separated']:
-            size = int(s * nb_steps)
-            x = layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
-            x = layers.LeakyReLU()(x)
-            x = layers.BatchNormalization()(x)
-            x = layers.Dropout(dropout)(x)
-
-        first_layer.append(x)
-    """
-    # ---------- Concatenation ----------
-    # for instrument in range(nb_instruments):
-    #     first_layer[instrument] = tf.keras.layers.Reshape((nb_steps, 1, 256))(
-    #         first_layer[instrument])  # (batch, nb_steps, 1, 128)
-
-    x = layers.concatenate(first_layer, axis=2)  # (batch, nb_steps, size * nb_instruments)
+        inputs_activation.append(Lambda(lambda xl: xl[:, :, :, 0])(
+            inputs_midi[instrument]))  # activation (batch, nb_steps, input_size)
+        inputs_activation[instrument] = layers.Reshape((nb_steps, input_size, 1))(inputs_activation[instrument])
 
     # ---------- All together ----------
-    for s in model_param['LSTM_common']:
-        size = int(s * nb_steps * nb_instruments)
-        x = layers.LSTM(size, return_sequences=True, unit_forget_bias=True)(x)  # (batch, nb_steps, size)
+    x = layers.concatenate(inputs_midi, axis=3)  # (batch, nb_steps, input_size, nb_instruments)
+
+    # ---------- Separate ----------
+    list_steps = []         # [(batch, input_size, nb_instruments)]
+    for step in range(nb_steps):
+        list_steps.append(Lambda(lambda xl: xl[:, step, :, :])(x))
+
+    # ----- Convolution -----
+    msize = input_size
+    convo = model_param['convo']
+    for step in range(nb_steps):
+        for i in convo:
+            for j in i:
+                size = j * nb_instruments
+                list_steps[step] = layers.Conv1D(filters=size, kernel_size=3, padding='same')(list_steps[step])
+                list_steps[step] = layers.LeakyReLU()(list_steps[step])
+                list_steps[step] = layers.BatchNormalization()(list_steps[step])
+                list_steps[step] = layers.Dropout(dropout / 2)(list_steps[step])
+            list_steps[step] = layers.MaxPool1D(pool_size=3, strides=2, padding='same')(list_steps[step])
+        list_steps[step] = layers.Flatten()(list_steps[step])  # (batch, size * filters)
+        list_steps[step] = layers.Lambda(lambda xl: tf.keras.backend.expand_dims(xl, axis=1))(list_steps[step])
+
+    x = layers.concatenate(list_steps, axis=1)  # (batch, nb_steps, ?)
+
+    # ---------- LSTM -----------
+    lstm = model_param['LSTM']
+    for index, s in enumerate(lstm):
+        size = int(s * nb_steps)
+        x = layers.LSTM(size,
+                        return_sequences=(index +1) != len(lstm),
+                        unit_forget_bias=True)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(0.3)(x)
-    x = layers.Flatten()(x)
+        x = layers.Dropout(dropout)(x)
+
+    # x : (batch, size)
+
     for s in model_param['fc_common']:
-        size = s * nb_instruments
+        size = es.eval_all(s, env)
         x = layers.Dense(size)(x)
         x = layers.LeakyReLU()(x)
-        x = layers.Dropout(0.4)(x)
-    """
+        x = layers.BatchNormalization()(x)
+        x = layers.Dropout(dropout)(x)
 
     # ---------- Instruments separately ----------
     outputs = []  # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
-        o = layers.Flatten()(first_layer[instrument])
+        o = x
         for s in model_param['fc_separated']:
             o = layers.Dense(s)(o)
             o = layers.LeakyReLU()(o)

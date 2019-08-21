@@ -1,0 +1,6 @@
+{
+  "convo": [[8], [8, 8]],
+  "LSTM": [24],
+  "fc_common": [],
+  "fc_separated": [24]
+}
