@@ -57,7 +57,10 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
         list_steps.append(Lambda(lambda xl: xl[:, step, :, :])(x))
 
     # ----- Convolution -----
-    msize = input_size
+    def expand_dim(xl):
+        import tensorflow
+        return tensorflow.keras.backend.expand_dims(xl, axis=1)
+
     convo = model_param['convo']
     for step in range(nb_steps):
         for i in convo:
@@ -69,7 +72,7 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
                 list_steps[step] = layers.Dropout(dropout / 2)(list_steps[step])
             list_steps[step] = layers.MaxPool1D(pool_size=3, strides=2, padding='same')(list_steps[step])
         list_steps[step] = layers.Flatten()(list_steps[step])  # (batch, size * filters)
-        list_steps[step] = layers.Lambda(lambda xl: tf.keras.backend.expand_dims(xl, axis=1))(list_steps[step])
+        list_steps[step] = layers.Lambda(expand_dim)(list_steps[step])
 
     x = layers.concatenate(list_steps, axis=1)  # (batch, nb_steps, ?)
 
