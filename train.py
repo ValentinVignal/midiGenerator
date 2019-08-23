@@ -31,6 +31,8 @@ def main():
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     parser.add_argument('--dropout', type=float, default=g.dropout,
                         help='Value of the dropout')
+    parser.add_argument('--type-loss', type=str, default=g.loss,
+                        help='Value of the dropout')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
@@ -49,7 +51,7 @@ def main():
     args = parser.parse_args()
 
     if args.pc:
-        #args.data = 'lmd_matched_mini'
+        # args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
         args.epochs = 2
         args.batch = 1
@@ -70,7 +72,10 @@ def main():
             'drop': float(args.decay_drop),
             'epoch_drop': float(args.epochs_drop)
         }
-        my_model.new_nn_model(model_id=args.model_id, opt_param=opt_param, dropout=args.dropout)
+        my_model.new_nn_model(model_id=args.model_id,
+                              opt_param=opt_param,
+                              dropout=args.dropout,
+                              type_loss=args.type_loss)
     elif args.load != '':
         my_model.load_model(args.load)
 

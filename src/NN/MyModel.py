@@ -147,12 +147,13 @@ class MyModel:
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
-    def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout):
+    def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout, type_loss=g.type_loss):
         """
 
         :param model_id: modelName;modelParam;nbSteps
         :param opt_param:
         :param dropout: value of the dropout
+        :param type_loss:
         :return: set up the neural network
         """
         try:
@@ -170,7 +171,9 @@ class MyModel:
         self.my_nn.new_model(model_id=self.model_id,
                              input_param=self.input_param,
                              opt_param=opt_param,
-                             dropout=dropout)
+                             dropout=dropout,
+                             type_loss=type_loss)
+        self.print_model()
 
     def load_model(self, id, keep_name=True):
         """
@@ -195,6 +198,7 @@ class MyModel:
             self.instruments = d['instruments']
             self.data_seed_pathlib = Path(d['data_seed_pathlib'])
             self.notes_range = d['notes_range']
+        self.print_model()
         print('Model', colored(id, 'white', 'on_blue'), 'loaded')
 
     def load_weights(self, id, keep_name=True):
@@ -213,7 +217,11 @@ class MyModel:
         path_to_load = Path('saved_models',
                             '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
         self.my_nn.load_weights(str(path_to_load / 'MyNN.h5'))
+        self.print_model()
         print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
+
+    def print_model(self):
+        print(self.my_nn.model.summary())
 
     def train(self, epochs=None, batch=None):
         """

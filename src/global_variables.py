@@ -9,3 +9,4 @@ nb_file_per_npy = 20
 
 # ---------- Neural Network ----------
 dropout = 0.4
+type_loss = 'smooth_round'

@@ -53,7 +53,7 @@ def main():
                         help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
     parser.add_argument('--images', action='store_true', default=False,
                         help='To also create the pianoroll')
-    parser.add_argument('--notes_range', type=str, default='0:88',
+    parser.add_argument('--notes-range', type=str, default='0:88',
                         help='The length of the data')
 
     args = parser.parse_args()

@@ -28,13 +28,14 @@ class MyNN:
         self.loss_lambdas = None
         self.opt_param = None
         self.decay = None
+        self.type_loss = None
 
         # Spare GPU
         self.allow_growth()
 
         self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
 
-    def new_model(self, model_id, input_param, opt_param, dropout=g.dropout):
+    def new_model(self, model_id, input_param, opt_param, dropout=g.dropout, type_loss=None):
         """
 
         :param model_id: model_name;model_param;nb_steps
@@ -43,6 +44,11 @@ class MyNN:
         :param dropout: value of dropout
         :return: the neural network
         """
+
+        if type_loss is not None:
+            self.type_loss = type_loss
+        elif self.type_loss is None:
+            self.type_loss = g.type_loss
 
         model_name, model_param_s, nb_steps = model_id.split(',')
         nb_steps = int(nb_steps)
@@ -74,7 +80,8 @@ class MyNN:
             model_param=model_param,
             nb_steps=nb_steps,
             optimizer=optimizer,
-            dropout=dropout)
+            dropout=dropout,
+            type_loss=self.type_loss)
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps
@@ -152,7 +159,8 @@ class MyNN:
                 'input_param': self.input_param,
                 'nb_steps': self.nb_steps,
                 'decay': string_decay,
-                'opt_param': self.opt_param
+                'opt_param': self.opt_param,
+                'type_loss': self.type_loss
             }, dump_file)
 
     def load(self, path):
@@ -172,12 +180,14 @@ class MyNN:
             self.nb_steps = d['nb_steps']
             self.decay = dill.loads(d['decay'])
             self.opt_param = d['opt_param']
+            self.type_loss = d['type_loss']
 
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
         metrics = [nn_losses.acc_act, nn_losses.mae_dur]
         self.model = tf.keras.models.load_model(str(path / 'm.h5'),
                                                 custom_objects={'losses': self.losses,
-                                                                'loss_function': nn_losses.custom_loss(*self.loss_lambdas),
+                                                                'loss_function': nn_losses.choose_loss(self.type_loss)(
+                                                                    *self.loss_lambdas),
                                                                 'optimizer': optimizer,
                                                                 'acc_act': nn_losses.acc_act,
                                                                 'mae_dur': nn_losses.mae_dur})
