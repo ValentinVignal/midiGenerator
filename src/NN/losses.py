@@ -48,14 +48,14 @@ def custom_loss_smoothround(lambda_a, lambda_d):
         y_pred_a = Lambda(lambda x: x[:, :, 0])(y_pred)
         y_pred_d = Lambda(lambda x: x[:, :, 1])(y_pred)
         # Calcul of "rounded"
-        a = 10
+        a = 50
         y_pred_a_rounded = 1 / (1 + tf.math.exp(-a * (y_pred_a - 0.5)))
 
         loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
-        loss_a_rounded = tf.keras.losses.mean_squared_error(y_true_a, y_pred_a_rounded)
+        loss_a_rounded = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a_rounded)
         loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
 
-        loss = lambda_a * (loss_a + 5 * loss_a_rounded) + lambda_d * loss_d
+        loss = lambda_a * (loss_a + loss_a_rounded) + lambda_d * loss_d
 
         return loss
 

@@ -25,9 +25,9 @@ def main():
                         help='learning rate')
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
                         help='Name of the optimizer')
-    parser.add_argument('--epochs_drop', type=float, default=10,
+    parser.add_argument('--epochs-drop', type=float, default=10,
                         help='how long before a complete drop (decay)')
-    parser.add_argument('--decay_drop', type=float, default=0.5,
+    parser.add_argument('--decay-drop', type=float, default=0.5,
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     parser.add_argument('--dropout', type=float, default=g.dropout,
                         help='Value of the dropout')
