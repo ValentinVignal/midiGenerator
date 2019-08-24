@@ -31,7 +31,7 @@ def main():
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     parser.add_argument('--dropout', type=float, default=g.dropout,
                         help='Value of the dropout')
-    parser.add_argument('--type-loss', type=str, default=g.loss,
+    parser.add_argument('--type-loss', type=str, default=g.type_loss,
                         help='Value of the dropout')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
