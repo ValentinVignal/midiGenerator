@@ -64,17 +64,31 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
     x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x)  # (batch, size * filters)
     # ---------- LSTM -----------
     lstm = model_param['LSTM']
-    for index, s in enumerate(lstm):
+    for s in lstm[:-1]:
         size = int(s * nb_steps)
         x = layers.LSTM(size,
-                        return_sequences=(index + 1) != len(lstm),
-                        unit_forget_bias=True)(x)  # (batch, nb_steps, size)
+                        return_sequences=True,
+                        unit_forget_bias=True,
+                        dropout=dropout,
+                        recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(dropout)(x)
+    s = lstm[-1]
+    size = int(s * nb_steps)
+    x, state_h, state_c = layers.LSTM(size,
+                                      return_sequences=False,
+                                      return_state=True,
+                                      unit_forget_bias=True,
+                                      dropout=dropout,
+                                      recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(dropout)(x)
 
-    # x : (batch, size)
+    x = layers.concatenate([x, state_h, state_c], axis=1)       # (batch, 3 *  size)
 
+    # ----- Fully Connected -----
     for s in model_param['fc_common']:
         size = es.eval_all(s, env)
         x = layers.Dense(size)(x)
