@@ -4,6 +4,8 @@ K = tf.keras.backend
 
 Lambda = tf.keras.layers.Lambda
 
+# ---------- Real output ----------
+
 
 def custom_loss(lambda_a, lambda_d):
     def loss_function(y_true, y_pred):
@@ -84,6 +86,23 @@ def choose_loss(type_loss):
         return custom_loss_smoothround
     else:
         raise Exception('type_loss "{0}" not known'.format(type_loss))
+
+
+# ---------- LSTM ----------
+
+
+def custom_losslstm():
+    def loss_functionlstm(y_true, y_pred):
+        loss = tf.keras.losses.mean_squared_error(y_true, y_pred)
+        return loss
+    return loss_functionlstm
+
+
+def choose_losslstm(type_loss_lstm):
+    return custom_losslstm
+
+
+# --------- Metrics ----------
 
 
 def acc_act(y_true, y_pred):

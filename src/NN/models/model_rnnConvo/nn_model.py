@@ -14,7 +14,8 @@ LSTM with encoder convolutional layers
 """
 
 
-def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropout, type_loss=g.type_loss):
+def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropout, type_loss=g.type_loss,
+                 all_sequence=g.all_sequence):
     """
 
     :param input_param:
@@ -23,6 +24,7 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
     :param optimizer:
     :param dropout: value of the dropout
     :param type_loss:
+    :param all_sequence:
     :return: the neural network
     """
 
@@ -63,6 +65,7 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
         x = layers.MaxPool2D(pool_size=(1, 3), strides=(1, 2), padding='same')(x)
     x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x)  # (batch, size * filters)
     # ---------- LSTM -----------
+    # -- Loop --
     lstm = model_param['LSTM']
     for s in lstm[:-1]:
         size = int(s * nb_steps)
@@ -74,10 +77,11 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(dropout)(x)
+    # -- Last one --
     s = lstm[-1]
     size = int(s * nb_steps)
     x, state_h, state_c = layers.LSTM(size,
-                                      return_sequences=False,
+                                      return_sequences=all_sequence,
                                       return_state=True,
                                       unit_forget_bias=True,
                                       dropout=dropout,
@@ -85,8 +89,10 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
     x = layers.LeakyReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(dropout)(x)
+    if all_sequence:
+        x = layers.Flatten()(x)
 
-    x = layers.concatenate([x, state_h, state_c], axis=1)       # (batch, 3 *  size)
+    x = layers.concatenate([x, state_h, state_c], axis=1)  # (batch, 3 *  size)
 
     # ----- Fully Connected -----
     for s in model_param['fc_common']:

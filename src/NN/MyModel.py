@@ -147,7 +147,8 @@ class MyModel:
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
-    def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout, type_loss=g.type_loss):
+    def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout, type_loss=g.type_loss,
+                     all_sequence=g.all_sequence):
         """
 
         :param model_id: modelName;modelParam;nbSteps
@@ -172,7 +173,8 @@ class MyModel:
                              input_param=self.input_param,
                              opt_param=opt_param,
                              dropout=dropout,
-                             type_loss=type_loss)
+                             type_loss=type_loss,
+                             all_sequence=all_sequence)
         self.print_model()
 
     def load_model(self, id, keep_name=True):
@@ -361,7 +363,8 @@ class MyModel:
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 88, 2)
-                if len(preds.shape) == 3:       # Only one instrument : output of nn not a list
+                preds = preds[:-1]  # Get rid of output lstm (only used on training)
+                if len(preds.shape) == 3:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis, :, :, :]
                 next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
                 generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 88, 2)

@@ -35,13 +35,16 @@ class MyNN:
 
         self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
 
-    def new_model(self, model_id, input_param, opt_param, dropout=g.dropout, type_loss=None):
+    def new_model(self, model_id, input_param, opt_param, dropout=g.dropout, type_loss=None,
+                  all_sequence=g.all_sequence):
         """
 
         :param model_id: model_name;model_param;nb_steps
         :param input_param:
         :param opt_param: {'lr', 'name'}
         :param dropout: value of dropout
+        :param type_loss:
+        :param all_sequence:
         :return: the neural network
         """
 
@@ -81,7 +84,8 @@ class MyNN:
             nb_steps=nb_steps,
             optimizer=optimizer,
             dropout=dropout,
-            type_loss=self.type_loss)
+            type_loss=self.type_loss,
+            all_sequence=all_sequence)
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps
