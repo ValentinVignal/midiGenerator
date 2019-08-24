@@ -1,6 +1,6 @@
 import tensorflow as tf
-import tensorflow.python.keras.backend as K
 import numpy as np
+K = tf.keras.backend
 
 Lambda = tf.keras.layers.Lambda
 
