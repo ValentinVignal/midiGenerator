@@ -363,7 +363,6 @@ class MyModel:
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 88, 2)
-                preds = preds[:-1]  # Get rid of output lstm (only used on training)
                 if len(preds.shape) == 3:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis, :, :, :]
                 next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
