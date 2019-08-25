@@ -26,7 +26,7 @@ class LossHistory(tf.keras.callbacks.Callback):
         # Update the best index
         if len(self.logs) == 1:
             self.best_index = 0
-        elif LossHistory.better_than(self.logs[self.best_index], self.logs[-1]):
+        elif LossHistory.better_than(self.logs[-1], self.logs[self.best_index]):
             self.best_index = len(self.logs) - 1
 
     # ------ Personal methods ------
