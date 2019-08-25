@@ -147,14 +147,21 @@ def save_midi(output_notes_list, instruments, path):
     print(colored(path + ' saved', 'green'))
 
 
-def print_informations(seed, matrix, notes_list, verbose):
-    nb_instruments = len(seed)
-    seed_length = seed[0].shape[0]
+def print_informations(nb_steps, matrix, notes_list, verbose):
+    """
+
+    :param nb_steps:
+    :param matrix:
+    :param notes_list:
+    :param verbose:
+    :return:
+    """
+    nb_instruments = matrix.shape[0]
     nb_notes_seed = [0 for i in range(nb_instruments)]
     nb_notes_generated = [0 for i in range(nb_instruments)]
     for index, instrument_notes in enumerate(notes_list):
         for n in instrument_notes:
-            if n.offset <= seed_length / g.step_per_beat:
+            if n.offset <= nb_steps / g.step_per_beat:
                 nb_notes_seed[index] += 1
             else:
                 nb_notes_generated[index] += 1

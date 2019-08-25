@@ -225,13 +225,12 @@ class MyModel:
     def print_model(self):
         print(self.my_nn.model.summary())
 
-    def train(self, epochs=None, batch=None):
+    def train(self, epochs=None, batch=None, callbacks=[]):
         """
 
         :param epochs:
         :param batch:
-        :param verbose:
-        :param shuffle:
+        :param callbacks:
         :return: train the model
         """
 
@@ -256,7 +255,7 @@ class MyModel:
 
         # Actual train
         print(colored('Training...', 'blue'))
-        self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence)
+        self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks)
 
         # Update parameters
         self.total_epochs += epochs
@@ -296,6 +295,7 @@ class MyModel:
         })
 
         print(colored('Model saved in {0}'.format(path_to_save), 'green'))
+        return path_to_save
 
     def print_weights(self):
         """
@@ -385,7 +385,7 @@ class MyModel:
             path_to_save = str(self.save_midis_pathlib / m_str)
             path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg'.format(i))
 
-            midi_create.print_informations(seed=seed, matrix=generated_midi_final, notes_list=output_notes_list, verbose=verbose)
+            midi_create.print_informations(nb_steps=nb_steps, matrix=generated_midi_final, notes_list=output_notes_list, verbose=verbose)
 
             # Saving the midi file
             midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save,)

@@ -2,9 +2,10 @@ import argparse
 import os
 from termcolor import cprint, colored
 import numpy as np
+from pathlib import Path
 
 from src.NN.MyModel import MyModel
-import src.global_variables as g
+from src.NN.callbacks import LossHistory
 
 
 def main():
@@ -85,7 +86,7 @@ def main():
     # ---------- Training ----------
     # ----- lr -----
     args.lr = create_list(args.lr)
-    args.lr = list(map(lambda x: 10**(-x), args.lr))
+    args.lr = list(map(lambda x: 10 ** (-x), args.lr))
     # ----- optimizer -----
     args.optimizer = args.optimizer.split(',')
     # ----- Epochs Drop -----
@@ -97,13 +98,27 @@ def main():
     # ----- Type Loss -----
     args.type_loss = args.type_loss.split(',')
     # ----- All Sequence -----
-    args.all_sequence = list(map(lambda x: bool(x), args.all_sequence.split(',')))
+    args.all_sequence = list(map(lambda x: x == 'True', args.all_sequence.split(',')))
 
     # ---------- Generation ----------
     args.images = True
     args.no_duration = True
 
+    # -------------------- Make the directory for the results --------------------
+    test_path = Path('tests_hp')
+    id = 0
+    while (test_path / 'test_{0}'.format(id)).exists():
+        id += 1
+    test_path = test_path / 'test_{0}'.format(id)
+    test_path.mkdir(parents=True, exist_ok=True)
+
+    # --------------------------------------------
+    loss_history = LossHistory()
+
     # ------------------------------------------------
+    i = 1
+    nb_tests = len(args.lr) * len(args.optimizer) * len(args.epochs_drop) * len(args.decay_drop) * len(
+        args.dropout) * len(args.type_loss) * len(args.all_sequence)
     for lr in args.lr:
         for optimizer in args.optimizer:
             for epochs_drop in args.epochs_drop:
@@ -111,14 +126,14 @@ def main():
                     for dropout in args.dropout:
                         for type_loss in args.type_loss:
                             for all_sequence in args.all_sequence:
-                                cprint('Test with', 'yellow', 'on_blue')
+                                cprint('Test {0}/{1}'.format(i, nb_tests), 'yellow', 'on_blue')
                                 print('lr :', colored(lr, 'magenta'),
                                       '- optimizer :', colored(optimizer, 'magenta'),
                                       '- epochs_drop :', colored(epochs_drop, 'magenta'),
                                       '- decay_drop :', colored(decay_drop, 'magenta'),
                                       '- dropout :', colored(dropout, 'magenta'),
                                       '- type_loss :', colored(type_loss, 'magenta'),
-                                      '- all_seqence :', colored(all_sequence, 'magenta'))
+                                      '- all_sequence :', colored(all_sequence, 'magenta'))
 
                                 my_model = MyModel(name=args.name)
                                 my_model.load_data(data_transformed_path=data_transformed_path)
@@ -139,17 +154,36 @@ def main():
                                                           type_loss=type_loss,
                                                           all_sequence=all_sequence)
 
-                                my_model.train(epochs=args.epochs, batch=args.batch)
+                                my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history])
 
-                                my_model.save_model()
+                                path = my_model.save_model()
+                                hparams = {
+                                    'index': i,
+                                    'lr': lr,
+                                    'optimizer': optimizer,
+                                    'epochs_drop': epochs_drop,
+                                    'decay_drop': decay_drop,
+                                    'dropout': dropout,
+                                    'type_loss': type_loss,
+                                    'all_sequence': all_sequence
+                                }
+                                loss_history.paths.append(path)
+                                loss_history.hparams.append(hparams)
 
+                                cprint(
+                                    'Best loss for now : {0}'.format(
+                                        loss_history.logs[loss_history.best_index]['loss']), 'yellow')
+                                """
                                 my_model.generate(length=args.length,
                                                   seed=args.seed,
                                                   save_images=args.images,
                                                   no_duration=args.no_duration,
                                                   verbose=args.verbose_generation)
+                                """
 
                                 del my_model
+                                i += 1
+    loss_history.save_summary()
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 

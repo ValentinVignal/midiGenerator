@@ -130,14 +130,15 @@ class MyNN:
 
         return dill.dumps(step_decay)
 
-    def train_seq(self, epochs, generator):
+    def train_seq(self, epochs, generator, callbacks=[]):
         """
 
         :param epochs:
         :param generator:
+        :param callbacks:
         :return:
         """
-        callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard]
+        callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
         self.model.fit_generator(epochs=epochs, generator=generator,
                                  shuffle=True, verbose=1, callbacks=callback_list)
 
