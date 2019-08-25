@@ -23,15 +23,15 @@ def main():
     parser.add_argument('-b', '--batch', type=int, default=4,
                         help='The number of the batches')
     # ----------------
-    parser.add_argument('--lr', type=str, default='2:4:0.25',
+    parser.add_argument('--lr', type=str, default='2:4:1',
                         help='learning rate = 10^-lr')
     parser.add_argument('-o', '--optimizer', type=str, default='adam,sgd',
                         help='Name of the optimizer (separeted with ,)')
-    parser.add_argument('--epochs-drop', type=str, default='10:50:10',
+    parser.add_argument('--epochs-drop', type=str, default='10:50:20',
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=str, default='0.25:0.5:0.25',
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-    parser.add_argument('--dropout', type=str, default='0.05:0.2:0.05',
+    parser.add_argument('--dropout', type=str, default='0.05:0.15:0.05',
                         help='Value of the dropout')
     parser.add_argument('--type-loss', type=str, default='smooth_round',
                         help='Value of the dropout')
@@ -81,7 +81,7 @@ def main():
         if len(string_list) == 1:
             return [float(string_list[0])]
         else:
-            return list(np.arange(float(string_list[0]), float(string_list[1]), float(string_list[2])))
+            return list(np.arange(float(string_list[0]), float(string_list[1]) + float(string_list[2]), float(string_list[2])))
 
     # ---------- Training ----------
     # ----- lr -----
