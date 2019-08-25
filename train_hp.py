@@ -20,7 +20,7 @@ def main():
     # ----------------
     parser.add_argument('-e', '--epochs', type=int, default=100,
                         help='number of epochs to train')
-    parser.add_argument('-b', '--batch', type=int, default=4,
+    parser.add_argument('-b', '--batch', type=int, default=8,
                         help='The number of the batches')
     # ----------------
     parser.add_argument('--lr', type=str, default='2:4:1',
@@ -152,9 +152,11 @@ def main():
                                                           opt_param=opt_param,
                                                           dropout=dropout,
                                                           type_loss=type_loss,
-                                                          all_sequence=all_sequence)
+                                                          all_sequence=all_sequence,
+                                                          print_model=False)
 
-                                my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history])
+                                my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history],
+                                               verbose=1)
 
                                 path = my_model.save_model()
                                 hparams = {
@@ -173,13 +175,11 @@ def main():
                                 cprint(
                                     'Best loss for now : {0}'.format(
                                         loss_history.logs[loss_history.best_index]['loss']), 'yellow')
-                                """
                                 my_model.generate(length=args.length,
                                                   seed=args.seed,
                                                   save_images=args.images,
                                                   no_duration=args.no_duration,
                                                   verbose=args.verbose_generation)
-                                """
 
                                 del my_model
                                 i += 1

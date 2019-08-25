@@ -148,13 +148,15 @@ class MyModel:
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout, type_loss=g.type_loss,
-                     all_sequence=g.all_sequence):
+                     all_sequence=g.all_sequence, print_model=True):
         """
 
         :param model_id: modelName;modelParam;nbSteps
         :param opt_param:
         :param dropout: value of the dropout
         :param type_loss:
+        :param all_sequence:
+        :param print_model:
         :return: set up the neural network
         """
         try:
@@ -175,7 +177,8 @@ class MyModel:
                              dropout=dropout,
                              type_loss=type_loss,
                              all_sequence=all_sequence)
-        self.print_model()
+        if print_model:
+            self.print_model()
 
     def load_model(self, id, keep_name=True):
         """
@@ -225,12 +228,13 @@ class MyModel:
     def print_model(self):
         print(self.my_nn.model.summary())
 
-    def train(self, epochs=None, batch=None, callbacks=[]):
+    def train(self, epochs=None, batch=None, callbacks=[], verbose=1):
         """
 
         :param epochs:
         :param batch:
         :param callbacks:
+        :param verbose:
         :return: train the model
         """
 
@@ -255,7 +259,7 @@ class MyModel:
 
         # Actual train
         print(colored('Training...', 'blue'))
-        self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks)
+        self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks, verbose=verbose)
 
         # Update parameters
         self.total_epochs += epochs

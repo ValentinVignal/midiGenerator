@@ -31,6 +31,7 @@ class MyNN:
         self.type_loss = None
 
         # Spare GPU
+        tf.logging.set_verbosity(tf.logging.ERROR)
         self.allow_growth()
 
         self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
@@ -130,17 +131,18 @@ class MyNN:
 
         return dill.dumps(step_decay)
 
-    def train_seq(self, epochs, generator, callbacks=[]):
+    def train_seq(self, epochs, generator, callbacks=[], verbose=1):
         """
 
         :param epochs:
         :param generator:
         :param callbacks:
+        :param verbose:
         :return:
         """
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
         self.model.fit_generator(epochs=epochs, generator=generator,
-                                 shuffle=True, verbose=1, callbacks=callback_list)
+                                 shuffle=True, verbose=verbose, callbacks=callback_list)
 
     def save(self, path):
         """

@@ -19,6 +19,7 @@ def main():
                         help='Use tf.test.gpu_device_name()')
 
     args = parser.parse_args()
+    tf.logging.set_verbosity(tf.logging.DEBUG)
 
     if args.list_local_devices:
         name = get_available_gpus()
