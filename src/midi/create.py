@@ -1,7 +1,7 @@
 import src.global_variables as g
 import numpy as np
 import music21
-from termcolor import colored
+from termcolor import colored, cprint
 
 import src.midi.instruments as midi_inst
 
@@ -145,3 +145,21 @@ def save_midi(output_notes_list, instruments, path):
         midi_stream.insert(0, s)
     midi_stream.write('midi', fp=path)
     print(colored(path + ' saved', 'green'))
+
+
+def print_informations(seed, matrix, notes_list, verbose):
+    nb_instruments = len(seed)
+    seed_length = seed[0].shape[0]
+    nb_notes_seed = [0 for i in range(nb_instruments)]
+    nb_notes_generated = [0 for i in range(nb_instruments)]
+    for index, instrument_notes in enumerate(notes_list):
+        for n in instrument_notes:
+            if n.offset <= seed_length / g.step_per_beat:
+                nb_notes_seed[index] += 1
+            else:
+                nb_notes_generated[index] += 1
+    if verbose == 0:
+        pass
+    elif verbose == 1:
+        print('notes in seed :', colored(nb_notes_seed, 'magenta'), 'notes generated :',
+              colored(nb_notes_generated, 'magenta'), 'for length', colored(matrix.shape[2], 'magenta'))

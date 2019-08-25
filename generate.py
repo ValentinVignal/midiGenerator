@@ -21,13 +21,15 @@ def main():
     parser.add_argument('--gpu', type=str, default='0',
                         help='What GPU to use')
     parser.add_argument('-s', '--seed', default=10,
-                       help='number of seeds or the path to the folder with the seeds')
+                        help='number of seeds or the path to the folder with the seeds')
     parser.add_argument('-l', '--length', type=int, default=300,
                         help='The length of the generated music')
     parser.add_argument('-i', '--images', action='store_true', default=False,
                         help='Save the images for each instruments')
     parser.add_argument('--no-duration', action='store_true', default=False,
                         help='Generate only shortest notes possible')
+    parser.add_argument('-v', '--verbose', type=int, default=1,
+                        help='Level of verbose')
 
     args = parser.parse_args()
 
@@ -42,8 +44,12 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    my_model = MyModel.from_model(id=args.load)     # Load the model
-    my_model.generate(length=args.length, seed=args.seed, save_images=args.images, no_duration=args.no_duration)
+    my_model = MyModel.from_model(id=args.load)  # Load the model
+    my_model.generate(length=args.length,
+                      seed=args.seed,
+                      save_images=args.images,
+                      no_duration=args.no_duration,
+                      verbose=args.verbose)
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 

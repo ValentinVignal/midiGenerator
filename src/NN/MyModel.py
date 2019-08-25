@@ -323,7 +323,7 @@ class MyModel:
             self.save_midis_pathlib = Path(path)
         print('new save path for midi files :', colored(str(self.save_midis_pathlib), 'cyan'))
 
-    def generate(self, seed=None, length=None, new_save_path=None, save_images=False, no_duration=False):
+    def generate(self, seed=None, length=None, new_save_path=None, save_images=False, no_duration=False, verbose=1):
         """
         Generate midi file from the seed and the trained model
         :param seed: seed for the generation
@@ -331,6 +331,7 @@ class MyModel:
         :param new_save_path:
         :param save_images: To save the pianoroll of the generation (.jpg images)
         :param no_duration: if True : all notes will be the shortest length possible
+        :param verbose: Level of verbose
         :return:
         """
         # --- Verify the inputs ---
@@ -384,8 +385,10 @@ class MyModel:
             path_to_save = str(self.save_midis_pathlib / m_str)
             path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg'.format(i))
 
+            midi_create.print_informations(seed=seed, matrix=generated_midi_final, notes_list=output_notes_list, verbose=verbose)
+
             # Saving the midi file
-            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save)
+            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save,)
             if save_images:
                 pianoroll.save_pianoroll(array=generated_midi_final,
                                          path=path_to_save_img,
