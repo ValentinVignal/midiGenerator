@@ -11,3 +11,4 @@ nb_file_per_npy = 20
 dropout = 0.4
 type_loss = 'smooth_round'
 all_sequence = False
+lstm_state = True

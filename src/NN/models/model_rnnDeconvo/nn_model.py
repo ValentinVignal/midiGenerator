@@ -6,6 +6,7 @@ import src.global_variables as g
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
+K = tf.keras.backend
 
 """
 
@@ -14,8 +15,20 @@ LSTM with encoder convolutional layers
 """
 
 
+def min_max_pool2d(x):
+    min_x = -K.pool2d(-x, pool_size=(1, 3), strides=(1, 1), padding='same')
+    return min_x
+
+
+def min_max_pool2d_output_shape(input_shape):
+    shape = list(input_shape)
+    shape[1] /= 2
+    shape[2] /= 2
+    return tuple(shape)
+
+
 def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropout, type_loss=g.type_loss,
-                 all_sequence=g.all_sequence):
+                 all_sequence=g.all_sequence, lstm_state=g.lstm_state):
     """
 
     :param input_param:
@@ -54,6 +67,7 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
     # ---------- All together ----------
     x = layers.concatenate(inputs_midi, axis=3)  # (batch, nb_steps, input_size, nb_instruments)
 
+    # ----- Convolutional Layer -----
     convo = model_param['convo']
     for i in convo:
         for s in i:
@@ -63,8 +77,17 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
             x = layers.BatchNormalization()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.MaxPool2D(pool_size=(1, 3), strides=(1, 2), padding='same')(x)
-    x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x)  # (batch, size * filters)
+    shape_before_fc = x.shape
+    x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x)  # (batch, nb_steps, size * filters)
+    fc = model_param['fc']
+    for s in fc:
+        size = eval(s, env)
+        x = layers.TimeDistributed(layers.Dense(size))(x)
+        x = layers.LeakyReLU()(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dropout(dropout / 2)(x)
     # ---------- LSTM -----------
+    size_before_lstm = x.shape[2]  # (batch, nb_steps, size)
     # -- Loop --
     lstm = model_param['LSTM']
     for s in lstm[:-1]:
@@ -78,39 +101,71 @@ def create_model(input_param, model_param, nb_steps, optimizer, dropout=g.dropou
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(dropout)(x)
     # -- Last one --
-    s = lstm[-1]
-    size = int(s * nb_steps)
-    x, state_h, state_c = layers.LSTM(size,
-                                      return_sequences=all_sequence,
-                                      return_state=True,
-                                      unit_forget_bias=True,
-                                      dropout=dropout,
-                                      recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-    x = layers.LeakyReLU()(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Dropout(dropout)(x)
-    if all_sequence:
-        x = layers.Flatten()(x)
+    if lstm_state:
+        s = lstm[-1]
+        size = int(s * nb_steps)
+        x, state_h, state_c = layers.LSTM(size,
+                                          return_sequences=all_sequence,
+                                          return_state=True,
+                                          unit_forget_bias=True,
+                                          dropout=dropout,
+                                          recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
+        x = layers.LeakyReLU()(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dropout(dropout)(x)
+        if all_sequence:
+            x = layers.Flatten()(x)
 
-    x = layers.concatenate([x, state_h, state_c], axis=1)  # (batch, 3 *  size)
+        x = layers.concatenate([x, state_h, state_c], axis=1)  # (batch, 3 *  size)
+    else:
+        s = lstm[-1]
+        size = int(s * nb_steps)
+        x = layers.LSTM(size,
+                        return_sequences=all_sequence,
+                        return_state=False,
+                        unit_forget_bias=True,
+                        dropout=dropout,
+                        recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
+        x = layers.LeakyReLU()(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dropout(dropout)(x)
+        if all_sequence:
+            x = layers.Flatten()(x)
+    x = layers.Dense(size_before_lstm)(x)  # (batch, size)
 
-    # ----- Fully Connected -----
-    for s in model_param['fc_common']:
+    # ----- Fully Connected ------
+    fc_decoder = model_param['fc'][::-1]
+    for s in (fc_decoder[1:] + [shape_before_fc[2] * shape_before_fc[3]]):
         size = es.eval_all(s, env)
         x = layers.Dense(size)(x)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout)(x)
+        x = layers.Dropout(dropout)(x)      # (batch, size)
+
+    # ----- Transposed Convolution -----
+    x = layers.Reshape((1, shape_before_fc[2], shape_before_fc[3]))(x)     # (batch, 1, size, filters)
+    transposed_convo = model_param['convo'][::-1]
+    for i in range(len(transposed_convo)):      # inverse the lists inside
+        transposed_convo[i] = transposed_convo[i][::-1]
+    for i in range(len(transposed_convo) - 1):
+        transposed_convo[i] = transposed_convo[i][1:] + [transposed_convo[i+1][0]]
+    transposed_convo[-1] = transposed_convo[-1][1:] + [model_param['last_convo']]
+    for i in transposed_convo:
+        for s in i:
+            size = s
+            x = layers.Conv2DTranspose(filters=size, kernel_size=(1, 3), padding='same')(x)
+            x = layers.LeakyReLU()(x)
+            x = layers.BatchNormalization()(x)
+            x = layers.Dropout(dropout / 2)(x)
+        x = layers.UpSampling2D(size=(1, 2))(x)     # Batch size
+        x = Lambda(min_max_pool2d, output_shape=min_max_pool2d_output_shape)(x)     # (batch, 1, size, filters)
+
+    x = layers.Flatten()(x)
 
     # ---------- Instruments separately ----------
     outputs = []  # (batch, nb_steps, nb_instruments, input_size)
     for instrument in range(nb_instruments):
         o = x
-        for s in model_param['fc_separated']:
-            o = layers.Dense(s)(o)
-            o = layers.LeakyReLU()(o)
-            o = layers.BatchNormalization()(o)
-            o = layers.Dropout(dropout)(o)
         output_a = layers.Dense(input_size, activation='sigmoid')(o)  # (batch, input_size)
         output_a = layers.Reshape((input_size, 1))(output_a)  # (batch, input_size, 1)
         output_d = layers.Dense(input_size, activation='sigmoid')(o)  # (batch, input_size)
