@@ -137,6 +137,10 @@ def main():
                                     'type_loss': type_loss,
                                     'all_sequence': all_sequence
                                 })
+
+    my_model = MyModel(name=args.name)
+    my_model.load_data(data_transformed_path=data_transformed_path)
+
     for index, params in enumerate(all_params):
         cprint('Test {0}/{1}'.format(index + 1, len(all_params)), 'yellow', 'on_blue')
         print('lr :', colored(params['lr'], 'magenta'),
@@ -147,8 +151,6 @@ def main():
               '- type_loss :', colored(params['type_loss'], 'magenta'),
               '- all_sequence :', colored(params['all_sequence'], 'magenta'))
 
-        my_model = MyModel(name=args.name)
-        my_model.load_data(data_transformed_path=data_transformed_path)
 
         opt_param = {
             'lr': params['lr'],
@@ -159,7 +161,7 @@ def main():
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
                               dropout=params['dropout'],
-                              type_loss=['type_loss'],
+                              type_loss=params['type_loss'],
                               all_sequence=['all_sequence'],
                               print_model=False)
 
@@ -181,8 +183,6 @@ def main():
                           no_duration=args.no_duration,
                           verbose=args.verbose_generation)
 
-        del my_model
-        i += 1
     loss_history.save_summary()
 
     cprint('---------- Done ----------', 'grey', 'on_green')
