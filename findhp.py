@@ -76,6 +76,10 @@ def main():
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
 
+    # Choose GPU
+    if not args.pc:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
     def create_list(string):
         string_list = string.split(':')
         if len(string_list) == 1:
@@ -116,9 +120,7 @@ def main():
     loss_history = LossHistory()
 
     # ------------------------------------------------
-    i = 1
-    nb_tests = len(args.lr) * len(args.optimizer) * len(args.epochs_drop) * len(args.decay_drop) * len(
-        args.dropout) * len(args.type_loss) * len(args.all_sequence)
+    all_params = []
     for lr in args.lr:
         for optimizer in args.optimizer:
             for epochs_drop in args.epochs_drop:
@@ -126,41 +128,7 @@ def main():
                     for dropout in args.dropout:
                         for type_loss in args.type_loss:
                             for all_sequence in args.all_sequence:
-                                cprint('Test {0}/{1}'.format(i, nb_tests), 'yellow', 'on_blue')
-                                print('lr :', colored(lr, 'magenta'),
-                                      '- optimizer :', colored(optimizer, 'magenta'),
-                                      '- epochs_drop :', colored(epochs_drop, 'magenta'),
-                                      '- decay_drop :', colored(decay_drop, 'magenta'),
-                                      '- dropout :', colored(dropout, 'magenta'),
-                                      '- type_loss :', colored(type_loss, 'magenta'),
-                                      '- all_sequence :', colored(all_sequence, 'magenta'))
-
-                                my_model = MyModel(name=args.name)
-                                my_model.load_data(data_transformed_path=data_transformed_path)
-                                # Choose GPU
-                                if not args.pc:
-                                    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-
-                                if args.model_id != '':
-                                    opt_param = {
-                                        'lr': lr,
-                                        'name': optimizer,
-                                        'drop': decay_drop,
-                                        'epoch_drop': epochs_drop
-                                    }
-                                    my_model.new_nn_model(model_id=args.model_id,
-                                                          opt_param=opt_param,
-                                                          dropout=dropout,
-                                                          type_loss=type_loss,
-                                                          all_sequence=all_sequence,
-                                                          print_model=False)
-
-                                my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history],
-                                               verbose=1)
-
-                                path = my_model.save_model()
-                                hparams = {
-                                    'index': i,
+                                all_params.append({
                                     'lr': lr,
                                     'optimizer': optimizer,
                                     'epochs_drop': epochs_drop,
@@ -168,21 +136,53 @@ def main():
                                     'dropout': dropout,
                                     'type_loss': type_loss,
                                     'all_sequence': all_sequence
-                                }
-                                loss_history.paths.append(path)
-                                loss_history.hparams.append(hparams)
+                                })
+    for index, params in enumerate(all_params):
+        cprint('Test {0}/{1}'.format(index + 1, len(all_params)), 'yellow', 'on_blue')
+        print('lr :', colored(params['lr'], 'magenta'),
+              '- optimizer :', colored(params['optimizer'], 'magenta'),
+              '- epochs_drop :', colored(params['epochs_drop'], 'magenta'),
+              '- decay_drop :', colored(params['decay_drop'], 'magenta'),
+              '- dropout :', colored(params['dropout'], 'magenta'),
+              '- type_loss :', colored(params['type_loss'], 'magenta'),
+              '- all_sequence :', colored(params['all_sequence'], 'magenta'))
 
-                                cprint(
-                                    'Best loss for now : {0}'.format(
-                                        loss_history.logs[loss_history.best_index]['loss']), 'yellow')
-                                my_model.generate(length=args.length,
-                                                  seed=args.seed,
-                                                  save_images=args.images,
-                                                  no_duration=args.no_duration,
-                                                  verbose=args.verbose_generation)
+        my_model = MyModel(name=args.name)
+        my_model.load_data(data_transformed_path=data_transformed_path)
 
-                                del my_model
-                                i += 1
+        opt_param = {
+            'lr': params['lr'],
+            'name': params['optimizer'],
+            'drop': params['decay_drop'],
+            'epoch_drop': params['epochs_drop']
+        }
+        my_model.new_nn_model(model_id=args.model_id,
+                              opt_param=opt_param,
+                              dropout=params['dropout'],
+                              type_loss=['type_loss'],
+                              all_sequence=['all_sequence'],
+                              print_model=False)
+
+        my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history],
+                       verbose=1)
+
+        path = my_model.save_model()
+        hparams = params
+        hparams['index'] = index
+        loss_history.paths.append(path)
+        loss_history.hparams.append(hparams)
+
+        cprint(
+            'Best loss for now : {0}'.format(
+                loss_history.logs[loss_history.best_index]['loss']), 'yellow')
+        my_model.generate(length=args.length,
+                          seed=args.seed,
+                          save_images=args.images,
+                          no_duration=args.no_duration,
+                          verbose=args.verbose_generation)
+
+        del my_model
+        i += 1
     loss_history.save_summary()
 
     cprint('---------- Done ----------', 'grey', 'on_green')
