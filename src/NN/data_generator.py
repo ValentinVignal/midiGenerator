@@ -197,7 +197,7 @@ class MySequenceBeat(tf.keras.utils.Sequence):
 
     """
 
-    def __init__(self, path, nb_steps, batch_size=4, work_on='measure'):
+    def __init__(self, path, nb_steps, batch_size=4, work_on=g.work_on):
         """
 
         :param path: the path to the datas

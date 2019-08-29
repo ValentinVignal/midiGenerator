@@ -22,6 +22,7 @@ class MyNN:
         self.model_id = None
         self.input_param = None
         self.nb_steps = None
+        self.step_length = None
         # --- TF ---
         self.model = None
         self.losses = None
@@ -36,13 +37,14 @@ class MyNN:
 
         self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
 
-    def new_model(self, model_id, input_param, opt_param, dropout=g.dropout, type_loss=None,
+    def new_model(self, model_id, input_param, opt_param, step_length=1, dropout=g.dropout, type_loss=None,
                   all_sequence=g.all_sequence):
         """
 
         :param model_id: model_name;model_param;nb_steps
         :param input_param:
         :param opt_param: {'lr', 'name'}
+        :param step_length:
         :param dropout: value of dropout
         :param type_loss:
         :param all_sequence:
@@ -53,6 +55,7 @@ class MyNN:
             self.type_loss = type_loss
         elif self.type_loss is None:
             self.type_loss = g.type_loss
+        self.step_length = step_length
 
         model_name, model_param_s, nb_steps = model_id.split(',')
         nb_steps = int(nb_steps)
@@ -79,11 +82,13 @@ class MyNN:
         self.opt_param = opt_param
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
 
+
         self.model, self.losses, self.loss_lambdas = nn_model.create_model(
             input_param=input_param,
             model_param=model_param,
             nb_steps=nb_steps,
             optimizer=optimizer,
+            step_length=step_length,
             dropout=dropout,
             type_loss=self.type_loss,
             all_sequence=all_sequence)
@@ -167,7 +172,8 @@ class MyNN:
                 'nb_steps': self.nb_steps,
                 'decay': string_decay,
                 'opt_param': self.opt_param,
-                'type_loss': self.type_loss
+                'type_loss': self.type_loss,
+                'step_length': self.step_length
             }, dump_file)
 
     def load(self, path):
@@ -188,6 +194,7 @@ class MyNN:
             self.decay = dill.loads(d['decay'])
             self.opt_param = d['opt_param']
             self.type_loss = d['type_loss']
+            self.step_length = d['step_length']
 
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
         metrics = [nn_losses.acc_act, nn_losses.mae_dur]

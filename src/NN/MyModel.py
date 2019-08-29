@@ -19,12 +19,11 @@ class MyModel:
 
     """
 
-    def __init__(self, name='default_name', load_model=None, model_infos=None, data=None):
+    def __init__(self, name='default_name', work_on=g.work_on, data=None):
         """
 
         :param name: The name of the model
-        :param load_model: if not None, load the model
-        :param model_infos: if load_model is None and model_infos is not None : create a new model with model_infos parameters
+        :param work_on: either 'beat' or 'measure'
         :param data: if not None, load the data
         """
         # ----- General -----
@@ -33,6 +32,7 @@ class MyModel:
         self.model_id = ''  # Id of the model used
         self.full_name = ''  # Id of this MyModel instance
         self.get_new_full_name()
+        self.work_on = work_on
 
         self.saved_model_path = os.path.join('saved_models', self.full_name)  # Where to saved the trained model
         self.saved_model_pathlib = Path(self.saved_model_path)
@@ -67,8 +67,8 @@ class MyModel:
         return myModel
 
     @classmethod
-    def with_model(cls, model_infos, name='defaultName', data=None):
-        myModel = cls(name=name, data=data)
+    def with_model(cls, model_infos, name='defaultName', work_on=g.work_on, data=None):
+        myModel = cls(name=name, work_on=work_on, data=data)
 
         def get_value(key):
             """
@@ -147,11 +147,12 @@ class MyModel:
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
-    def new_nn_model(self, model_id, opt_param=None, dropout=g.dropout, type_loss=g.type_loss,
+    def new_nn_model(self, model_id, work_on=None, opt_param=None, dropout=g.dropout, type_loss=g.type_loss,
                      all_sequence=g.all_sequence, print_model=True):
         """
 
         :param model_id: modelName;modelParam;nbSteps
+        :param work_on:
         :param opt_param:
         :param dropout: value of the dropout
         :param type_loss:
@@ -171,8 +172,22 @@ class MyModel:
 
         opt_param = {'lr': 0.01, 'name': 'adam'} if opt_param is None else opt_param
 
+        if work_on is None:
+            self.work_on = g.work_on if self.work_on is None else self.work_on
+        else:
+            self.work_on = work_on
+        if work_on == 'note':
+            step_length = 1
+        elif work_on == 'beat':
+            step_length = g.step_per_beat
+        elif work_on == 'measure':
+            step_length = 4 * g.step_per_beat
+        else:
+            raise Exception('Work_on type unkown : {0}'.format(work_on))
+
         self.my_nn = MyNN()
         self.my_nn.new_model(model_id=self.model_id,
+                             step_length=step_length,
                              input_param=self.input_param,
                              opt_param=opt_param,
                              dropout=dropout,
@@ -204,6 +219,7 @@ class MyModel:
             self.instruments = d['instruments']
             self.data_seed_pathlib = Path(d['data_seed_pathlib'])
             self.notes_range = d['notes_range']
+            self.work_on = d['work_on']
         self.print_model()
         print('Model', colored(id, 'white', 'on_blue'), 'loaded')
 
@@ -289,14 +305,16 @@ class MyModel:
                 },
                 'instruments': self.instruments,
                 'data_seed_pathlib': str(self.data_seed_pathlib),
-                'notes_range': self.notes_range
+                'notes_range': self.notes_range,
+                'work_on': self.work_on
             }, dump_file)
         summary.summarize_train(path_to_save, **{
             'full_name': self.full_name,
             'epochs': self.total_epochs,
             'input_param': self.input_param,
             'instruments': self.instruments,
-            'notes_range': self.notes_range
+            'notes_range': self.notes_range,
+            'work_on': self.work_on
         })
 
         print(colored('Model saved in {0}'.format(path_to_save), 'green'))
@@ -346,7 +364,15 @@ class MyModel:
         elif seed is None:
             seed = 1
         elif type(seed) is int:
-            seed = self.get_seed(nb_steps=nb_steps, number=seed)
+            if self.work_on == 'note':
+                step_length = 1
+            elif self.work_on == 'beat':
+                step_length = g.step_per_beat
+            elif self.work_on == 'measure':
+                step_length = 4 * g.step_per_beat
+            else:
+                raise Exception('Unkown work_on type : {0}'.format(self.work_on))
+            seed = self.get_seed(nb_steps=nb_steps, step_length=step_length, number=seed)
         length = length if length is not None else 200
         # For save midi path
         if type(new_save_path) is str or (
@@ -390,10 +416,12 @@ class MyModel:
             path_to_save = str(self.save_midis_pathlib / m_str)
             path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg'.format(i))
 
-            midi_create.print_informations(nb_steps=nb_steps, matrix=generated_midi_final, notes_list=output_notes_list, verbose=verbose)
+            midi_create.print_informations(nb_steps=nb_steps, matrix=generated_midi_final, notes_list=output_notes_list,
+                                           verbose=verbose)
 
             # Saving the midi file
-            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments, path=path_to_save,)
+            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+                                  path=path_to_save, )
             if save_images:
                 pianoroll.save_pianoroll(array=generated_midi_final,
                                          path=path_to_save_img,
@@ -410,10 +438,11 @@ class MyModel:
 
         cprint('Done Generating', 'green')
 
-    def get_seed(self, nb_steps, number=1):
+    def get_seed(self, nb_steps, step_length, number=1):
         """
 
         :param nb_steps:
+        :param step_length:
         :param number:
         :return:
         """
@@ -427,7 +456,10 @@ class MyModel:
             )), allow_pickle=True).item()['list']
             array = array_list[random.randint(0, len(array_list) - 1)]
             start = random.randint(0, len(array) - nb_steps - 1)
-            seed = array[start: start + nb_steps]  # (nb_steps, nb_intruments, input_size, 2)
-            seed = np.transpose(seed, (1, 0, 2, 3))  # (nb_instruments, nb_steps, input_size, 2)
+            seed = array[
+                   start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
+            seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
+                                     seed.shape[3]))  # (nb_steps, step_length, nb_instruments, input_size, 2)
+            seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, input_size, 2)
             seeds.append(seed)
         return seeds

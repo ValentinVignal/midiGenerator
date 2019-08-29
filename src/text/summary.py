@@ -29,6 +29,7 @@ def summarize_train(path, **d):
     text += 'input_param :' + str(d['input_param']) + '\n'
     text += 'instruments :' + str(d['instruments']) + '\n'
     text += 'notes_range :' + str(d['notes_range']) + '\n'
+    text += 'work_on :' + d['work_on'] + '\n'
 
     file_path = path / 'Summary.txt'
     if file_path.exists():
