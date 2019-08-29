@@ -1,8 +1,0 @@
-{
-  "dense_param": {
-    "k": [4, 8, 16],
-    "nb_conv": [4, 4, 4]
-  },
-  "fc_common": [4, 2, 4],
-  "fc_separated": [4, 2]
-}

@@ -35,6 +35,8 @@ def main():
                         help='Value of the dropout')
     parser.add_argument('--all-sequence', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
+    parser.add_argument('--work-on', type=str, default=g.work_on,
+                        help='note, beat or measure')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
@@ -76,6 +78,7 @@ def main():
         }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
+                              work_on=args.work_on,
                               dropout=args.dropout,
                               type_loss=args.type_loss,
                               all_sequence=args.all_sequence)

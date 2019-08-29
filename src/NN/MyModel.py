@@ -7,7 +7,7 @@ import random
 from termcolor import colored, cprint
 
 from src.NN.MyNN import MyNN
-from src.NN.data_generator import MySequence
+from src.NN.data_generator import MySequence, MySequenceBeat
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
 import src.text.summary as summary
@@ -19,7 +19,7 @@ class MyModel:
 
     """
 
-    def __init__(self, name='default_name', work_on=g.work_on, data=None):
+    def __init__(self, name='default_name', data=None):
         """
 
         :param name: The name of the model
@@ -32,7 +32,7 @@ class MyModel:
         self.model_id = ''  # Id of the model used
         self.full_name = ''  # Id of this MyModel instance
         self.get_new_full_name()
-        self.work_on = work_on
+        self.work_on = None
 
         self.saved_model_path = os.path.join('saved_models', self.full_name)  # Where to saved the trained model
         self.saved_model_pathlib = Path(self.saved_model_path)
@@ -68,7 +68,7 @@ class MyModel:
 
     @classmethod
     def with_model(cls, model_infos, name='defaultName', work_on=g.work_on, data=None):
-        myModel = cls(name=name, work_on=work_on, data=data)
+        myModel = cls(name=name, data=data)
 
         def get_value(key):
             """
@@ -83,6 +83,7 @@ class MyModel:
         myModel.model_id = model_infos['model_id']
         myModel.new_nn_model(
             model_id=model_infos['model_id'],
+            work_on=work_on,
             opt_param=get_value('opt_param'),
         )
         return myModel
@@ -268,10 +269,11 @@ class MyModel:
             flag_new_sequence = True
 
         if flag_new_sequence:
-            self.my_sequence = MySequence(
+            self.my_sequence = MySequenceBeat(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
-                batch_size=self.batch
+                batch_size=self.batch,
+                work_on=self.work_on
             )
 
         # Actual train

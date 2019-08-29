@@ -213,7 +213,9 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         self.nb_steps = nb_steps
         self.work_on = work_on
         self.step_size = None
-        if work_on == 'beat':
+        if work_on == 'note':
+            self.step_size = 1
+        elif work_on == 'beat':
             self.step_size = g.step_per_beat
         elif work_on == 'measure':
             self.step_size = 4 * g.step_per_beat
