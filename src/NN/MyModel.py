@@ -393,19 +393,23 @@ class MyModel:
                                                    progressbar.ETA()])
             bar.start()  # To see it working
             for l in range(length):
-                samples = generated[:, np.newaxis, l:, :]  # (nb_instruments, 1, nb_steps, 88, 2)
+                samples = generated[:, np.newaxis, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
                 # expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.my_nn.generate(input=list(samples))
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 88, 2)
-                if len(preds.shape) == 3:  # Only one instrument : output of nn not a list
-                    preds = preds[np.newaxis, :, :, :]
+                preds = self.my_nn.generate(input=list(samples))  # (nb_instruments, 1, length, 88, 2)
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, length, 88, 2)
+                if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
+                    preds = preds[np.newaxis, :, :, :, :]
                 next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
-                generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, 88, 2)
+                generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, length, 88, 2)
 
                 bar.update(l + 1)
             bar.finish()
 
-            generated_midi_final = np.transpose(generated, (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps, 2)
+            generated_midi_final = np.reshape(generated, (
+                generated.shape[0], generated.shape[1] * generated.shape[2], generated.shape[3],
+                generated.shape[4]))  # (nb_instruments, nb_step * length, 88 , 2)
+            generated_midi_final = np.transpose(generated_midi_final,
+                                                (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
             output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
                                                            notes_range=self.notes_range, no_duration=no_duration)
 
