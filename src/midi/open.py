@@ -2,7 +2,7 @@ import src.global_variables as g
 import numpy as np
 import music21
 import functools
-from termcolor import colored
+from termcolor import colored, cprint
 
 import src.midi.instruments as midi_inst
 
@@ -18,7 +18,9 @@ def no_silence(matrix):
         start += 1
     while start < end and np.all(matrix[:, :, end-1, 0] == 0):
         end -= 1
-
+    # To have all the mesures
+    start = start - (start % (4 * g.step_per_beat))
+    end = end - (end % (4 * g.step_per_beat))
     return matrix[:, :, start:end, :]       # (nb_instruments, input_size, nb_steps, 2)
 
 
@@ -144,7 +146,8 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
             # name = (str(instrument).split(' ')[-1])[
             #        :-1]  # str(instrument) = "<midi.stream.Part object Electric Bass>"
             instrument_names.append(name)
-        if print_instruments: print('instruments :', instrument_names)
+        if print_instruments:
+            print('instruments :', instrument_names)
     except TypeError:
         print(colored('Type is not iterable.', 'red'))
         return None
@@ -185,6 +188,11 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
                     duration = str(element.duration)[27:-1]
                     durations.append(check_float(duration))
                     offsets.append(element.offset)
+                elif isinstance(element, music21.meter.TimeSignature):
+                    # Check if it is correct
+                    if element.ratioString != '4/4':
+                        cprint('Unwanted time signature : {0}'.format(element.ratioString), 'red')
+                        return None
             our_matrix = notes_to_matrix(notes, durations, offsets)      # (88, nb_steps, 2)
 
             try:

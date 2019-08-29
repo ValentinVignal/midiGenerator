@@ -166,6 +166,7 @@ class MyModel:
             print('Load the data before creating a new model')
 
         self.model_id = model_id
+        self.total_epochs = 0
         self.get_new_full_name()
 
         opt_param = {'lr': 0.01, 'name': 'adam'} if opt_param is None else opt_param
