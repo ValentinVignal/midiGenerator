@@ -21,7 +21,7 @@ def main():
     # ----------------
     parser.add_argument('-e', '--epochs', type=int, default=200,
                         help='number of epochs to train')
-    parser.add_argument('-b', '--batch', type=int, default=8,
+    parser.add_argument('-b', '--batch', type=int, default=4,
                         help='The number of the batches')
     # ----------------
     parser.add_argument('--lr', type=str, default='1:3:1',
