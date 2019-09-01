@@ -149,7 +149,7 @@ class MyModel:
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def new_nn_model(self, model_id, work_on=None, opt_param=None, dropout=g.dropout, type_loss=g.type_loss,
-                     all_sequence=g.all_sequence, print_model=True):
+                     all_sequence=g.all_sequence, lstm_state=g.lstm_state, print_model=True):
         """
 
         :param model_id: modelName;modelParam;nbSteps
@@ -158,6 +158,7 @@ class MyModel:
         :param dropout: value of the dropout
         :param type_loss:
         :param all_sequence:
+        :param lstm_state:
         :param print_model:
         :return: set up the neural network
         """
@@ -193,7 +194,8 @@ class MyModel:
                              opt_param=opt_param,
                              dropout=dropout,
                              type_loss=type_loss,
-                             all_sequence=all_sequence)
+                             all_sequence=all_sequence,
+                             lstm_state=lstm_state)
         if print_model:
             self.print_model()
 

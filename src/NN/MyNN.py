@@ -38,7 +38,7 @@ class MyNN:
         self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
 
     def new_model(self, model_id, input_param, opt_param, step_length=1, dropout=g.dropout, type_loss=None,
-                  all_sequence=g.all_sequence):
+                  all_sequence=g.all_sequence, lstm_state=g.lstm_state):
         """
 
         :param model_id: model_name;model_param;nb_steps
@@ -48,6 +48,7 @@ class MyNN:
         :param dropout: value of dropout
         :param type_loss:
         :param all_sequence:
+        :param lstm_state:
         :return: the neural network
         """
 
@@ -82,7 +83,6 @@ class MyNN:
         self.opt_param = opt_param
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
 
-
         self.model, self.losses, self.loss_lambdas = nn_model.create_model(
             input_param=input_param,
             model_param=model_param,
@@ -91,7 +91,8 @@ class MyNN:
             step_length=step_length,
             dropout=dropout,
             type_loss=self.type_loss,
-            all_sequence=all_sequence)
+            all_sequence=all_sequence,
+            lstm_state=lstm_state)
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps

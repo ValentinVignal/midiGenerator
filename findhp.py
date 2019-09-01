@@ -38,6 +38,8 @@ def main():
                         help='Value of the dropout')
     parser.add_argument('--all-sequence', type=str, default='False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
+    parser.add_argument('--lstm-state', type=str, default='False,True',
+                        help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
     # ----------------
@@ -106,17 +108,12 @@ def main():
     args.type_loss = args.type_loss.split(',')
     # ----- All Sequence -----
     args.all_sequence = list(map(lambda x: x == 'True', args.all_sequence.split(',')))
+    # LSTM State
+    args.lstm_state = list(map(lambda x: x == 'True', args.lstm_state.split(',')))
 
     # ---------- Generation ----------
     args.images = True
     args.no_duration = True
-
-    # -------------------- Make the directory for the results --------------------
-    test_path = Path('tests_hp')
-    id = 0
-    while (test_path / 'Summary_test_{0}.txt'.format(id)).exists():
-        id += 1
-    test_path = test_path / 'Summary_test_{0}.txt'.format(id)
 
     # --------------------------------------------
     loss_history = LossHistory()
@@ -130,15 +127,18 @@ def main():
                     for dropout in args.dropout:
                         for type_loss in args.type_loss:
                             for all_sequence in args.all_sequence:
-                                all_params.append({
-                                    'lr': lr,
-                                    'optimizer': optimizer,
-                                    'epochs_drop': epochs_drop,
-                                    'decay_drop': decay_drop,
-                                    'dropout': dropout,
-                                    'type_loss': type_loss,
-                                    'all_sequence': all_sequence
-                                })
+                                for lstm_state in args.lstm_state:
+                                    all_params.append({
+                                        'lr': lr,
+                                        'optimizer': optimizer,
+                                        'epochs_drop': epochs_drop,
+                                        'decay_drop': decay_drop,
+                                        'dropout': dropout,
+                                        'type_loss': type_loss,
+                                        'all_sequence': all_sequence,
+                                        'lstm_state': lstm_state
+                                    })
+    print(all_params)
 
     my_model = MyModel(name=args.name)
     my_model.load_data(data_transformed_path=data_transformed_path)
@@ -151,7 +151,8 @@ def main():
               '- decay_drop :', colored(params['decay_drop'], 'magenta'),
               '- dropout :', colored(params['dropout'], 'magenta'),
               '- type_loss :', colored(params['type_loss'], 'magenta'),
-              '- all_sequence :', colored(params['all_sequence'], 'magenta'))
+              '- all_sequence :', colored(params['all_sequence'], 'magenta'),
+              '- lstm_state :', colored(params['lstm_state'], 'magenta'))
 
         opt_param = {
             'lr': params['lr'],
@@ -165,6 +166,7 @@ def main():
                               dropout=params['dropout'],
                               type_loss=params['type_loss'],
                               all_sequence=['all_sequence'],
+                              lstm_state=['lstm_state'],
                               print_model=False)
 
         my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history],
