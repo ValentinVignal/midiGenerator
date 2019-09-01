@@ -5,6 +5,7 @@ import numpy as np
 import progressbar
 import random
 from termcolor import colored, cprint
+import math
 
 from src.NN.MyNN import MyNN
 from src.NN.data_generator import MySequence, MySequenceBeat
@@ -460,10 +461,10 @@ class MyModel:
             all_shapes = d['all_shapes']
         for i in range(number):
             array_list = np.load(str(self.data_seed_pathlib / 'npy' / '{0}.npy'.format(
-                random.randint(0, len(all_shapes) - 1)
+                random.randint(0, len(all_shapes))
             )), allow_pickle=True).item()['list']
-            array = array_list[random.randint(0, len(array_list) - 1)]
-            start = random.randint(0, len(array) - nb_steps - step_length)
+            array = array_list[random.randint(0, array_list.shape[0])]      # The song
+            start = random.randint(0, (math.floor(array.shape[0] / step_length) - nb_steps) * step_length)
             seed = array[
                    start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
             seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
