@@ -9,6 +9,12 @@ Lambda = tf.keras.layers.Lambda
 
 def custom_loss(lambda_a, lambda_d):
     def loss_function(y_true, y_pred):
+        """
+
+        :param y_true: (batch, lenght, input_size, 2)
+        :param y_pred: (batch, lenght, input_size, 2)
+        :return:
+        """
         y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
         y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
         y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
@@ -64,9 +70,8 @@ def custom_loss_smoothround(lambda_a, lambda_d):
     return loss_function
 
 
-def compare_losses():
-    n = 20
-    yt = np.random.uniform(size=(n, 2))       # Only activations
+def compare_losses_random(n=20):
+    yt = np.random.randint(2, size=(n, 2))       # Only activations
     yp = np.random.randint(2, size=(n, 2))       # Only activations
     for i in range(len(yt)):
         yt_ = yt[np.newaxis, np.newaxis, np.newaxis, i]
@@ -75,6 +80,32 @@ def compare_losses():
         F_rounded = custom_loss_round(1, 1)(K.variable(yt_), K.variable(yp_))
         F_smooth = custom_loss_smoothround(1, 1)(K.variable(yt_), K.variable(yp_))
         print('Truth :{0}, Pred :{1} -- loss {2}, round {3}, smoothround {4}'.format(yt[i], yp[i], K.eval(F), K.eval(F_rounded), K.eval(F_smooth)))
+
+
+def compare_losses_auto(step=0.1):
+
+    yp_a = np.arange(0, 1+step, step)  # Only activations
+    yp = np.zeros((yp_a.shape[0], 2))
+    yp[:, 0] = yp_a
+    yt = np.array([[0, 0], [1, 0]])
+    for i in range(len(yp)):
+        yt_ = yt[np.newaxis, np.newaxis, np.newaxis, 0]
+        yp_ = yp[np.newaxis, np.newaxis, np.newaxis, i]
+        F = custom_loss(1, 1)(K.variable(yt_), K.variable(yp_))
+        F_rounded = custom_loss_round(1, 1)(K.variable(yt_), K.variable(yp_))
+        F_smooth = custom_loss_smoothround(1, 1)(K.variable(yt_), K.variable(yp_))
+        print('Truth :{0}, Pred :{1} -- loss {2}, round {3}, smoothround {4}'.format(yt[0], yp[i], K.eval(F),
+                                                                                     K.eval(F_rounded),
+                                                                                     K.eval(F_smooth)))
+    for i in range(len(yp)):
+        yt_ = yt[np.newaxis, np.newaxis, np.newaxis, 1]
+        yp_ = yp[np.newaxis, np.newaxis, np.newaxis, i]
+        F = custom_loss(1, 1)(K.variable(yt_), K.variable(yp_))
+        F_rounded = custom_loss_round(1, 1)(K.variable(yt_), K.variable(yp_))
+        F_smooth = custom_loss_smoothround(1, 1)(K.variable(yt_), K.variable(yp_))
+        print('Truth :{0}, Pred :{1} -- loss {2}, round {3}, smoothround {4}'.format(yt[1], yp[i], K.eval(F),
+                                                                                     K.eval(F_rounded),
+                                                                                     K.eval(F_smooth)))
 
 
 def choose_loss(type_loss):
