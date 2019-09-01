@@ -181,7 +181,7 @@ def main():
             if matrix_of_single_midi is not None:
                 all_midi_paths.append(single_midi_path)
                 matrix_of_single_midi = np.transpose(matrix_of_single_midi,
-                                                     (2, 0, 1, 3))  # (length, nb_instruments, 88, 3)
+                                                     (2, 0, 1, 3))  # (length, nb_instruments, 88, 2)
                 matrix_of_all_midis.append(matrix_of_single_midi)
                 # print('shape of the matrix : {0}'.format(matrix_of_single_midi.shape))
                 i += 1

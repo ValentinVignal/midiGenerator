@@ -205,11 +205,9 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         :param batch_size: batch size for training
         :param work_on: can be 'beat' or 'measure'
         """
-        self.path = path
         self.pathlib = Path(path)
         self.batch_size = batch_size  # batch size
         self.npy_pathlib = self.pathlib / 'npy'
-        self.npy_path = self.npy_pathlib.as_posix()  # Path for the npy folder
         self.nb_steps = nb_steps
         self.work_on = work_on
         self.step_size = None
@@ -223,7 +221,7 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         with open(self.pathlib / 'infos_dataset.p', 'rb') as dump_file:
             d = pickle.load(dump_file)
             self.nb_files = d['nb_files']  # nb available files in the dataset
-            self.all_shapes = d['all_shapes']
+            self.all_shapes = d['all_shapes']  # [nb_files, nb_song_in_file], (length, nb_instrument, input_size, 2)
 
         self.i_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded
@@ -233,7 +231,7 @@ class MySequenceBeat(tf.keras.utils.Sequence):
                                                              self.nb_steps)  # nb element available in the generator
         self.nb_elements = int(self.nb_elements / self.batch_size)
         self.all_len = self.know_all_len()
-        print('MySequence instance initiated on the data', colored(self.path, 'grey', 'on_white'))
+        print('MySequence instance initiated on the data', colored(self.pathlib.as_posix(), 'grey', 'on_white'))
 
     def __len__(self):
         return self.nb_elements
@@ -253,7 +251,7 @@ class MySequenceBeat(tf.keras.utils.Sequence):
             y.append(
                 self.npy_loaded[j][k + (self.nb_steps * self.step_size): k + (
                         self.nb_steps * self.step_size) + self.step_size]
-            )       # (batch, step_size, nb_instruments, input_size, 2)
+            )  # (batch, step_size, nb_instruments, input_size, 2)
             k += 1
             if k == self.all_shapes[i][j][0] - self.nb_steps + 1:
                 k = 0
@@ -289,12 +287,12 @@ class MySequenceBeat(tf.keras.utils.Sequence):
                 i += 1
         flag = True
         while flag:
-            if c + self.all_shapes[i][j][0] - self.nb_steps > i_start:
+            if c + int(self.all_shapes[i][j][0] / self.step_size) - self.nb_steps > i_start:
                 flag = False
             else:
-                c += self.all_shapes[i][j][0] - self.nb_steps
+                c += int(self.all_shapes[i][j][0] / self.step_size) - self.nb_steps
                 j += 1
-        k = i_start - c
+        k = (i_start - c) * self.step_size
         return i, j, k
 
     @staticmethod
@@ -306,7 +304,6 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         :param nb_steps:
         :return: The number of useful element in the dataset
         """
-
         if type(l) is list:
             acc = 0
             for l2 in l:
@@ -329,3 +326,71 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         all_len = list(map(f_map, self.all_shapes))
 
         return all_len
+
+
+class SeeMySequenceBeat:
+
+    def __init__(self, path, nb_steps, work_on):
+        self.my_sequence = MySequenceBeat(path=path, nb_steps=nb_steps, batch_size=1, work_on=work_on)
+        # my_sequence[i] -> tuple [0] = x, [1] = y
+        #                   -> [ list ] (nb_instruments)
+        #                       -> np array (batch, nb_steps, step_size, input_size, 2)
+        self.nb_instruments = np.array(self.my_sequence[0][0]).shape[0]
+        self.nb_steps = nb_steps
+        self.input_size = np.array(self.my_sequence[0][0]).shape[4]
+
+        self.colors = None
+        self.new_colors()
+
+    def new_colors(self):
+        # Colors
+        colors = [Color('#' + ''.join([random.choice('0123456789abcdef') for j in range(6)])) for i in
+                  range(self.nb_instruments)]
+        colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
+        for i in range(len(colors_rgb)):  # Make a light color
+            m = min(colors_rgb[i])
+            M = max(colors_rgb[i])
+            if M <= 50:  # If the color is too dark
+                for j in range(3):
+                    if colors_rgb[i][j] == M:
+                        colors_rgb[i][j] = min(50 + 3 * colors_rgb[i][j], 255)
+                    elif colors_rgb[i][j] == m:
+                        colors_rgb[i][j] = 10 + colors_rgb[i][j]
+                    else:
+                        colors_rgb[i][j] = 25 + 2 * colors_rgb[i][j]
+        self.colors = colors_rgb
+
+    def show(self, indice, nb_rows=3, nb_colums=4):
+        nb_images = nb_rows * nb_colums
+        fig = plt.figure()
+        for ind in range(nb_images):
+            x, y = self.my_sequence[indice + ind]
+            # activations
+            x = np.array(x)[:, 0, :, :, :, 0]  # (nb_instruments, nb_steps, step_size, input_size)
+            x = np.reshape(x,
+                           (x.shape[0], x.shape[1] * x.shape[2], x.shape[3])
+                           )  # (nb_instruments, nb_steps * step_size, input_size)
+            y = np.array(y)[:, 0, :, :, 0]  # (nb_instruments, step_size, input_size)
+            np.place(x, 0.5 <= x, 1)
+            np.place(x, x < 0.5, 0)
+            np.place(y, 0.5 <= y, 1)
+            np.place(y, y < 0.5, 0)
+
+            all = np.zeros((x.shape[1] + y.shape[1], self.input_size, 3))
+            all[- y.shape[1]:] = 50
+
+            for inst in range(self.nb_instruments):
+                for j in range(self.input_size):
+                    for i in range(x.shape[1]):
+                        if x[inst, i, j] == 1:
+                            all[i, j] = self.colors[inst]
+                    for i in range(y.shape[1]):
+                        if y[inst, i, j] == 1:
+                            all[x.shape[1] + i, j] = self.colors[inst]
+            all = (np.flip(np.transpose(all, (1, 0, 2)), axis=0)).astype(np.int)
+
+            fig.add_subplot(nb_rows, nb_colums, ind + 1)
+            plt.imshow(all)
+        plt.show()
+
+

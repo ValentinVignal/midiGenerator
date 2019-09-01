@@ -3,6 +3,7 @@ import numpy as np
 import music21
 import functools
 from termcolor import colored, cprint
+import math
 
 import src.midi.instruments as midi_inst
 
@@ -16,12 +17,12 @@ def no_silence(matrix):
     start, end = 0, matrix.shape[2]
     while start < end and np.all(matrix[:, :, start, 0] == 0):
         start += 1
-    while start < end and np.all(matrix[:, :, end-1, 0] == 0):
+    while start < end and np.all(matrix[:, :, end - 1, 0] == 0):
         end -= 1
     # To have all the mesures
-    start = start - (start % (4 * g.step_per_beat))
-    end = end - (end % (4 * g.step_per_beat))
-    return matrix[:, :, start:end, :]       # (nb_instruments, input_size, nb_steps, 2)
+    start = math.floor(start / (4 * g.step_per_beat)) * 4 * g.step_per_beat
+    end = math.ceil(end / (4 * g.step_per_beat)) * 4 * g.step_per_beat + 1
+    return matrix[:, :, start:end, :]  # (nb_instruments, input_size, nb_steps, 2)
 
 
 def notes_to_matrix(notes, durations, offsets):
@@ -39,10 +40,11 @@ def notes_to_matrix(notes, durations, offsets):
         return None, None, None
     total_offset_axis = last_offset * 4 + (
             8 * 4)  # nb times * 4 because quarter note + 2 measures (max length of a note)
-    our_matrix = np.zeros((128, int(total_offset_axis), 2))  # (128, nb_times, 2)
+    our_matrix = np.zeros(
+        (128, math.ceil(total_offset_axis / (4 * g.step_per_beat)) * 4 * g.step_per_beat, 2))  # (128, nb_times, 2)
 
     for (note, duration, offset) in zip(notes, durations, offsets):
-        #how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
+        # how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
         start = int(offset * 4)
         if '.' not in str(note):  # it is not chord. Single note.
             our_matrix[note, start, 0] = 1
@@ -56,9 +58,8 @@ def notes_to_matrix(notes, durations, offsets):
                 our_matrix[chord_note_float, start, 0] = 1
                 our_matrix[chord_note_float, start, 1] = float(duration) / g.max_length_note_music21
 
-
     # our_matrix is (128, nb_steps, 2)
-    return our_matrix[21:109]       # From A0 to C8 (88, nb_steps, 2)
+    return our_matrix[21:109]  # From A0 to C8 (88, nb_steps, 2)
 
 
 def check_float(duration):
@@ -193,7 +194,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
                     if element.ratioString != '4/4':
                         cprint('Unwanted time signature : {0}'.format(element.ratioString), 'red')
                         return None
-            our_matrix = notes_to_matrix(notes, durations, offsets)      # (88, nb_steps, 2)
+            our_matrix = notes_to_matrix(notes, durations, offsets)  # (88, nb_steps, 2)
 
             try:
                 freq, time, _ = our_matrix.shape
@@ -216,7 +217,8 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
         if len(matrix[0]) > max_len:  # matrix has shape : (88, length, 2)
             max_len = len(matrix[0])
 
-    final_matrix = np.zeros((len(our_matrixes), notes_range[1]-notes_range[0], max_len, 2))  # (nb_instruments, 88, max_len, 2)
+    final_matrix = np.zeros(
+        (len(our_matrixes), notes_range[1] - notes_range[0], max_len, 2))  # (nb_instruments, 88, max_len, 2)
     for i in range(len(our_matrixes)):
         final_matrix[i, :, :len(our_matrixes[i][0]), :] = our_matrixes[i]
     final_matrix = no_silence(final_matrix)
