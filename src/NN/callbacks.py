@@ -1,5 +1,6 @@
 import tensorflow as tf
 import src.text.summary as summary
+from pathlib import Path
 
 
 class LossHistory(tf.keras.callbacks.Callback):
@@ -14,6 +15,14 @@ class LossHistory(tf.keras.callbacks.Callback):
         self.hparams = []  # the hyper parameters of the model
 
         self.best_index = None
+
+        i = 0
+        while Path('tests_hp/Summary_test_{0}.txt'.format(i)).exists():
+            i += 1
+        self.path = Path('tests_hp/Summary_test_{0}.txt'.format(i))
+        with open(self.path.as_posix(), 'a') as f:
+            f.write('\n')
+        Path('tests_hp').mkdir(parents=True, exist_ok=True)
 
     def on_train_begin(self, logs={}):
         self.current_logs = None
@@ -67,5 +76,10 @@ class LossHistory(tf.keras.callbacks.Callback):
             key = 'Output_{0}_acc_act'.format(i)
         return a1 >= a2
 
-    def save_summary(self):
-        summary.summarize_loss_history(self.logs, self.paths, self.hparams, self.best_index)
+    def update_summary(self, i=None):
+        summary.update_summary_loss_history(self.path.as_posix(), self.logs[-1], self.paths[-1], self.hparams[-1], i)
+
+    def update_best_summary(self):
+        summary.update_best_summary_loss_history(self.path.as_posix(), self.logs[self.best_index],
+                                                 self.paths[self.best_index], self.hparams[self.best_index],
+                                                 self.best_index)

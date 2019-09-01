@@ -54,13 +54,9 @@ def summarize_generation(path, **d):
         f.write(text)
 
 
-def summarize_loss_history(logs, paths, hparams, best_index=None):
+def summarize_loss_history(path, logs, paths, hparams, best_index=None):
     path = Path('tests_hp')
     path.mkdir(parents=True, exist_ok=True)
-    i = 0
-    while (path / 'Summary_test_{0}.txt'.format(i)).exists():
-        i += 1
-    path = (path / 'Summary_test_{0}.txt'.format(i))
     if best_index is not None:
         text = '\t\t---------- Best model ----------\n\n' \
                'Best index : {0} --> Loss : {4}\n' \
@@ -82,5 +78,32 @@ def summarize_loss_history(logs, paths, hparams, best_index=None):
     with open(str(path), 'a') as f:
         f.write(text)
     cprint('Summary saved at {0}'.format(path), 'green')
+
+
+def update_summary_loss_history(path, log, path_model, hparam, j):
+    text = 'Index : {0} --> Loss : {1}\n' \
+            'Logs : {2}\n' \
+            'Hyper Parameters : {3}\n' \
+            'Save Path : {4}\n\n'.format(j, log['loss'], log, hparam, path_model)
+
+    with open(str(path), 'a') as f:
+        f.write(text)
+    cprint('Summary updated at {0}'.format(path), 'green')
+
+
+def update_best_summary_loss_history(path, log, path_model, hparam, best_index):
+    text = '\t\t---------- Best model ----------\n\n' \
+           'Best index : {0} --> Loss : {4}\n' \
+           'Logs : {1}\n' \
+           'Hyper Parameters : {2}\n' \
+           'Save Path : {3}\n\n\n'.format(best_index, log, hparam, path_model,
+                                          log['loss'])
+
+    text += '\t\t---------- All informations ---------- \n\n'
+    with open(path, 'r') as f:
+        ftext = text + f.read()
+    with open(path, 'w') as f2:
+        f2.write(ftext)
+    cprint('Summary updated with the best model at {0}'.format(path), 'green')
 
 

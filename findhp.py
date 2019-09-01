@@ -6,6 +6,7 @@ from pathlib import Path
 
 from src.NN.MyModel import MyModel
 from src.NN.callbacks import LossHistory
+import src.global_variables as g
 
 
 def main():
@@ -18,25 +19,27 @@ def main():
     parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
                         help='The name of the data')
     # ----------------
-    parser.add_argument('-e', '--epochs', type=int, default=100,
+    parser.add_argument('-e', '--epochs', type=int, default=200,
                         help='number of epochs to train')
     parser.add_argument('-b', '--batch', type=int, default=8,
                         help='The number of the batches')
     # ----------------
-    parser.add_argument('--lr', type=str, default='2:4:1',
+    parser.add_argument('--lr', type=str, default='1:3:1',
                         help='learning rate = 10^-lr')
-    parser.add_argument('-o', '--optimizer', type=str, default='adam,sgd',
-                        help='Name of the optimizer (separeted with ,)')
-    parser.add_argument('--epochs-drop', type=str, default='10:50:20',
+    parser.add_argument('-o', '--optimizer', type=str, default='adam',
+                        help='Name of the optimizer (separeted with ,)(ex : adam,sgd)')
+    parser.add_argument('--epochs-drop', type=str, default='50:100:50',
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=str, default='0.25:0.5:0.25',
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-    parser.add_argument('--dropout', type=str, default='0.05:0.15:0.05',
+    parser.add_argument('--dropout', type=str, default='0.1:0.3:0.1',
                         help='Value of the dropout')
     parser.add_argument('--type-loss', type=str, default='smooth_round',
                         help='Value of the dropout')
-    parser.add_argument('--all-sequence', type=str, default='True,False',
-                        help='Use or not all the sequence in the RNN layer')
+    parser.add_argument('--all-sequence', type=str, default='False',
+                        help='Use or not all the sequence in the RNN layer (separated with ,)')
+    parser.add_argument('--work-on', type=str, default=g.work_on,
+                        help='note, beat or measure')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
@@ -111,10 +114,9 @@ def main():
     # -------------------- Make the directory for the results --------------------
     test_path = Path('tests_hp')
     id = 0
-    while (test_path / 'test_{0}'.format(id)).exists():
+    while (test_path / 'Summary_test_{0}.txt'.format(id)).exists():
         id += 1
-    test_path = test_path / 'test_{0}'.format(id)
-    test_path.mkdir(parents=True, exist_ok=True)
+    test_path = test_path / 'Summary_test_{0}.txt'.format(id)
 
     # --------------------------------------------
     loss_history = LossHistory()
@@ -151,7 +153,6 @@ def main():
               '- type_loss :', colored(params['type_loss'], 'magenta'),
               '- all_sequence :', colored(params['all_sequence'], 'magenta'))
 
-
         opt_param = {
             'lr': params['lr'],
             'name': params['optimizer'],
@@ -159,6 +160,7 @@ def main():
             'epoch_drop': params['epochs_drop']
         }
         my_model.new_nn_model(model_id=args.model_id,
+                              work_on=args.work_on,
                               opt_param=opt_param,
                               dropout=params['dropout'],
                               type_loss=params['type_loss'],
@@ -173,6 +175,7 @@ def main():
         hparams['index'] = index
         loss_history.paths.append(path)
         loss_history.hparams.append(hparams)
+        loss_history.update_summary(index)
 
         cprint(
             'Best loss for now : {0}'.format(
@@ -183,7 +186,7 @@ def main():
                           no_duration=args.no_duration,
                           verbose=args.verbose_generation)
 
-    loss_history.save_summary()
+    loss_history.update_best_summary()
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 

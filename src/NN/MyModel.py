@@ -177,11 +177,11 @@ class MyModel:
             self.work_on = g.work_on if self.work_on is None else self.work_on
         else:
             self.work_on = work_on
-        if work_on == 'note':
+        if self.work_on == 'note':
             step_length = 1
-        elif work_on == 'beat':
+        elif self.work_on == 'beat':
             step_length = g.step_per_beat
-        elif work_on == 'measure':
+        elif self.work_on == 'measure':
             step_length = 4 * g.step_per_beat
         else:
             raise Exception('Work_on type unkown : {0}'.format(work_on))
@@ -461,7 +461,7 @@ class MyModel:
                 random.randint(0, len(all_shapes) - 1)
             )), allow_pickle=True).item()['list']
             array = array_list[random.randint(0, len(array_list) - 1)]
-            start = random.randint(0, len(array) - nb_steps - 1)
+            start = random.randint(0, len(array) - nb_steps - step_length)
             seed = array[
                    start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
             seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
