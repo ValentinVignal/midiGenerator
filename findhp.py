@@ -24,7 +24,7 @@ def main():
     parser.add_argument('-b', '--batch', type=int, default=4,
                         help='The number of the batches')
     # ----------------
-    parser.add_argument('--lr', type=str, default='1:3:1',
+    parser.add_argument('--lr', type=str, default='2:3:0.5',
                         help='learning rate = 10^-lr')
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
                         help='Name of the optimizer (separeted with ,)(ex : adam,sgd)')
