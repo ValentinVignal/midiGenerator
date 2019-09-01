@@ -425,8 +425,8 @@ class MyModel:
             path_to_save = str(self.save_midis_pathlib / m_str)
             path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg'.format(i))
 
-            midi_create.print_informations(nb_steps=nb_steps, matrix=generated_midi_final, notes_list=output_notes_list,
-                                           verbose=verbose)
+            midi_create.print_informations(nb_steps=step_length, matrix=generated_midi_final,
+                                           notes_list=output_notes_list, verbose=verbose)
 
             # Saving the midi file
             midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
@@ -463,7 +463,7 @@ class MyModel:
             array_list = np.load(str(self.data_seed_pathlib / 'npy' / '{0}.npy'.format(
                 np.random.randint(0, len(all_shapes))
             )), allow_pickle=True).item()['list']
-            array = array_list[np.random.randint(0, len(array_list))]      # The song
+            array = array_list[np.random.randint(0, len(array_list))]  # The song
             start = np.random.randint(0, (math.floor(array.shape[0] / step_length) - nb_steps)) * step_length
             seed = array[
                    start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
