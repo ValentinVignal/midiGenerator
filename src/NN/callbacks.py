@@ -20,7 +20,7 @@ class LossHistory(tf.keras.callbacks.Callback):
         while Path('tests_hp/Summary_test_{0}.txt'.format(i)).exists():
             i += 1
         self.path = Path('tests_hp/Summary_test_{0}.txt'.format(i))
-        with open(self.path.as_posix(), 'a') as f:
+        with open(self.path.as_posix(), 'w') as f:
             f.write('\n')
         Path('tests_hp').mkdir(parents=True, exist_ok=True)
 
