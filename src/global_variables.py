@@ -8,8 +8,8 @@ max_length_note_array = max_length_note_music21 * step_per_beat
 nb_file_per_npy = 20
 
 # ---------- Neural Network ----------
-dropout = 0.4
+dropout = 0.2
 type_loss = 'smooth_round'
 all_sequence = False
 lstm_state = True
-work_on = 'note'
+work_on = 'beat'
