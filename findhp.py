@@ -138,7 +138,6 @@ def main():
                                         'all_sequence': all_sequence,
                                         'lstm_state': lstm_state
                                     })
-    print(all_params)
 
     my_model = MyModel(name=args.name)
     my_model.load_data(data_transformed_path=data_transformed_path)
