@@ -14,7 +14,7 @@ def main():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('load', type=str, default='',
                         help='The model of the Neural Network ot load')
-    parser.add_argument('--data', type=str, default='lmd_matched_mini',
+    parser.add_argument('-d', '--data', type=str, default='lmd_matched_mini',
                         help='The name of the data')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
