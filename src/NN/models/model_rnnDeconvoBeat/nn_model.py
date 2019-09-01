@@ -86,7 +86,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
         x = layers.TimeDistributed(layers.Dense(size))(x)
         x = layers.LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout / 2)(x)
+        x = layers.Dropout(dropout)(x)
     # ---------- LSTM -----------
     size_before_lstm = x.shape[2]  # (batch, nb_steps, size)
     # -- Loop --

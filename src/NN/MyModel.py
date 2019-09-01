@@ -19,7 +19,7 @@ class MyModel:
 
     """
 
-    def __init__(self, name='default_name', data=None):
+    def __init__(self, name='name', data=None):
         """
 
         :param name: The name of the model
@@ -61,13 +61,13 @@ class MyModel:
             self.load_data(data)
 
     @classmethod
-    def from_model(cls, id, name='defaultName', data=None):
+    def from_model(cls, id, name='name', data=None):
         myModel = cls(name=name, data=data)
         myModel.load_model(id=id)
         return myModel
 
     @classmethod
-    def with_model(cls, model_infos, name='defaultName', work_on=g.work_on, data=None):
+    def with_model(cls, model_infos, name='name', work_on=g.work_on, data=None):
         myModel = cls(name=name, data=data)
 
         def get_value(key):
@@ -171,7 +171,7 @@ class MyModel:
         self.total_epochs = 0
         self.get_new_full_name()
 
-        opt_param = {'lr': 0.01, 'name': 'adam'} if opt_param is None else opt_param
+        opt_param = {'lr': g.lr, 'name': 'adam'} if opt_param is None else opt_param
 
         if work_on is None:
             self.work_on = g.work_on if self.work_on is None else self.work_on
@@ -431,7 +431,7 @@ class MyModel:
             if save_images:
                 pianoroll.save_pianoroll(array=generated_midi_final,
                                          path=path_to_save_img,
-                                         seed_length=nb_steps,
+                                         seed_length=nb_steps * step_length,
                                          instruments=self.instruments)
 
         summary.summarize_generation(str(self.save_midis_pathlib), **{
