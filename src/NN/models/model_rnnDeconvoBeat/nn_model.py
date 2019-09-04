@@ -104,7 +104,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
     # -- Last one --
     if lstm_state:
         s = lstm[-1]
-        size = int(s * nb_steps)
+        size = eval(s, env)
         x, state_h, state_c = layers.LSTM(size,
                                           return_sequences=all_sequence,
                                           return_state=True,
@@ -120,7 +120,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
         x = layers.concatenate([x, state_h, state_c], axis=1)  # (batch, 3 *  size)
     else:
         s = lstm[-1]
-        size = int(s * nb_steps)
+        size = eval(s, env)
         x = layers.LSTM(size,
                         return_sequences=all_sequence,
                         return_state=False,

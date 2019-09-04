@@ -35,6 +35,8 @@ def main():
                         help='Value of the dropout')
     parser.add_argument('--all-sequence', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
+    parser.add_argument('--lstm-state', default=False, action='store_true',
+                        help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
     # ----------------
@@ -81,7 +83,8 @@ def main():
                               work_on=args.work_on,
                               dropout=args.dropout,
                               type_loss=args.type_loss,
-                              all_sequence=args.all_sequence)
+                              all_sequence=args.all_sequence,
+                              lstm_state=args.lstm_state)
     elif args.load != '':
         my_model.load_model(args.load)
 
