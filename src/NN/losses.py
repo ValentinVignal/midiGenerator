@@ -70,6 +70,27 @@ def custom_loss_smoothround(lambda_a, lambda_d):
     return loss_function
 
 
+def custom_loss_linearround(lambda_a, lambda_d):
+    def loss_function(y_true, y_pred):
+        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
+        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
+        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
+        # Calcul of "rounded"
+        a = 50
+        y_pred_a_rounded = (0.8 / (1 + tf.math.exp(-a * (y_pred_a - 0.5)))) + 0.2 * y_pred_a
+
+        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
+        loss_a_rounded = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a_rounded)
+        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
+
+        loss = lambda_a * (loss_a + loss_a_rounded) + lambda_d * loss_d
+
+        return loss
+
+    return loss_function
+
+
 def compare_losses_random(n=20):
     yt = np.random.randint(2, size=(n, 2))       # Only activations
     yp = np.random.randint(2, size=(n, 2))       # Only activations
@@ -115,6 +136,8 @@ def choose_loss(type_loss):
         return custom_loss_round
     elif type_loss == 'smooth_round':
         return custom_loss_smoothround
+    elif type_loss == 'linear_round':
+        return custom_loss_linearround
     else:
         raise Exception('type_loss "{0}" not known'.format(type_loss))
 
