@@ -59,7 +59,7 @@ def main():
     # ---------- Generation ----------
     parser.add_argument('--seed', default=4,
                         help='number of seeds or the path to the folder with the seeds')
-    parser.add_argument('--length', type=int, default=300,
+    parser.add_argument('--length', type=int, default=20,
                         help='The length of the generated music')
     parser.add_argument('--images', action='store_true', default=False,
                         help='Save the images for each instruments')

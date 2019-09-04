@@ -92,7 +92,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
     # -- Loop --
     lstm = model_param['LSTM']
     for s in lstm[:-1]:
-        size = int(s * nb_steps)
+        size = eval(s, env)
         x = layers.LSTM(size,
                         return_sequences=True,
                         unit_forget_bias=True,
