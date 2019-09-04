@@ -71,6 +71,7 @@ def custom_loss_smoothround(lambda_a, lambda_d):
 
 
 def custom_loss_linearround(lambda_a, lambda_d):
+
     def loss_function(y_true, y_pred):
         y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
         y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
@@ -86,9 +87,9 @@ def custom_loss_linearround(lambda_a, lambda_d):
 
         loss = lambda_a * (loss_a + loss_a_rounded) + lambda_d * loss_d
 
-        return loss
+        return tf.reduce_mean(loss, axis=None)
 
-    return tf.reduce_mean(loss_function, axis=None)
+    return loss_function
 
 
 def compare_losses_random(n=20):
