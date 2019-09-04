@@ -159,13 +159,16 @@ def main():
             'drop': params['decay_drop'],
             'epoch_drop': params['epochs_drop']
         }
+        model_options = {
+            'dropout': args.dropout,
+            'all_sequence': args.all_sequence,
+            'lstm_state': args.lstm_state
+        }
         my_model.new_nn_model(model_id=args.model_id,
                               work_on=args.work_on,
                               opt_param=opt_param,
-                              dropout=params['dropout'],
                               type_loss=params['type_loss'],
-                              all_sequence=['all_sequence'],
-                              lstm_state=['lstm_state'],
+                              model_options=model_options,
                               print_model=False)
 
         my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history],

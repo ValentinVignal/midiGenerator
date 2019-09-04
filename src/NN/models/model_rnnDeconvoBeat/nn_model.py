@@ -24,8 +24,9 @@ def min_max_pool3d_output_shape(input_shape):
     return input_shape
 
 
-def create_model(input_param, model_param, nb_steps, step_length, optimizer, dropout=g.dropout, type_loss=g.type_loss,
-                 all_sequence=g.all_sequence, lstm_state=g.lstm_state):
+def create_model(input_param, model_param, nb_steps, step_length, optimizer, type_loss=g.type_loss,
+                 model_options={}
+                 ):
     """
 
     :param input_param:
@@ -33,12 +34,25 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
     :param model_param:
     :param step_length:
     :param optimizer:
-    :param dropout: value of the dropout
     :param type_loss:
-    :param all_sequence:
-    :param lstm_state:
+    :param model_options:
     :return: the neural network:
     """
+
+    # ---------- Model options ----------
+    mmodel_options ={
+        'dropout': g.dropout,
+        'all_sequence': g.all_sequence,
+        'lstm_state': g.lstm_state,
+        'min_pool': False
+    }
+    mmodel_options.update(model_options)
+
+    dropout = mmodel_options['dropout']
+    all_sequence = mmodel_options['all_sequence']
+    lstm_state = mmodel_options['lstm_state']
+    min_pool = mmodel_options['min_pool']
+    # --------- End model options ----------
 
     print('Definition of the graph ...')
 
@@ -160,7 +174,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
             x = layers.BatchNormalization()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
-        # x = Lambda(min_max_pool3d, output_shape=min_max_pool3d_output_shape)(x)  # (batch, 1, size, filters)
+        if min_pool:
+            x = Lambda(min_max_pool3d, output_shape=min_max_pool3d_output_shape)(x)  # (batch, 1, size, filters)
 
     x = layers.Flatten()(x)
 

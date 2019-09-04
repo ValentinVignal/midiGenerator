@@ -37,6 +37,8 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--lstm-state', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
+    parser.add_argument('--min-pool', default=False, action='store_true',
+                        help='Either to use the min pooling after upsampling')
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
     # ----------------
@@ -78,13 +80,17 @@ def main():
             'drop': float(args.decay_drop),
             'epoch_drop': float(args.epochs_drop)
         }
+        model_options = {
+            'dropout': args.dropout,
+            'all_sequence': args.all_sequence,
+            'lstm_state': args.lstm_state,
+            'min_pool': args.min_pool
+        }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
                               work_on=args.work_on,
-                              dropout=args.dropout,
                               type_loss=args.type_loss,
-                              all_sequence=args.all_sequence,
-                              lstm_state=args.lstm_state)
+                              model_options=model_options)
     elif args.load != '':
         my_model.load_model(args.load)
 

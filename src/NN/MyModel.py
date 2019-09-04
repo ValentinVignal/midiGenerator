@@ -149,17 +149,14 @@ class MyModel:
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
-    def new_nn_model(self, model_id, work_on=None, opt_param=None, dropout=g.dropout, type_loss=g.type_loss,
-                     all_sequence=g.all_sequence, lstm_state=g.lstm_state, print_model=True):
+    def new_nn_model(self, model_id, work_on=None, opt_param=None, type_loss=g.type_loss, model_options=None, print_model=True):
         """
 
         :param model_id: modelName;modelParam;nbSteps
         :param work_on:
         :param opt_param:
-        :param dropout: value of the dropout
         :param type_loss:
-        :param all_sequence:
-        :param lstm_state:
+        :param model_options:
         :param print_model:
         :return: set up the neural network
         """
@@ -193,10 +190,8 @@ class MyModel:
                              step_length=step_length,
                              input_param=self.input_param,
                              opt_param=opt_param,
-                             dropout=dropout,
                              type_loss=type_loss,
-                             all_sequence=all_sequence,
-                             lstm_state=lstm_state)
+                             model_options=model_options)
         if print_model:
             self.print_model()
 
