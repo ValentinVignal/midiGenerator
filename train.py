@@ -59,8 +59,8 @@ def main():
     if args.pc:
         # args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
-        args.epochs = 2
-        args.batch = 1
+        args.epochs = 10
+        args.batch = 4
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'

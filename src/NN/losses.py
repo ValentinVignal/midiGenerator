@@ -25,7 +25,7 @@ def custom_loss(lambda_a, lambda_d):
 
         loss = lambda_a * loss_a + lambda_d * loss_d
 
-        return loss
+        return tf.reduce_mean(loss, axis=None)
 
     return loss_function
 
@@ -44,7 +44,7 @@ def custom_loss_round(lambda_a, lambda_d):
 
         loss = lambda_a * (loss_a + 5 * loss_a_rounded) + lambda_d * loss_d
 
-        return loss
+        return tf.reduce_mean(loss, axis=None)
 
     return loss_function
 
@@ -65,7 +65,7 @@ def custom_loss_smoothround(lambda_a, lambda_d):
 
         loss = lambda_a * (loss_a + loss_a_rounded) + lambda_d * loss_d
 
-        return loss
+        return tf.reduce_mean(loss, axis=None)
 
     return loss_function
 
@@ -88,7 +88,7 @@ def custom_loss_linearround(lambda_a, lambda_d):
 
         return loss
 
-    return loss_function
+    return tf.reduce_mean(loss_function, axis=None)
 
 
 def compare_losses_random(n=20):
@@ -165,7 +165,7 @@ def acc_act(y_true, y_pred):
 
     acc = tf.keras.metrics.binary_accuracy(y_true_a, y_pred_a)
 
-    return acc
+    return tf.reduce_mean(acc, axis=None)
 
 
 def mae_dur(y_true, y_pred):
@@ -174,4 +174,4 @@ def mae_dur(y_true, y_pred):
 
     mae = tf.keras.metrics.mean_squared_error(y_true_d, y_pred_d)
 
-    return mae
+    return tf.reduce_mean(mae, axis=None)

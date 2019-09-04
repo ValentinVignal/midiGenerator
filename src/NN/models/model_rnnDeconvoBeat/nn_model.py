@@ -160,7 +160,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, dro
             x = layers.BatchNormalization()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
-        x = Lambda(min_max_pool3d, output_shape=min_max_pool3d_output_shape)(x)  # (batch, 1, size, filters)
+        # x = Lambda(min_max_pool3d, output_shape=min_max_pool3d_output_shape)(x)  # (batch, 1, size, filters)
 
     x = layers.Flatten()(x)
 
