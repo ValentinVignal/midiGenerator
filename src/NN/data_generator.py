@@ -393,4 +393,10 @@ class SeeMySequenceBeat:
             plt.imshow(all)
         plt.show()
 
+    def __len__(self):
+        return len(self.my_sequence)
+
+    def __getitem__(self, item):
+        return self.my_sequence[item]
+
 

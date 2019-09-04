@@ -358,7 +358,9 @@ class MyModel:
         :return:
         """
         # --- Verify the inputs ---
+        # -- Nb Steps --
         nb_steps = int(self.model_id.split(',')[2])
+        # -- Seed --
         if type(seed) is list:
             pass
         elif seed is None:
@@ -373,8 +375,9 @@ class MyModel:
             else:
                 raise Exception('Unkown work_on type : {0}'.format(self.work_on))
             seed = self.get_seed(nb_steps=nb_steps, step_length=step_length, number=seed)
+        # -- Length --
         length = length if length is not None else 200
-        # For save midi path
+        # -- For save midi path --
         if type(new_save_path) is str or (
                 type(new_save_path) is bool and new_save_path) or (
                 new_save_path is None and self.save_midis_pathlib is None):
@@ -464,6 +467,7 @@ class MyModel:
                    start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
             seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
                                      seed.shape[3]))  # (nb_steps, step_length, nb_instruments, input_size, 2)
-            seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, input_size, 2)
+            seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, step_lenght, input_size, 2)
             seeds.append(seed)
         return seeds
+
