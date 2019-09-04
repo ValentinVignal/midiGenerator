@@ -13,7 +13,6 @@ def normalize_activation(arr, threshold=0.5):
     :param threshold:
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
-    print('preds', arr.shape)
     activations = arr[:, :, :, :, 0]
     np.place(activations, threshold <= activations, 1)
     np.place(activations, activations < threshold, 0)
@@ -28,7 +27,6 @@ def converter_func(arr, no_duration=False):
     :param no_duration: if True : all notes will be the shortest length possible
     :return:
     """
-    print('converter function', arr.shape)
     activations = arr[:, :, :, 0]
     durations = arr[:, :, :, 1]
 
