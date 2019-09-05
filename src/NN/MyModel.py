@@ -307,7 +307,8 @@ class MyModel:
                 'instruments': self.instruments,
                 'data_seed_pathlib': str(self.data_seed_pathlib),
                 'notes_range': self.notes_range,
-                'work_on': self.work_on
+                'work_on': self.work_on,
+                'data_transformed_pathlib': self.data_transformed_pathlib
             }, dump_file)
         summary.summarize_train(path_to_save, **{
             'full_name': self.full_name,
@@ -593,7 +594,7 @@ class MyModel:
                                        notes_list=output_notes_list_helped, verbose=verbose)
 
         # Saving the midi file
-        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+        midi_create.save_midi(output_notes_list=output_notes_list_helped, instruments=self.instruments,
                               path=path_to_save, )
         pianoroll.save_pianoroll(array=generated_midi_final_helped,
                                  path=path_to_save_img,
@@ -613,7 +614,7 @@ class MyModel:
                                        notes_list=output_notes_list_truth, verbose=verbose)
 
         # Saving the midi file
-        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+        midi_create.save_midi(output_notes_list=output_notes_list_truth, instruments=self.instruments,
                               path=path_to_save, )
         pianoroll.save_pianoroll(array=generated_midi_final_truth,
                                  path=path_to_save_img,
