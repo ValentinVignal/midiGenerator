@@ -149,7 +149,8 @@ class MyModel:
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
-    def new_nn_model(self, model_id, work_on=None, opt_param=None, type_loss=g.type_loss, model_options=None, print_model=True):
+    def new_nn_model(self, model_id, work_on=None, opt_param=None, type_loss=g.type_loss, model_options=None,
+                     print_model=True):
         """
 
         :param model_id: modelName;modelParam;nbSteps
@@ -470,4 +471,152 @@ class MyModel:
             seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, step_lenght, input_size, 2)
             seeds.append(seed)
         return seeds
+
+    def compare_generation(self, max_length=None, no_duration=False, verbose=1):
+        """
+
+        :return:
+        """
+        # -------------------- Find informations --------------------
+        if self.data_transformed_pathlib is None:
+            self.data_transformed_pathlib = self.data_seed_pathlib
+        nb_steps = int(self.model_id.split(',')[2])
+        if self.my_sequence is None:
+            self.my_sequence = MySequenceBeat(
+                path=str(self.data_transformed_pathlib),
+                nb_steps=nb_steps,
+                batch_size=1,
+                work_on=self.work_on)
+        max_length = len(self.my_sequence) if max_length is None else min(max_length, len(self.my_sequence))
+
+        # -------------------- Construct seeds --------------------
+        generated = np.array(self.my_sequence[0][0])  # (nb_instrument, 1, nb_steps, step_size, input_size, 2) (1=batch)
+        generated_helped = np.copy(generated)  # Each step will take the truth as an input
+        generated_truth = np.copy(generated)  # The truth
+
+        # -------------------- Generation --------------------
+        bar = progressbar.ProgressBar(maxval=max_length,
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        bar.start()  # To see it working
+        for l in range(max_length):
+            ms_input, ms_output = self.my_sequence[l]
+            sample = np.concatenate((generated[:, :, l:, :, :, :], np.array(ms_input)),
+                                    axis=1)  # (nb_instruments, 2, nb_steps, step_size, input_size, 2)
+
+            # Generation
+            preds = self.my_nn.generate(input=list(sample))
+
+            # Reshape
+            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 2, length, 88, 2)
+            preds_truth = np.array(ms_output)[:, :, np.newaxis, :, :,
+                          :]  # (nb_instruments, 1, 1, step_size, input_size, 2)
+            # if only one instrument
+            if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
+                preds = preds[np.newaxis, :, :, :, :]
+            if len(preds_truth.shape) == 4:  # Only one instrument : output of nn not a list
+                preds_truth = preds_truth[np.newaxis, :, :, :, :]
+            preds = midi_create.normalize_activation(preds)  # Normalize the activation part
+            preds_helped = preds[:, 1, :, :, :][:, np.newaxis, np.newaxis, :, :,
+                           :]  # (nb_instruments, 1, 1, lenght, 88, 2)
+            preds = preds[:, 0, :, :, :][:, np.newaxis, np.newaxis, :, :, :]
+
+            # Concatenation
+            generated = np.concatenate((generated, preds), axis=2)  # (nb_instruments, 1, nb_steps, length, 88, 2)
+            generated_helped = np.concatenate((generated_helped, preds_helped),
+                                              axis=2)  # (nb_instruments, 1, nb_steps, length, 88, 2)
+            generated_truth = np.concatenate((generated_truth, preds_truth), axis=2)
+            bar.update(l + 1)
+        bar.finish()
+
+        # -------------------- Compute notes list --------------------
+        # Generated
+        generated_midi_final = np.reshape(generated, (
+            generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
+            generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+        generated_midi_final = np.transpose(generated_midi_final,
+                                            (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
+                                                       notes_range=self.notes_range, no_duration=no_duration)
+        # Helped
+        generated_midi_final_helped = np.reshape(generated_helped, (
+            generated_helped.shape[0], generated_helped.shape[2] * generated_helped.shape[3], generated_helped.shape[4],
+            generated_helped.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+        generated_midi_final_helped = np.transpose(generated_midi_final_helped,
+                                            (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        output_notes_list_helped = midi_create.matrix_to_midi(generated_midi_final_helped, instruments=self.instruments,
+                                                       notes_range=self.notes_range, no_duration=no_duration)
+        # Truth
+        generated_midi_final_truth = np.reshape(generated_truth, (
+            generated_truth.shape[0], generated_truth.shape[2] * generated_truth.shape[3], generated_truth.shape[4],
+            generated_truth.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+        generated_midi_final_truth = np.transpose(generated_midi_final_truth,
+                                                   (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        output_notes_list_truth = midi_create.matrix_to_midi(generated_midi_final_truth, instruments=self.instruments,
+                                                       notes_range=self.notes_range, no_duration=no_duration)
+
+        # ---------- find the name for the midi_file ----------
+        self.get_new_save_midis_path()
+        self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
+
+        # -------------------- Save Results --------------------
+        # Generated
+        path_to_save = str(self.save_midis_pathlib / 'generated.mid')
+        path_to_save_img = str(self.save_midis_pathlib / 'generated.jpg')
+        if self.work_on == 'note':
+            step_length = 1
+        elif self.work_on == 'beat':
+            step_length = g.step_per_beat
+        elif self.work_on == 'measure':
+            step_length = 4 * g.step_per_beat
+        midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
+                                       notes_list=output_notes_list, verbose=verbose)
+
+        # Saving the midi file
+        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+                              path=path_to_save, )
+        pianoroll.save_pianoroll(array=generated_midi_final,
+                                 path=path_to_save_img,
+                                 seed_length=nb_steps * step_length,
+                                 instruments=self.instruments)
+
+        # Helped
+        path_to_save = str(self.save_midis_pathlib / 'generated_helped.mid')
+        path_to_save_img = str(self.save_midis_pathlib / 'generated_helped.jpg')
+        if self.work_on == 'note':
+            step_length = 1
+        elif self.work_on == 'beat':
+            step_length = g.step_per_beat
+        elif self.work_on == 'measure':
+            step_length = 4 * g.step_per_beat
+        midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_helped,
+                                       notes_list=output_notes_list_helped, verbose=verbose)
+
+        # Saving the midi file
+        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+                              path=path_to_save, )
+        pianoroll.save_pianoroll(array=generated_midi_final_helped,
+                                 path=path_to_save_img,
+                                 seed_length=nb_steps * step_length,
+                                 instruments=self.instruments)
+
+        # Truth
+        path_to_save = str(self.save_midis_pathlib / 'generated_truth.mid')
+        path_to_save_img = str(self.save_midis_pathlib / 'generated_truth.jpg')
+        if self.work_on == 'note':
+            step_length = 1
+        elif self.work_on == 'beat':
+            step_length = g.step_per_beat
+        elif self.work_on == 'measure':
+            step_length = 4 * g.step_per_beat
+        midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_truth,
+                                       notes_list=output_notes_list_truth, verbose=verbose)
+
+        # Saving the midi file
+        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+                              path=path_to_save, )
+        pianoroll.save_pianoroll(array=generated_midi_final_truth,
+                                 path=path_to_save_img,
+                                 seed_length=nb_steps * step_length,
+                                 instruments=self.instruments)
 
