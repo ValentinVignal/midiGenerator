@@ -34,9 +34,7 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    if args.length == 'None':
-        args.length = None
-    else:
+    if args.length is not None:
         args.length = int(args.length)
 
     my_model = MyModel.from_model(id=args.load)  # Load the model
