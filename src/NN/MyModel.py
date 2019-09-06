@@ -544,34 +544,44 @@ class MyModel:
             generated_helped.shape[0], generated_helped.shape[2] * generated_helped.shape[3], generated_helped.shape[4],
             generated_helped.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
         generated_midi_final_helped = np.transpose(generated_midi_final_helped,
-                                            (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+                                                   (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
         output_notes_list_helped = midi_create.matrix_to_midi(generated_midi_final_helped, instruments=self.instruments,
-                                                       notes_range=self.notes_range, no_duration=no_duration)
+                                                              notes_range=self.notes_range, no_duration=no_duration)
         # Truth
         generated_midi_final_truth = np.reshape(generated_truth, (
             generated_truth.shape[0], generated_truth.shape[2] * generated_truth.shape[3], generated_truth.shape[4],
             generated_truth.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
         generated_midi_final_truth = np.transpose(generated_midi_final_truth,
-                                                   (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+                                                  (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
         output_notes_list_truth = midi_create.matrix_to_midi(generated_midi_final_truth, instruments=self.instruments,
-                                                       notes_range=self.notes_range, no_duration=no_duration)
+                                                             notes_range=self.notes_range, no_duration=no_duration)
 
         # ---------- find the name for the midi_file ----------
         self.get_new_save_midis_path()
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
 
         # -------------------- Save Results --------------------
-        # Generated
-        path_to_save = str(self.save_midis_pathlib / 'generated.mid')
-        path_to_save_img = str(self.save_midis_pathlib / 'generated.jpg')
         if self.work_on == 'note':
             step_length = 1
         elif self.work_on == 'beat':
             step_length = g.step_per_beat
         elif self.work_on == 'measure':
             step_length = 4 * g.step_per_beat
+        # -- Generated --
+        path_to_save = str(self.save_midis_pathlib / 'generated.mid')
+        path_to_save_img = str(self.save_midis_pathlib / 'generated.jpg')
         midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
                                        notes_list=output_notes_list, verbose=verbose)
+        # Print the accuracy
+        accuracies = [((np.count_nonzero(
+            generated_midi_final[i, :, nb_steps * step_length:, :] == generated_midi_final_truth[i, :,
+                                                                      nb_steps * step_length:,
+                                                                      :])) / (generated_midi_final[i, :,
+                                                                            nb_steps * step_length:, :].size)) for i in
+                      range(len(self.instruments))]
+        accuracy = sum(accuracies) / len(accuracies)
+        print('Accuracy of the generation :', colored(accuracies, 'magenta'), ', overall :',
+              colored(accuracy, 'magenta'))
 
         # Saving the midi file
         midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
@@ -581,17 +591,22 @@ class MyModel:
                                  seed_length=nb_steps * step_length,
                                  instruments=self.instruments)
 
-        # Helped
+        # -- Helped --
         path_to_save = str(self.save_midis_pathlib / 'generated_helped.mid')
         path_to_save_img = str(self.save_midis_pathlib / 'generated_helped.jpg')
-        if self.work_on == 'note':
-            step_length = 1
-        elif self.work_on == 'beat':
-            step_length = g.step_per_beat
-        elif self.work_on == 'measure':
-            step_length = 4 * g.step_per_beat
         midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_helped,
                                        notes_list=output_notes_list_helped, verbose=verbose)
+        # Print the accuracy
+        accuracies_helped = [(np.count_nonzero(
+            generated_midi_final_helped[i, :, nb_steps * step_length:, :] == generated_midi_final_truth[i, :,
+                                                                             nb_steps * step_length:,
+                                                                             :]) / generated_midi_final_helped[i, :,
+                                                                                   nb_steps * step_length:, :].size) for
+                             i in
+                             range(len(self.instruments))]
+        accuracy_helped = sum(accuracies_helped) / len(accuracies_helped)
+        print('Accuracy of the generation :', colored(accuracies_helped, 'magenta'), ', overall :',
+              colored(accuracy_helped, 'magenta'))
 
         # Saving the midi file
         midi_create.save_midi(output_notes_list=output_notes_list_helped, instruments=self.instruments,
@@ -601,15 +616,9 @@ class MyModel:
                                  seed_length=nb_steps * step_length,
                                  instruments=self.instruments)
 
-        # Truth
+        # -- Truth --
         path_to_save = str(self.save_midis_pathlib / 'generated_truth.mid')
         path_to_save_img = str(self.save_midis_pathlib / 'generated_truth.jpg')
-        if self.work_on == 'note':
-            step_length = 1
-        elif self.work_on == 'beat':
-            step_length = g.step_per_beat
-        elif self.work_on == 'measure':
-            step_length = 4 * g.step_per_beat
         midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_truth,
                                        notes_list=output_notes_list_truth, verbose=verbose)
 
@@ -620,4 +629,12 @@ class MyModel:
                                  path=path_to_save_img,
                                  seed_length=nb_steps * step_length,
                                  instruments=self.instruments)
+
+        text = 'Generated :\n\tAccuracy : {0}, Accuracies : {1}\n'.format(accuracy, accuracies)
+        text += 'Generated Helped :\n\tAccuracy : {0}, Accuracies : {1}'.format(accuracy_helped, accuracies_helped)
+        with open(str(self.save_midis_pathlib / 'Results.txt'), 'w') as f:
+            f.write(text)
+
+        cprint('Done Generating', 'green')
+
 
