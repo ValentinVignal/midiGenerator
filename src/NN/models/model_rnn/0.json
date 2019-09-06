@@ -1,4 +1,4 @@
 {
-  "fc": [64, 48, 32],
+  "fc": ["nb_instruments * 32", "nb_instruments * 24", "nb_instruments * 16"],
   "LSTM": ["24 * nb_instruments"]
 }
