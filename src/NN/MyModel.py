@@ -574,10 +574,10 @@ class MyModel:
                                        notes_list=output_notes_list, verbose=verbose)
         # Print the accuracy
         accuracies = [((np.count_nonzero(
-            generated_midi_final[i, :, nb_steps * step_length:, :] == generated_midi_final_truth[i, :,
+            generated_midi_final[i, :, nb_steps * step_length:, 0] == generated_midi_final_truth[i, :,
                                                                       nb_steps * step_length:,
-                                                                      :])) / (generated_midi_final[i, :,
-                                                                            nb_steps * step_length:, :].size)) for i in
+                                                                      0])) / (generated_midi_final[i, :,
+                                                                            nb_steps * step_length:, 0].size)) for i in
                       range(len(self.instruments))]
         accuracy = sum(accuracies) / len(accuracies)
         print('Accuracy of the generation :', colored(accuracies, 'magenta'), ', overall :',
@@ -598,10 +598,10 @@ class MyModel:
                                        notes_list=output_notes_list_helped, verbose=verbose)
         # Print the accuracy
         accuracies_helped = [(np.count_nonzero(
-            generated_midi_final_helped[i, :, nb_steps * step_length:, :] == generated_midi_final_truth[i, :,
+            generated_midi_final_helped[i, :, nb_steps * step_length:, 0] == generated_midi_final_truth[i, :,
                                                                              nb_steps * step_length:,
-                                                                             :]) / generated_midi_final_helped[i, :,
-                                                                                   nb_steps * step_length:, :].size) for
+                                                                             0]) / generated_midi_final_helped[i, :,
+                                                                                   nb_steps * step_length:, 0].size) for
                              i in
                              range(len(self.instruments))]
         accuracy_helped = sum(accuracies_helped) / len(accuracies_helped)
