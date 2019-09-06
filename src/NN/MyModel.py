@@ -605,7 +605,7 @@ class MyModel:
                              i in
                              range(len(self.instruments))]
         accuracy_helped = sum(accuracies_helped) / len(accuracies_helped)
-        print('Accuracy of the generation :', colored(accuracies_helped, 'magenta'), ', overall :',
+        print('Accuracy of the generation helped :', colored(accuracies_helped, 'magenta'), ', overall :',
               colored(accuracy_helped, 'magenta'))
 
         # Saving the midi file

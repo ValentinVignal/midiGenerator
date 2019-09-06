@@ -1,7 +1,4 @@
 {
-  "first_fc": [],
-  "LSTM_separated": [24],
-  "LSTM_common": [],
-  "fc_common": [],
-  "fc_separated": []
+  "fc": ["nb_instruments * 12"],
+  "LSTM": ["24 * nb_instruments"]
 }

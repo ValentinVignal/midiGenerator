@@ -204,4 +204,4 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     model.compile(loss=losses, optimizer=optimizer, metrics=[l.acc_act, l.mae_dur])
 
-    return model, losses, (lambda_activation, lambda_duration),
+    return model, losses, (lambda_activation, lambda_duration)
