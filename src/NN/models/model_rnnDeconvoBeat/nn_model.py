@@ -79,7 +79,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             inputs_activation[instrument])
 
     # ---------- All together ----------
-    x = layers.concatenate(inputs_midi, axis=4)  # (batch, nb_steps, step_length input_size, nb_instruments)
+    x = layers.concatenate(inputs_activation, axis=4)  # (batch, nb_steps, step_length input_size, nb_instruments)
 
     # ----- Convolutional Layer -----
     convo = model_param['convo']

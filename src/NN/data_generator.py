@@ -274,8 +274,8 @@ class MySequenceBeat(tf.keras.utils.Sequence):
 
         if self.noise is not None and self.noise > 0:
             # Creation of the noise
-            noise = np.random.binomial(n=1, p=self.noise, size=x.shape)
-            x = np.abs(x - noise)
+            noise = np.random.binomial(n=1, p=self.noise, size=x[:, :, :, :, :, 0].shape)
+            x[:, :, :, :, :, 0] = np.abs(x[:, :, :, :, :, 0] - noise)
 
         return list(x), list(y)
 
@@ -358,6 +358,9 @@ class SeeMySequenceBeat:
 
         self.colors = None
         self.new_colors()
+
+    def set_noise(self, noise):
+        self.my_sequence.set_noise(noise)
 
     def new_colors(self):
         # Colors
