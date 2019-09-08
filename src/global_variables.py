@@ -16,6 +16,7 @@ type_loss = 'linear_round'
 all_sequence = False
 lstm_state = False
 work_on = 'beat'
+epochs = 200
 
 
 def work_on2nb(wo):
@@ -55,4 +56,4 @@ def letter2work_on(letter):
         raise Exception('Unknow work_on letter :{0}'.format(letter))
 
 
-noise = 0.002
+noise = 0
