@@ -231,7 +231,12 @@ class MySequenceBeat(tf.keras.utils.Sequence):
                                                              self.nb_steps)  # nb element available in the generator
         self.nb_elements = int(self.nb_elements / self.batch_size)
         self.all_len = self.know_all_len()
+
+        self.noise = 0
+
         print('MySequence instance initiated on the data', colored(self.pathlib.as_posix(), 'grey', 'on_white'))
+
+    # ---------- For Keras ----------
 
     def __len__(self):
         return self.nb_elements
@@ -267,7 +272,19 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         x = np.transpose(x, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         y = np.transpose(y, (2, 0, 1, 3, 4))  # (nb_instruments, batch, step_size, input_size, 2)
 
+        if self.noise is not None and self.noise > 0:
+            # Creation of the noise
+            noise = np.random.binomial(n=1, p=self.noise, size=x.shape)
+            x = np.abs(x - noise)
+
         return list(x), list(y)
+    
+    # ---------- For the user ----------
+
+    def set_noise(self, noise):
+        self.noise = noise
+
+    # --------- Helper functions ---------
 
     def return_ijk(self, i_start):
         """

@@ -42,6 +42,9 @@ def main():
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
     # ----------------
+    parser.add_argument('--noise', type=float, default=g.noise,
+                        help='If not 0, add noise to the input for training')
+    # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
     # ----------------
@@ -94,7 +97,7 @@ def main():
     elif args.load != '':
         my_model.load_model(args.load)
 
-    my_model.train(epochs=args.epochs, batch=args.batch)
+    my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
 
     my_model.save_model()
 

@@ -16,3 +16,5 @@ type_loss = 'linear_round'
 all_sequence = False
 lstm_state = False
 work_on = 'beat'
+
+noise = 0.1

@@ -245,13 +245,14 @@ class MyModel:
     def print_model(self):
         print(self.my_nn.model.summary())
 
-    def train(self, epochs=None, batch=None, callbacks=[], verbose=1):
+    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise):
         """
 
         :param epochs:
         :param batch:
         :param callbacks:
         :param verbose:
+        :param noise:
         :return: train the model
         """
 
@@ -274,6 +275,8 @@ class MyModel:
                 batch_size=self.batch,
                 work_on=self.work_on
             )
+        if noise is not None:
+            self.my_sequence.set_noise(noise)
 
         # Actual train
         print(colored('Training...', 'blue'))
@@ -488,6 +491,7 @@ class MyModel:
                 nb_steps=nb_steps,
                 batch_size=1,
                 work_on=self.work_on)
+        self.my_sequence.set_noise(0)
         max_length = len(self.my_sequence) if max_length is None else min(max_length, len(self.my_sequence))
 
         # -------------------- Construct seeds --------------------
