@@ -37,9 +37,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     }
     mmodel_options.update(model_options)
 
-    dropout = mmodel_options['dropout']
-    all_sequence = mmodel_options['all_sequence']
-    lstm_state = mmodel_options['lstm_state']
     # --------- End model options ----------
 
     print('Definition of the graph ...')
@@ -73,68 +70,51 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     shape_before_fc = x.shape
     x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(
         x)  # (batch, nb_steps, length * size * input_size)
-    fc = model_param['fc']
-    for s in fc:
-        size = eval(s, env)
-        x = layers.TimeDistributed(layers.Dense(size))(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout)(x)
-    # ---------- LSTM -----------
-    size_before_lstm = x.shape[2]  # (batch, nb_steps, size)
-    # -- Loop --
-    lstm = model_param['LSTM']
-    for s in lstm[:-1]:
-        size = eval(s, env)
-        x = layers.LSTM(size,
-                        return_sequences=True,
-                        unit_forget_bias=True,
-                        dropout=dropout,
-                        recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout)(x)
-    # -- Last one --
-    if lstm_state:
-        s = lstm[-1]
-        size = eval(s, env)
-        x, state_h, state_c = layers.LSTM(size,
-                                          return_sequences=all_sequence,
-                                          return_state=True,
-                                          unit_forget_bias=True,
-                                          dropout=dropout,
-                                          recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout)(x)
-        if all_sequence:
-            x = layers.Flatten()(x)
 
-        x = layers.concatenate([x, state_h, state_c], axis=1)  # (batch, 3 *  size)
-    else:
-        s = lstm[-1]
-        size = eval(s, env)
-        x = layers.LSTM(size,
-                        return_sequences=all_sequence,
-                        return_state=False,
-                        unit_forget_bias=True,
-                        dropout=dropout,
-                        recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout)(x)
-        if all_sequence:
-            x = layers.Flatten()(x)
-    x = layers.Dense(size_before_lstm)(x)  # (batch, size)
+    x = layers.Dropout(0.5)(x)
+    # fc 1
+    x = layers.TimeDistributed(layers.Dense(64))(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.5)(x)
+    # fc 2
+    x = layers.TimeDistributed(layers.Dense(48))(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.4)(x)
+    # fc 2
+    x = layers.TimeDistributed(layers.Dense(32))(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.3)(x)
+
+    # ---------- LSTM -----------
+    x = layers.LSTM(64,
+                    return_sequences=False,
+                    return_state=False,
+                    unit_forget_bias=True,
+                    dropout=0.3,
+                    recurrent_dropout=0.3)(x)  # (batch, nb_steps, size)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.3)(x)
 
     # ----- Fully Connected ------
-    fc_decoder = model_param['fc'][::-1]
-    for s in (fc_decoder + [shape_before_fc[2] * shape_before_fc[3] * shape_before_fc[4]]):
-        size = es.eval_all(s, env)
-        x = layers.Dense(size)(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(dropout)(x)  # (batch, size)
+    # fc 3
+    x = layers.Dense(32)(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.5)(x)
+    # fc 2
+    x = layers.Dense(48)(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.4)(x)
+    # fc 1
+    x = layers.Dense(64)(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.3)(x)
 
     # ---------- Instruments separately ----------
     outputs = []  # (batch, nb_steps, nb_instruments, input_size)
