@@ -1,5 +1,6 @@
 from pathlib import Path
 from termcolor import cprint
+import matplotlib.pyplot as plt
 
 
 def summarize_compute_data(path, **d):
@@ -106,4 +107,68 @@ def update_best_summary_loss_history(path, log, path_model, hparam, best_index):
         f2.write(ftext)
     cprint('Summary updated with the best model at {0}'.format(path), 'green')
 
+
+def save_train_history(train_history, nb_instruments, pathlib):
+    """
+
+    :param train_history:
+    :param nb_instruments:
+    :param pathlib:
+    :return:
+    """
+    loss = train_history['loss']
+    losses = [train_history['Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
+    accs_act = [train_history['Output_{0}_acc_act'.format(i)] for i in range(nb_instruments)]
+    mae_dur = [train_history['Output_{0}_mae_dur'.format(i)] for i in range(nb_instruments)]
+
+    epochs = range(1, len(loss) + 1)
+
+    # ----- Save losses -----
+    plt.figure()
+    plt.plot(epochs, loss, label='Loss')
+    for i in range(nb_instruments):
+        plt.plot(epochs, losses[i], label='Output_{0}_loss'.format(i))
+
+    plt.title('Variation of the Loss through the epochs\n{0}'.format(loss[-1]))
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss value')
+    plt.legend()
+    plt.grid()
+    plt.savefig((pathlib / 'Losses.png').as_posix())
+
+    # ----- Save accuracies -----
+    plt.figure()
+    for i in range(nb_instruments):
+        plt.plot(epochs, accs_act[i], label='Output_{0}_acc_act'.format(i))
+
+    plt.title('Variation of the accuracy through the epochs\n')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy value')
+    plt.legend()
+    plt.grid()
+    plt.savefig((pathlib / 'Accuracies_activation.png').as_posix())
+
+    # ----- Save durations -----
+    plt.figure()
+    for i in range(nb_instruments):
+        plt.plot(epochs, mae_dur[i], label='Output_{0}_acc_act'.format(i))
+
+    plt.title('Variation of the accuracy mae through the epochs\n')
+    plt.xlabel('Epochs')
+    plt.ylabel('Duration mae value')
+    plt.legend()
+    plt.grid()
+    plt.savefig((pathlib / 'Duration_mae.png').as_posix())
+
+    # ----- Text -----
+    text = 'Loss : {0}'.format(loss[-1])
+    text += '\n\n'
+    text += 'By instrument :\n'
+    for i in range(nb_instruments):
+        text += '\tInstrument {0}\n'.format(i)
+        text += '\t\t Loss : {0}\t--\t{1}\n'.format(losses[i][-1], losses[i])
+        text += '\t\t Accuracy activation : {0}\t--\t{1}\n'.format(accs_act[i][-1], accs_act[i])
+        text += '\t\t Duration mae : {0}\t--\t{1}\n'.format(mae_dur[i][-1], mae_dur[i])
+    with open((pathlib / 'Summary.txt').as_posix(), 'w') as f:
+        f.write(text)
 

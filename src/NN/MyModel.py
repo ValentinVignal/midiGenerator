@@ -3,7 +3,6 @@ from pathlib import Path
 import pickle
 import numpy as np
 import progressbar
-import random
 from termcolor import colored, cprint
 import math
 
@@ -54,6 +53,7 @@ class MyModel:
         # ----- Neural Network -----
         self.input_param = None  # The parameters for the neural network
         self.my_nn = None  # Our neural network
+        self.train_history = None
 
         # ------ save_midi_path -----
         self.save_midis_pathlib = None  # Where to save the generated midi files
@@ -280,7 +280,7 @@ class MyModel:
 
         # Actual train
         print(colored('Training...', 'blue'))
-        self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks, verbose=verbose)
+        self.train_history = self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks, verbose=verbose)
 
         # Update parameters
         self.total_epochs += epochs
@@ -321,6 +321,8 @@ class MyModel:
             'notes_range': self.notes_range,
             'work_on': self.work_on
         })
+
+        summary.save_train_history(self.train_history, len(self.instruments), path_to_save)
 
         print(colored('Model saved in {0}'.format(path_to_save), 'green'))
         return path_to_save
