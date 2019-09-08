@@ -74,17 +74,17 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     x = layers.Dropout(0.5)(x)
     # fc 1
     x = layers.TimeDistributed(layers.Dense(64))(x)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.5)(x)
     # fc 2
     x = layers.TimeDistributed(layers.Dense(48))(x)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.4)(x)
     # fc 2
     x = layers.TimeDistributed(layers.Dense(32))(x)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.3)(x)
 
@@ -95,24 +95,24 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                     unit_forget_bias=True,
                     dropout=0.3,
                     recurrent_dropout=0.3)(x)  # (batch, nb_steps, size)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.3)(x)
 
     # ----- Fully Connected ------
     # fc 3
     x = layers.Dense(32)(x)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.5)(x)
     # fc 2
     x = layers.Dense(48)(x)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.4)(x)
     # fc 1
     x = layers.Dense(64)(x)
-    x = layers.LeakyReLU()(x)
+    x = layers.ReLU()(x)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.3)(x)
 
