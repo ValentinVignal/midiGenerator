@@ -32,8 +32,8 @@ class MyModel:
         self.name = name
         self.model_id = ''  # Id of the model used
         self.full_name = ''  # Id of this MyModel instance
-        self.get_new_full_name()
         self.work_on = None
+        self.get_new_full_name()
 
         self.saved_model_path = os.path.join('saved_models', self.full_name)  # Where to saved the trained model
         self.saved_model_pathlib = Path(self.saved_model_path)
@@ -95,7 +95,8 @@ class MyModel:
         :param i: index
         :return: set up the full name and the path to save the trained model
         """
-        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i)
+        full_name = '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i,
+                                                             g.work_on2letter(self.work_on))
         saved_model_path = os.path.join('saved_models', full_name)
         saved_model_pathlib = Path(saved_model_path)
         self.full_name = full_name
@@ -109,12 +110,14 @@ class MyModel:
         :return: set up a new unique full name and the corresponding path to save the trained model
         """
         i = 0
-        full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i)
+        full_name = '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i,
+                                                             g.work_on2letter(self.work_on))
         saved_model_path = os.path.join('saved_models', full_name)
         saved_model_pathlib = Path(saved_model_path)
         while saved_model_pathlib.exists():
             i += 1
-            full_name = '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i)
+            full_name = '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i,
+                                                                 g.work_on2letter(self.work_on))
             saved_model_path = os.path.join('saved_models', full_name)
             saved_model_pathlib = Path(saved_model_path)
         self.saved_model_path = saved_model_path
@@ -169,22 +172,15 @@ class MyModel:
 
         self.model_id = model_id
         self.total_epochs = 0
-        self.get_new_full_name()
-
-        opt_param = {'lr': g.lr, 'name': 'adam'} if opt_param is None else opt_param
-
         if work_on is None:
             self.work_on = g.work_on if self.work_on is None else self.work_on
         else:
             self.work_on = work_on
-        if self.work_on == 'note':
-            step_length = 1
-        elif self.work_on == 'beat':
-            step_length = g.step_per_beat
-        elif self.work_on == 'measure':
-            step_length = 4 * g.step_per_beat
-        else:
-            raise Exception('Work_on type unkown : {0}'.format(work_on))
+
+        step_length = g.work_on2nb(self.work_on)
+        self.get_new_full_name()
+
+        opt_param = {'lr': g.lr, 'name': 'adam'} if opt_param is None else opt_param
 
         self.my_nn = MyNN()
         self.my_nn.new_model(model_id=self.model_id,
@@ -203,14 +199,16 @@ class MyModel:
         :param keep_name: if true keep the name, if not, get a new index at the and of the full name
         :return: load a model
         """
-        self.name, self.model_id, total_epochs, indice = id.split('-')
+        self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
+        self.work_on = g.letter2work_on(work_on_letter)
         self.total_epochs = int(total_epochs)
         if keep_name:
             self.get_full_name(indice)
         else:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
-                            '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
+                            '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs,
+                                                                     indice, work_on_letter))
         self.my_nn = MyNN()
         self.my_nn.load(str(path_to_load / 'MyNN'))
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
@@ -230,14 +228,16 @@ class MyModel:
         :param keep_name: if true keep the name, if not, get a new index at the and of the full name
         :return: load the weights of a model
         """
-        self.name, self.model_id, total_epochs, indice = id.split('-')
+        self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
+        self.work_on = g.letter2work_on(work_on_letter)
         self.total_epochs = int(total_epochs)
         if keep_name:
             self.get_full_name(indice)
         else:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
-                            '{0}-m({1})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, indice))
+                            '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs,
+                                                                     indice, work_on_letter))
         self.my_nn.load_weights(str(path_to_load / 'MyNN.h5'))
         self.print_model()
         print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
@@ -581,7 +581,8 @@ class MyModel:
             generated_midi_final[i, :, nb_steps * step_length:, 0] == generated_midi_final_truth[i, :,
                                                                       nb_steps * step_length:,
                                                                       0])) / (generated_midi_final[i, :,
-                                                                            nb_steps * step_length:, 0].size)) for i in
+                                                                              nb_steps * step_length:, 0].size)) for i
+                      in
                       range(len(self.instruments))]
         accuracy = sum(accuracies) / len(accuracies)
         print('Accuracy of the generation :', colored(accuracies, 'magenta'), ', overall :',
@@ -640,5 +641,3 @@ class MyModel:
             f.write(text)
 
         cprint('Done Generating', 'green')
-
-
