@@ -86,7 +86,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for i in convo:
         for s in i:
             size = s
-            x = layers.Conv3D(filters=size, kernel_size=(1, 5, 3), padding='same')(x)
+            x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
             x = layers.LeakyReLU()(x)
             x = layers.BatchNormalization()(x)
             x = layers.Dropout(dropout / 2)(x)

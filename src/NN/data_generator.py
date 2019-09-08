@@ -278,7 +278,7 @@ class MySequenceBeat(tf.keras.utils.Sequence):
             x = np.abs(x - noise)
 
         return list(x), list(y)
-    
+
     # ---------- For the user ----------
 
     def set_noise(self, noise):
