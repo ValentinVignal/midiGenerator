@@ -493,6 +493,8 @@ class MyModel:
                 nb_steps=nb_steps,
                 batch_size=1,
                 work_on=self.work_on)
+        else:
+            self.my_sequence.change_batch_size(1)
         self.my_sequence.set_noise(0)
         max_length = len(self.my_sequence) if max_length is None else min(max_length, len(self.my_sequence))
 

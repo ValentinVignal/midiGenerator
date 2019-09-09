@@ -284,6 +284,14 @@ class MySequenceBeat(tf.keras.utils.Sequence):
     def set_noise(self, noise):
         self.noise = noise
 
+    def change_batch_size(self, batch_size):
+        self.batch_size = batch_size
+
+        self.nb_elements = MySequenceBeat.return_nb_elements(self.all_shapes, self.step_size,
+                                                             self.nb_steps)  # nb element available in the generator
+        self.nb_elements = int(self.nb_elements / self.batch_size)
+        self.all_len = self.know_all_len()
+
     # --------- Helper functions ---------
 
     def return_ijk(self, i_start):

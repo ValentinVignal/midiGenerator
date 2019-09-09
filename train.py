@@ -48,6 +48,9 @@ def main():
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
     # ----------------
+    parser.add_argument('--generate', default=False, action='store_true',
+                        help='Generation after training')
+    # ----------------
     load_group = parser.add_mutually_exclusive_group()
     load_group.add_argument('-m', '--model-id', type=str, default='',
                             help='The model id modelName,modelParam,nbSteps')
@@ -99,9 +102,10 @@ def main():
 
     my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
 
-    my_model.compare_generation(max_length=None,
-                                no_duration=True,
-                                verbose=1)
+    if args.generate:
+        my_model.compare_generation(max_length=None,
+                                    no_duration=True,
+                                    verbose=1)
 
     my_model.save_model()
 
