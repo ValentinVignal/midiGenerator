@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow.python.keras.backend as K
 
 import src.eval_string as es
 import src.NN.losses as l
@@ -9,6 +8,7 @@ import src.NN.layers as mlayers
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
+K = tf.keras.backend
 
 """
 
