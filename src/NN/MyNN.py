@@ -12,6 +12,8 @@ from time import time
 import src.NN.losses as nn_losses
 import src.global_variables as g
 
+K = tf.keras.backend
+
 
 class MyNN:
     """
@@ -148,6 +150,7 @@ class MyNN:
         return a.history
 
     def evaluate(self, generator, verbose=1):
+        K.set_learning_phase(1)
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
 
@@ -223,6 +226,7 @@ class MyNN:
         :param input:
         :return:
         """
+        K.set_learning_phase(1)
         return self.model.predict(input, verbose=0)
 
     @staticmethod
@@ -239,3 +243,7 @@ class MyNN:
     @staticmethod
     def choose_gpu(gpu):
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu
+
+    @staticmethod
+    def clear_session():
+        K.clear_session()
