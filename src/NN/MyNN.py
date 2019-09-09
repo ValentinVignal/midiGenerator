@@ -147,6 +147,10 @@ class MyNN:
 
         return a.history
 
+    def evaluate(self, generator, verbose=1):
+        evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
+        return evaluation
+
     def save(self, path):
         """
 

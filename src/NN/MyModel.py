@@ -288,6 +288,16 @@ class MyModel:
         self.get_new_full_name()
         print(colored('Training done', 'green'))
 
+    def evaluate(self):
+        cprint('Evaluation', 'blue')
+        evaluation = self.my_nn.evaluate(generator=self.my_sequence)
+
+        metrics_names = self.my_nn.model.metrics_names
+        text = ''
+        for i in range(len(metrics_names)):
+            text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
+        print(text)
+
     def save_model(self, path=None):
         """
 

@@ -48,6 +48,8 @@ def main():
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
     # ----------------
+    parser.add_argument('--evaluate', default=False, action='store_true',
+                        help='Evaluate the model after the training')
     parser.add_argument('--generate', default=False, action='store_true',
                         help='Generation after training')
     # ----------------
@@ -101,6 +103,9 @@ def main():
         my_model.load_model(args.load)
 
     my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
+
+    if args.evaluate:
+        my_model.evaluate()
 
     if args.generate:
         my_model.compare_generation(max_length=None,
