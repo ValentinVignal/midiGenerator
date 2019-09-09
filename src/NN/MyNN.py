@@ -144,8 +144,9 @@ class MyNN:
         :return:
         """
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
+        K.set_learning_phase(1)
         a = self.model.fit_generator(epochs=epochs, generator=generator,
-                                 shuffle=True, verbose=verbose, callbacks=callback_list)
+                                     shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return a.history
 
