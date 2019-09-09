@@ -39,14 +39,16 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--min-pool', default=False, action='store_true',
                         help='Either to use the min pooling after upsampling')
-    parser.add_argument('--work-on', type=str, default=g.work_on,
-                        help='note, beat or measure')
+    parser.add_argument('--no-batch-norm', default=False, action='store_true',
+                        help='to not use batch norm')
     # ----------------
     parser.add_argument('--noise', type=float, default=g.noise,
                         help='If not 0, add noise to the input for training')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
+    parser.add_argument('--work-on', type=str, default=g.work_on,
+                        help='note, beat or measure')
     # ----------------
     parser.add_argument('--evaluate', default=False, action='store_true',
                         help='Evaluate the model after the training')
@@ -63,6 +65,8 @@ def main():
                         help='What GPU to use')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='To work on a small computer with a cpu')
+    parser.add_argument('--debug', action='store_true', default=False,
+                        help='To set special paremeters for a debug')
 
     args = parser.parse_args()
 
@@ -80,6 +84,8 @@ def main():
     # Choose GPU
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    if args.debug:
+        args.no_batch_norm = True
 
     if args.model_id != '':
         opt_param = {
@@ -92,7 +98,8 @@ def main():
             'dropout': args.dropout,
             'all_sequence': args.all_sequence,
             'lstm_state': args.lstm_state,
-            'min_pool': args.min_pool
+            'min_pool': args.min_pool,
+            'no_batch_norm': args.no_batch_norm
         }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
