@@ -99,6 +99,10 @@ def main():
 
     my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
 
+    my_model.compare_generation(max_length=None,
+                                no_duration=True,
+                                verbose=1)
+
     my_model.save_model()
 
     cprint('---------- Done ----------', 'grey', 'on_green')

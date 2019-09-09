@@ -525,7 +525,7 @@ class MyModel:
                 preds_truth = preds_truth[np.newaxis, :, :, :, :]
             preds = midi_create.normalize_activation(preds)  # Normalize the activation part
             preds_helped = preds[:, 1, :, :, :][:, np.newaxis, np.newaxis, :, :,
-                           :]  # (nb_instruments, 1, 1, lenght, 88, 2)
+                           :]  # (nb_instruments, 1, 1, length, 88, 2)
             preds = preds[:, 0, :, :, :][:, np.newaxis, np.newaxis, :, :, :]
 
             # Concatenation
