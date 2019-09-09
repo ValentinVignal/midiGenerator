@@ -8,7 +8,7 @@ from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
 from tensorflow.python.keras import constraints
 
-K = tf.keras.backend
+import tensorflow.python.keras.backend as K
 
 '''
 class BatchNormalization(Layer):

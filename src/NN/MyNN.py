@@ -12,7 +12,7 @@ from time import time
 import src.NN.losses as nn_losses
 import src.global_variables as g
 
-K = tf.keras.backend
+import tensorflow.python.keras.backend as K
 
 
 class MyNN:
