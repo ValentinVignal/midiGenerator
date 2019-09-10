@@ -144,12 +144,14 @@ class MyNN:
         :return:
         """
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
+        self.unfreeze_batch_norm()
         a = self.model.fit_generator(epochs=epochs, generator=generator,
                                      shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return a.history
 
     def evaluate(self, generator, verbose=1):
+        self.freeze_batch_norm()
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
 
@@ -225,7 +227,24 @@ class MyNN:
         :param input:
         :return:
         """
+        self.freeze_batch_norm()
         return self.model.predict(input, verbose=0)
+
+    def freeze_batch_norm(self):
+        for layer in self.model.layers:
+            if 'batch_normalization' in layer.name:
+                if 'time_distributed' in layer.name:
+                    layer.layer.momentum = 1
+                else:
+                    layer.momentum = 1
+
+    def unfreeze_batch_norm(self):
+        for layer in self.model.layers:
+            if 'batch_normalization' in layer.name:
+                if 'time_distributed' in layer.name:
+                    layer.layer.momentum = 0.99
+                else:
+                    layer.momentum = 0.99
 
     @staticmethod
     def allow_growth():
