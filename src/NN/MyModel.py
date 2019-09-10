@@ -243,7 +243,7 @@ class MyModel:
         print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
 
     def print_model(self):
-        print(self.my_nn.model.summary())
+        print(self.my_nn.model_train.summary())
 
     def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise):
         """
@@ -292,7 +292,7 @@ class MyModel:
         cprint('Evaluation', 'blue')
         evaluation = self.my_nn.evaluate(generator=self.my_sequence)
 
-        metrics_names = self.my_nn.model.metrics_names
+        metrics_names = self.my_nn.model_train.metrics_names
         text = ''
         for i in range(len(metrics_names)):
             text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
@@ -342,7 +342,7 @@ class MyModel:
         Print the weights
         :return:
         """
-        for layer in self.my_nn.model.layers:
+        for layer in self.my_nn.model_train.layers:
             lstm_weights = layer.get_weights()  # list of numpy arrays
             print('Lstm weights:', lstm_weights)
 
