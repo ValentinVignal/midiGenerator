@@ -20,6 +20,8 @@ class BatchNormalization(layers.Layer):
         self.momentum = momentum
         self.epsilon = epsilon
 
+        self.shape = None
+
         self.scale = None
         self.beta = None
         self.pop_mean = None
@@ -27,7 +29,7 @@ class BatchNormalization(layers.Layer):
 
     def build(self, inputs_shape):
         if type(self.axis) is int:
-            shape = inputs_shape[self.axis]
+            shape = (inputs_shape[self.axis], )
         elif type(self.axis) is list or type(self.axis) is tuple:
             shape = []
             for i in range(len(self.axis)):
@@ -35,6 +37,7 @@ class BatchNormalization(layers.Layer):
             shape = tuple(shape)
         else:
             raise TypeError('{0}: axis should be an int, list or tuple. Not a {1}'.format(self.name, type(self.axis)))
+        self.shape = shape
 
         self.scale = self.add_weight(name='batch_norm_scale',
                                      shape=shape,
@@ -43,18 +46,18 @@ class BatchNormalization(layers.Layer):
                                     shape=shape,
                                     initializer=tf.keras.initializers.zeros)
         self.pop_mean = self.add_weight(name='batch_norm_pop_mean',
-                                        shape=inputs_shape[1:],
+                                        shape=shape,
                                         initializer=tf.keras.initializers.zeros,
                                         trainable=False)
         self.pop_var = self.add_weight(name='batch_norm_pop_var',
-                                       shape=inputs_shape[1:],
+                                       shape=shape,
                                        initializer=tf.keras.initializers.ones,
                                        trainable=False)
 
     def call(self, inputs, training=None):
 
         def batch_norm_train():
-            batch_mean, batch_var = tf.nn.moments(inputs, [0])
+            batch_mean, batch_var = tf.nn.moments(inputs, list(self.shape))
             train_mean = tf.assign(self.pop_mean,
                                    self.pop_mean * self.momentum + batch_mean * (1 - self.momentum))
             train_var = tf.assign(self.pop_var,
