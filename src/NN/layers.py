@@ -22,22 +22,36 @@ class BatchNormalization(layers.Layer):
 
         self.shape = None
 
+        self._axis = None
         self.scale = None
         self.beta = None
         self.pop_mean = None
         self.pop_var = None
 
     def build(self, inputs_shape):
+        # ----- Shape -----
         if type(self.axis) is int:
             shape = (inputs_shape[self.axis], )
+            self._axis = [i for i in range(len(inputs_shape))]
+            self._axis = self._axis[:self.axis] + self._axis[self.axis+1:]
         elif type(self.axis) is list or type(self.axis) is tuple:
             shape = []
+            axis_abs = []
             for i in range(len(self.axis)):
                 shape.append(inputs_shape[self.axis[i]])
+                if self.axis[i] >= 0:
+                    axis_abs.append(self.axis[i])
+                else:
+                    axis_abs.append(len(inputs_shape) - self.axis[i])
             shape = tuple(shape)
+            self._axis = []
+            for i in range(len(inputs_shape)):
+                if i not in axis_abs:
+                    self._axis.append(i)
         else:
             raise TypeError('{0}: axis should be an int, list or tuple. Not a {1}'.format(self.name, type(self.axis)))
         self.shape = shape
+        # ----- _axis -----
 
         self.scale = self.add_weight(name='batch_norm_scale',
                                      shape=shape,
@@ -57,7 +71,7 @@ class BatchNormalization(layers.Layer):
     def call(self, inputs, training=None):
 
         def batch_norm_train():
-            batch_mean, batch_var = tf.nn.moments(inputs, list(self.shape))
+            batch_mean, batch_var = tf.nn.moments(inputs, self._axis)
             train_mean = tf.assign(self.pop_mean,
                                    self.pop_mean * self.momentum + batch_mean * (1 - self.momentum))
             train_var = tf.assign(self.pop_var,
