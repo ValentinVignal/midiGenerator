@@ -26,15 +26,12 @@ class MyNN:
         self.nb_steps = None
         self.step_length = None
         # --- TF ---
-        self.model_train = None
-        self.model_predict = None
+        self.model = None
         self.losses = None
         self.loss_lambdas = None
         self.opt_param = None
         self.decay = None
         self.type_loss = None
-
-        self.train_mode = True
 
         # Spare GPU
         tf.logging.set_verbosity(tf.logging.ERROR)
@@ -85,26 +82,14 @@ class MyNN:
         self.opt_param = opt_param
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
 
-        K.set_learning_phase(1)
-        self.model_train, self.losses, self.loss_lambdas = nn_model.create_model(
+        self.model, self.losses, self.loss_lambdas = nn_model.create_model(
             input_param=input_param,
             model_param=model_param,
             nb_steps=nb_steps,
             optimizer=optimizer,
             step_length=step_length,
             type_loss=self.type_loss,
-            model_options=model_options,
-            trainable=True)
-        K.set_learning_phase(0)
-        self.model_predict = nn_model.create_model(
-            input_param=input_param,
-            model_param=model_param,
-            nb_steps=nb_steps,
-            optimizer=optimizer,
-            step_length=step_length,
-            type_loss=self.type_loss,
-            model_options=model_options,
-            trainable=False)[0]
+            model_options=model_options)
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps
@@ -159,14 +144,15 @@ class MyNN:
         :return:
         """
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
-        a = self.model_train.fit_generator(epochs=epochs, generator=generator,
-                                           shuffle=True, verbose=verbose, callbacks=callback_list)
-        self.model_predict.set_weights(self.model_train.get_weights())
+        self.unfreeze_batch_norm()
+        a = self.model.fit_generator(epochs=epochs, generator=generator,
+                                     shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return a.history
 
     def evaluate(self, generator, verbose=1):
-        evaluation = self.model_predict.evaluate_generator(generator=generator, verbose=verbose)
+        self.freeze_batch_norm()
+        evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
 
     def save(self, path):
@@ -177,10 +163,8 @@ class MyNN:
         """
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
-        self.model_train.save_weights(str(path / 'm_train_weights.h5'))
-        self.model_train.save(str(path / 'm_train.h5'))
-        self.model_predict.save_weights(str(path / 'm_predict_weights.h5'))
-        self.model_predict.save(str(path / 'm_predict_train.h5'))
+        self.model.save_weights(str(path / 'm_weigths.h5'))
+        self.model.save(str(path / 'm.h5'))
 
         string_loss = dill.dumps(self.losses)
         string_decay = dill.dumps(self.decay)
@@ -220,24 +204,13 @@ class MyNN:
 
         optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
         metrics = [nn_losses.acc_act, nn_losses.mae_dur]
-        K.set_learning_phase(1)
-        self.model_train = tf.keras.models.load_model(str(path / 'm_train.h5'),
-                                                      custom_objects={'losses': self.losses,
-                                                                      'loss_function': nn_losses.choose_loss(
-                                                                          self.type_loss)(
-                                                                          *self.loss_lambdas),
-                                                                      'optimizer': optimizer,
-                                                                      'acc_act': nn_losses.acc_act,
-                                                                      'mae_dur': nn_losses.mae_dur})
-        K.set_learning_phase(0)
-        self.model_train = tf.keras.models.load_model(str(path / 'm_predict.h5'),
-                                                      custom_objects={'losses': self.losses,
-                                                                      'loss_function': nn_losses.choose_loss(
-                                                                          self.type_loss)(
-                                                                          *self.loss_lambdas),
-                                                                      'optimizer': optimizer,
-                                                                      'acc_act': nn_losses.acc_act,
-                                                                      'mae_dur': nn_losses.mae_dur})
+        self.model = tf.keras.models.load_model(str(path / 'm.h5'),
+                                                custom_objects={'losses': self.losses,
+                                                                'loss_function': nn_losses.choose_loss(self.type_loss)(
+                                                                    *self.loss_lambdas),
+                                                                'optimizer': optimizer,
+                                                                'acc_act': nn_losses.acc_act,
+                                                                'mae_dur': nn_losses.mae_dur})
 
     def load_weights(self, path):
         """
@@ -246,8 +219,7 @@ class MyNN:
         :return:
         """
         path = Path(path)
-        self.model_train.load_weights(str(path / 'm_train_weights.h5'))
-        self.model_predict.load_weights(str(path / 'm_predict_weights.h5'))
+        self.model.load_weights(str(path / 'm_weights.h5'))
 
     def generate(self, input):
         """
@@ -255,13 +227,8 @@ class MyNN:
         :param input:
         :return:
         """
-        return self.model_predict.predict(input, verbose=0)
-
-    def train_mode_on(self):
-        if not self.train_mode:
-            self.train_mode = True
-            if self.model is not None:
-                weight = self.model.get_weights()
+        self.freeze_batch_norm()
+        return self.model.predict(input, verbose=0)
 
     def freeze_batch_norm(self):
         for layer in self.model.layers:

@@ -25,7 +25,7 @@ def min_max_pool3d_output_shape(input_shape):
 
 
 def create_model(input_param, model_param, nb_steps, step_length, optimizer, type_loss=g.type_loss,
-                 model_options={}, trainable=True
+                 model_options={}
                  ):
     """
 
@@ -36,13 +36,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     :param optimizer:
     :param type_loss:
     :param model_options:
-    :param trainable
     :return: the neural network:
     """
-    if trainable:
-        K.set_learning_phase(1)
-    else:
-        K.set_learning_phase(0)
 
     # ---------- Model options ----------
     mmodel_options = {
@@ -60,11 +55,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     min_pool = mmodel_options['min_pool']
     # --------- End model options ----------
 
-    if trainable:
-        print('Definition of the trainable graph ...')
-    else:
-        print('Definition of the non-trainable graph ...')
-
+    print('Definition of the graph ...')
 
     nb_instruments = input_param['nb_instruments']
     input_size = input_param['input_size']
@@ -100,7 +91,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             size = s
             x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
             x = layers.LeakyReLU()(x)
-            x = layers.TimeDistributed(layers.BatchNormalization(trainable=trainable),
+            x = layers.TimeDistributed(layers.BatchNormalization(),
                                        name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
             i_tdbn += 1
             x = layers.Dropout(dropout / 2)(x)
@@ -113,7 +104,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         size = eval(s, env)
         x = layers.TimeDistributed(layers.Dense(size))(x)
         x = layers.LeakyReLU()(x)
-        x = layers.TimeDistributed(layers.BatchNormalization(trainable=trainable),
+        x = layers.TimeDistributed(layers.BatchNormalization(),
                                    name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
         i_tdbn += 1
         x = layers.Dropout(dropout)(x)
@@ -129,7 +120,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                         dropout=dropout,
                         recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
-        x = layers.TimeDistributed(layers.BatchNormalization(trainable=trainable),
+        x = layers.TimeDistributed(layers.BatchNormalization(),
                                    name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
         i_tdbn += 1
         x = layers.Dropout(dropout)(x)
@@ -144,7 +135,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                           dropout=dropout,
                                           recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization(trainable=trainable)(x)
+        x = layers.BatchNormalization(trainable=False)(x)
         x = layers.Dropout(dropout)(x)
         if all_sequence:
             x = layers.Flatten()(x)
@@ -160,9 +151,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                         dropout=dropout,
                         recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization(trainable=trainable)(x)
+        x = layers.BatchNormalization()(x)
         if all_sequence:
-            x = layers.TimeDistributed(layers.BatchNormalization(trainable=trainable),
+            x = layers.TimeDistributed(layers.BatchNormalization(),
                                        name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
             i_tdbn += 1
             x = layers.Flatten()(x)
@@ -175,7 +166,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         size = es.eval_all(s, env)
         x = layers.Dense(size)(x)
         x = layers.LeakyReLU()(x)
-        x = layers.BatchNormalization(trainable=trainable)(x)
+        x = layers.BatchNormalization()(x)
         x = layers.Dropout(dropout)(x)  # (batch, size)
 
     # ----- Transposed Convolution -----
@@ -192,7 +183,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             size = s
             x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 3), padding='same')(x)
             x = layers.LeakyReLU()(x)
-            x = layers.BatchNormalization(trainable=trainable)(x)
+            x = layers.BatchNormalization()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
         if min_pool:
