@@ -166,6 +166,7 @@ class MyNN:
         return a.history
 
     def evaluate(self, generator, verbose=1):
+        K.set_learning_phase(0)
         evaluation = self.model_predict.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
 
@@ -255,6 +256,7 @@ class MyNN:
         :param input:
         :return:
         """
+        K.set_learning_phase(0)
         return self.model_predict.predict(input, verbose=0)
 
     def train_mode_on(self):
