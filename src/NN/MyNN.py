@@ -231,9 +231,15 @@ class MyNN:
         return self.model.predict(input, verbose=0)
 
     def freeze_batch_norm(self):
+        print('----- before -----')
         for layer in self.model.layers:
+            print(layer.name, layer.trainable)
             if 'batch_normalization' in layer.name:
+                print('yes')
                 layer.trainable = False
+        print('----- After -----')
+        for layer in self.model.layers:
+            print(layer.name, layer.trainable)
 
     def unfreeze_batch_norm(self):
         for layer in self.model.layers:
