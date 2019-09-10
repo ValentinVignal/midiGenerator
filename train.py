@@ -39,6 +39,8 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--min-pool', default=False, action='store_true',
                         help='Either to use the min pooling after upsampling')
+    parser.add_argument('--no-batch-norm', default=False, action='store_true',
+                        help='Either to use batch norm')
     # ----------------
     parser.add_argument('--noise', type=float, default=g.noise,
                         help='If not 0, add noise to the input for training')
@@ -96,7 +98,8 @@ def main():
             'dropout': args.dropout,
             'all_sequence': args.all_sequence,
             'lstm_state': args.lstm_state,
-            'min_pool': args.min_pool
+            'min_pool': args.min_pool,
+            'no_batch_norm': args.no_batch_norm
         }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
