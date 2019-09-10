@@ -39,8 +39,6 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--min-pool', default=False, action='store_true',
                         help='Either to use the min pooling after upsampling')
-    parser.add_argument('--no-batch-norm', default=False, action='store_true',
-                        help='to not use batch norm')
     # ----------------
     parser.add_argument('--noise', type=float, default=g.noise,
                         help='If not 0, add noise to the input for training')
@@ -85,7 +83,7 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     if args.debug:
-        args.no_batch_norm = True
+        pass
 
     if args.model_id != '':
         opt_param = {
@@ -98,8 +96,7 @@ def main():
             'dropout': args.dropout,
             'all_sequence': args.all_sequence,
             'lstm_state': args.lstm_state,
-            'min_pool': args.min_pool,
-            'no_batch_norm': args.no_batch_norm
+            'min_pool': args.min_pool
         }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
