@@ -50,12 +50,10 @@ class BatchNormalization(layers.Layer):
 
         self.scale = self.add_weight(name='batch_norm_scale',
                                      shape=shape,
-                                     initializer=tf.keras.initializers.ones,
-                                     trainable=False)
+                                     initializer=tf.keras.initializers.ones)
         self.beta = self.add_weight(name='batch_norm_beta',
                                     shape=shape,
-                                    initializer=tf.keras.initializers.zeros,
-                                    trainable=False)
+                                    initializer=tf.keras.initializers.zeros)
         self.pop_mean = self.add_weight(name='batch_norm_pop_mean',
                                         shape=shape,
                                         initializer=tf.keras.initializers.zeros,
