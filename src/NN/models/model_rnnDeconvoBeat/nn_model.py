@@ -3,6 +3,8 @@ import tensorflow as tf
 import src.eval_string as es
 import src.NN.losses as l
 import src.global_variables as g
+import src.NN.layers as mlayers
+import src.NN.in_training as it
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -74,6 +76,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for instrument in range(nb_instruments):
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size, 2)]
 
+    input_in_training = tf.keras.Input((1,))  # If we are on training or not
+    all_inputs = inputs_midi + [input_in_training]
+
     # --------- Only activation ----------
     inputs_activation = []
     for instrument in range(nb_instruments):
@@ -93,8 +98,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
             x = layers.LeakyReLU()(x)
             if batch_norm:
-                x = layers.TimeDistributed(layers.BatchNormalization(),
-                                           name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
+                x = layers.TimeDistributed(mlayers.BatchNormalization(),
+                                           name='time_distributed_batch_normalization_{0}'.format(i_tdbn)
+                                           )(x, in_training=input_in_training)
             i_tdbn += 1
             x = layers.Dropout(dropout / 2)(x)
         x = layers.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 1, 2), padding='same')(x)
@@ -107,8 +113,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         x = layers.TimeDistributed(layers.Dense(size))(x)
         x = layers.LeakyReLU()(x)
         if batch_norm:
-            x = layers.TimeDistributed(layers.BatchNormalization(),
-                                       name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
+            x = layers.TimeDistributed(mlayers.BatchNormalization(),
+                                       name='time_distributed_batch_normalization_{0}'.format(i_tdbn)
+                                       )(x, in_training=input_in_training)
         i_tdbn += 1
         x = layers.Dropout(dropout)(x)
     # ---------- LSTM -----------
@@ -124,8 +131,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                         recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
         if batch_norm:
-            x = layers.TimeDistributed(layers.BatchNormalization(),
-                                       name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
+            x = layers.TimeDistributed(mlayers.BatchNormalization(),
+                                       name='time_distributed_batch_normalization_{0}'.format(i_tdbn)
+                                       )(x, in_training=input_in_training)
         i_tdbn += 1
         x = layers.Dropout(dropout)(x)
     # -- Last one --
@@ -140,7 +148,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                           recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
         x = layers.LeakyReLU()(x)
         if batch_norm:
-            x = layers.BatchNormalization()(x)
+            x = mlayers.BatchNormalization()(x, in_training=input_in_training)
         x = layers.Dropout(dropout)(x)
         if all_sequence:
             x = layers.Flatten()(x)
@@ -158,11 +166,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         x = layers.LeakyReLU()(x)
         if batch_norm:
             if all_sequence:
-                x = layers.TimeDistributed(layers.BatchNormalization(),
-                                           name='time_distributed_batch_normalization_{0}'.format(i_tdbn))(x)
+                x = layers.TimeDistributed(mlayers.BatchNormalization(),
+                                           name='time_distributed_batch_normalization_{0}'.format(i_tdbn)
+                                           )(x, in_training=input_in_training)
                 x = layers.Flatten()(x)
             else:
-                x = layers.BatchNormalization()(x)
+                x = mlayers.BatchNormalization()(x, in_training=input_in_training)
             i_tdbn += 1
     x = layers.Dropout(dropout)(x)
     x = layers.Dense(size_before_lstm)(x)  # (batch, size)
@@ -174,7 +183,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         x = layers.Dense(size)(x)
         x = layers.LeakyReLU()(x)
         if batch_norm:
-            x = layers.BatchNormalization()(x)
+            x = mlayers.BatchNormalization()(x, in_training=input_in_training)
         x = layers.Dropout(dropout)(x)  # (batch, size)
 
     # ----- Transposed Convolution -----
@@ -192,7 +201,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 3), padding='same')(x)
             x = layers.LeakyReLU()(x)
             if batch_norm:
-                x = layers.BatchNormalization()(x)
+                x = mlayers.BatchNormalization()(x, in_training=input_in_training)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
         if min_pool:
@@ -212,7 +221,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         output = layers.Layer(name='Output_{0}'.format(instrument))(output)
         outputs.append(output)
 
-    model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
+    model = it.WrappedInTrainingModel(inputs=all_inputs, outputs=outputs)
 
     # ------------------ Losses -----------------
     lambda_activation = 20

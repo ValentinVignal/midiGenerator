@@ -3,11 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.python.keras.engine.base_layer import Layer, InputSpec
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras import constraints
-
 K = tf.keras.backend
 layers = tf.keras.layers
 
@@ -68,7 +63,7 @@ class BatchNormalization(layers.Layer):
                                        initializer=tf.keras.initializers.ones,
                                        trainable=False)
 
-    def call(self, inputs, training=None):
+    def call(self, inputs, in_training=None):
 
         def batch_norm_train():
             batch_mean, batch_var = tf.nn.moments(inputs, self._axis)
@@ -84,7 +79,7 @@ class BatchNormalization(layers.Layer):
             return tf.nn.batch_normalization(inputs,
                                          self.pop_mean, self.pop_var, self.scale, self.beta, self.epsilon)
 
-        return K.in_train_phase(batch_norm_train, batch_norm_no_train, training=training)
+        return K.in_train_phase(batch_norm_train, batch_norm_no_train, training=in_training)
 
     def compute_output_shape(self, input_shape):
         return input_shape
