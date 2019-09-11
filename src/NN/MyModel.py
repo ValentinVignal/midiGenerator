@@ -12,7 +12,6 @@ import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
 import src.text.summary as summary
 import src.global_variables as g
-from src.NN.in_training import WrapInTrainingMySequence
 
 
 class MyModel:
@@ -270,7 +269,7 @@ class MyModel:
             flag_new_sequence = True
 
         if flag_new_sequence:
-            self.my_sequence = WrapInTrainingMySequence(
+            self.my_sequence = MySequenceBeat(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
@@ -499,7 +498,7 @@ class MyModel:
             self.data_transformed_pathlib = self.data_seed_pathlib
         nb_steps = int(self.model_id.split(',')[2])
         if self.my_sequence is None:
-            self.my_sequence = WrapInTrainingMySequence(
+            self.my_sequence = MySequenceBeat(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=nb_steps,
                 batch_size=1,
@@ -510,7 +509,7 @@ class MyModel:
         max_length = len(self.my_sequence) if max_length is None else min(max_length, len(self.my_sequence))
 
         # -------------------- Construct seeds --------------------
-        generated = np.array(self.my_sequence.get_inputs(0)[0])  # (nb_instrument, 1, nb_steps, step_size, input_size, 2) (1=batch)
+        generated = np.array(self.my_sequence[0][0])  # (nb_instrument, 1, nb_steps, step_size, input_size, 2) (1=batch)
         generated_helped = np.copy(generated)  # Each step will take the truth as an input
         generated_truth = np.copy(generated)  # The truth
 
@@ -520,7 +519,7 @@ class MyModel:
                                                progressbar.ETA()])
         bar.start()  # To see it working
         for l in range(max_length):
-            ms_input, ms_output = self.my_sequence.get_inputs(l)
+            ms_input, ms_output = self.my_sequence[l]
             sample = np.concatenate((generated[:, :, l:, :, :, :], np.array(ms_input)),
                                     axis=1)  # (nb_instruments, 2, nb_steps, step_size, input_size, 2)
 

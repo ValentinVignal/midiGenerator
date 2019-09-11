@@ -70,22 +70,7 @@ class WrapInTrainingMySequence(MySequenceBeat):
             inputs = [inputs, input_learning]
         return (inputs)
 
-    def __getitem__(self, index):
-        x, y = super(WrapInTrainingMySequence, self).__getitem__(index)
+    def __getitem__(self, **kwargs):
+        x, y = super(WrapInTrainingMySequence, self).__getitem__(**kwargs)
         x = self.new_inputs(x)
         return x, y
-
-    def get_inputs(self, index):
-        return super(WrapInTrainingMySequence, self).__getitem__(index)
-
-    @staticmethod
-    def add_training_input(x, in_training):
-        if type(x) is list:
-            batch = len(x[0])
-            input_learning = np.ones(batch) * in_training
-            x.append(input_learning)
-        else:
-            batch = len(x)
-            input_learning = np.ones(batch) * in_training
-            x = [x, input_learning]
-        return x
