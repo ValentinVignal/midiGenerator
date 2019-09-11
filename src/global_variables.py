@@ -17,6 +17,7 @@ all_sequence = False
 lstm_state = False
 work_on = 'beat'
 epochs = 200
+bn_momentum = 0.99
 
 
 def work_on2nb(wo):
