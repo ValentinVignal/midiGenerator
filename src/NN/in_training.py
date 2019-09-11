@@ -70,7 +70,10 @@ class WrapInTrainingMySequence(MySequenceBeat):
             inputs = [inputs, input_learning]
         return (inputs)
 
-    def __getitem__(self, **kwargs):
-        x, y = super(WrapInTrainingMySequence, self).__getitem__(**kwargs)
+    def __getitem__(self, index):
+        x, y = super(WrapInTrainingMySequence, self).__getitem__(index)
         x = self.new_inputs(x)
         return x, y
+
+    def get_inputs(self, index):
+        return super(WrapInTrainingMySequence, self).__getitem__(index)
