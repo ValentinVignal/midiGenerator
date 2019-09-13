@@ -152,7 +152,7 @@ class MyNN:
         return a.history
 
     def evaluate(self, generator, verbose=1):
-        K.set_learning_phase(1)
+        K.set_learning_phase(0)
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
 
