@@ -88,14 +88,17 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # ----- Convolutional Layer -----
     convo = model_param['convo']
     for i in convo:
-        for s in i:
+        for index, s in enumerate(i):
             size = s
-            x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
+            if index + 1 == len(i):
+                x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), strides=(1, 1, 2), padding='same')(x)
+            else:
+                x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
             if batch_norm:
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
             x = layers.LeakyReLU()(x)
             x = layers.Dropout(dropout / 2)(x)
-        x = layers.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 1, 2), padding='same')(x)
+        #x = layers.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 1, 2), padding='same')(x)
     shape_before_fc = x.shape
     x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(
         x)  # (batch, nb_steps, lenght * size * filters)
