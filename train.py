@@ -77,7 +77,7 @@ def main():
         # args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
         args.epochs = 2
-        args.batch = 4
+        args.batch = 3
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
@@ -117,6 +117,8 @@ def main():
 
     if args.evaluate:
         my_model.evaluate()
+        my_model.test_function(0)
+        my_model.test_function(1)
 
     if args.generate:
         my_model.compare_generation(max_length=None,

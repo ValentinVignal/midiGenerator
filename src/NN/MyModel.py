@@ -280,7 +280,8 @@ class MyModel:
 
         # Actual train
         print(colored('Training...', 'blue'))
-        self.train_history = self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks, verbose=verbose)
+        self.train_history = self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks,
+                                                  verbose=verbose)
 
         # Update parameters
         self.total_epochs += epochs
@@ -297,6 +298,12 @@ class MyModel:
         for i in range(len(metrics_names)):
             text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
         print(text)
+
+    def test_function(self, learning_phase=0):
+        cprint('Test function', 'blue')
+        output = self.my_nn.test_function(generator=self.my_sequence,
+                                          learning_phase=learning_phase)
+        print(output)
 
     def save_model(self, path=None):
         """

@@ -8,6 +8,8 @@ import dill
 import json
 import math
 from time import time
+import progressbar
+import numpy as np
 
 import src.NN.losses as nn_losses
 import src.global_variables as g
@@ -150,6 +152,7 @@ class MyNN:
         return a.history
 
     def evaluate(self, generator, verbose=1):
+        K.set_learning_phase(1)
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
 
@@ -227,21 +230,49 @@ class MyNN:
         """
         return self.model.predict(input, verbose=0)
 
-    def freeze_batch_norm(self):
-        for layer in self.model.layers:
-            if 'batch_normalization' in layer.name:
-                if 'time_distributed' in layer.name:
-                    layer.layer.momentum = 1
-                else:
-                    layer.momentum = 1
+    def test_function(self, inputs=None, truth=None, generator=None, learning_phase=0):
+        self.model._make_test_function()
+        if generator is not None:
+            # All midi have to be in same shape.
+            bar = progressbar.ProgressBar(maxval=len(generator),
+                                          widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                                   progressbar.ETA()])
+            bar.start()  # To see it working
+            batch = len(generator[0][1][0])
+            nb_instruments = len(generator[0][1])
+            print('batch', batch, 'instruments', nb_instruments, 'shape', generator[0][0][0].shape)
+            ins = generator[0][0] + generator[0][1] + [np.ones((3, 1)), np.ones((1,))] + [learning_phase] # + [np.ones((batch, )) for isnt in range(nb_instruments)] + [learning_phase]
+            print('ins', len(ins))
+            outputs = self.model.test_function(ins)
+            for i in range(1, len(generator)):
+                ins = generator[i][0] + generator[i][1] + [np.ones((batch, )) for inst in range(nb_instruments)] + [
+                    learning_phase]
+                _outputs = self.model.test_function(ins)
+                for j in range(len(outputs)):
+                    outputs[j] += _outputs[j]
+                bar.update(i)
+            bar.finish()
+            for j in range(len(outputs)):
+                outputs[j] /= len(generator)
+        else:
+            if type(inputs) is not list:
+                inputs = [inputs]
+            if type(truth) is not list:
+                truth = [truth]
+            nb_instruments = len(truth)
+            batch = len(truth[0])
+            ins = inputs + truth + [np.ones(batch) for inst in range(nb_instruments)] + [learning_phase]
+            outputs = self.model.test_function(ins)
+        return outputs
 
-    def unfreeze_batch_norm(self):
-        for layer in self.model.layers:
-            if 'batch_normalization' in layer.name:
-                if 'time_distributed' in layer.name:
-                    layer.layer.momentum = 0.99
-                else:
-                    layer.momentum = 0.99
+    def predict_function(self, inputs, learning_phase=0):
+        if self.model.predict_function is None:
+            self.model._make_predict_function()
+        outputs = self.model.predict_function([
+            inputs,
+            learning_phase
+        ])
+        return outputs
 
     @staticmethod
     def allow_growth():
