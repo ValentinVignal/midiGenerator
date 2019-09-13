@@ -115,12 +115,8 @@ def main():
 
     my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
 
-
     if args.evaluate:
         my_model.evaluate()
-        #my_model.test_function(0)
-        #my_model.test_function(1)
-
 
     if args.generate:
         my_model.compare_generation(max_length=None,
