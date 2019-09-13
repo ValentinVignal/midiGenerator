@@ -91,9 +91,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         for s in i:
             size = s
             x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
-            x = layers.LeakyReLU()(x)
             if batch_norm:
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
+            x = layers.LeakyReLU()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 1, 2), padding='same')(x)
     shape_before_fc = x.shape
@@ -103,9 +103,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for s in fc:
         size = eval(s, env)
         x = layers.TimeDistributed(layers.Dense(size))(x)
-        x = layers.LeakyReLU()(x)
         if batch_norm:
             x = layers.BatchNormalization(momentum=bn_momentum)(x)
+        x = layers.LeakyReLU()(x)
         x = layers.Dropout(dropout)(x)
     # ---------- LSTM -----------
     size_before_lstm = x.shape[2]  # (batch, nb_steps, size)
@@ -118,9 +118,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                         unit_forget_bias=True,
                         dropout=dropout,
                         recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        x = layers.LeakyReLU()(x)
         if batch_norm:
             x = layers.BatchNormalization(momentum=bn_momentum)(x)
+        x = layers.LeakyReLU()(x)
         x = layers.Dropout(dropout)(x)
     # -- Last one --
     if lstm_state:
@@ -132,9 +132,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                           unit_forget_bias=True,
                                           dropout=dropout,
                                           recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        x = layers.LeakyReLU()(x)
         if batch_norm:
             x = layers.BatchNormalization(momentum=bn_momentum)(x)
+        x = layers.LeakyReLU()(x)
         x = layers.Dropout(dropout)(x)
         if all_sequence:
             x = layers.Flatten()(x)
@@ -149,9 +149,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                         unit_forget_bias=True,
                         dropout=dropout,
                         recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        x = layers.LeakyReLU()(x)
         if batch_norm:
-                x =layers.BatchNormalization(momentum=bn_momentum)(x)
+            x =layers.BatchNormalization(momentum=bn_momentum)(x)
+        x = layers.LeakyReLU()(x)
         if all_sequence:
             x = layers.Flatten()(x)
         x = layers.Dropout(dropout)(x)
@@ -162,9 +162,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for s in (fc_decoder[1:] + [shape_before_fc[2] * shape_before_fc[3] * shape_before_fc[4]]):
         size = es.eval_all(s, env)
         x = layers.Dense(size)(x)
-        x = layers.LeakyReLU()(x)
         if batch_norm:
             x = layers.BatchNormalization(momentum=bn_momentum)(x)
+        x = layers.LeakyReLU()(x)
         x = layers.Dropout(dropout)(x)  # (batch, size)
 
     # ----- Transposed Convolution -----
@@ -180,9 +180,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         for s in i:
             size = s
             x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 3), padding='same')(x)
-            x = layers.LeakyReLU()(x)
             if batch_norm:
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
+            x = layers.LeakyReLU()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
         if min_pool:
