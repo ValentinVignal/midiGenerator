@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from colour import Color
 
 import src.global_variables as g
+import src.image.pianoroll as pianoroll
 
 
 class MySequence(tf.keras.utils.Sequence):
@@ -372,21 +373,7 @@ class SeeMySequenceBeat:
 
     def new_colors(self):
         # Colors
-        colors = [Color('#' + ''.join([random.choice('0123456789abcdef') for j in range(6)])) for i in
-                  range(self.nb_instruments)]
-        colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
-        for i in range(len(colors_rgb)):  # Make a light color
-            m = min(colors_rgb[i])
-            M = max(colors_rgb[i])
-            if M <= 50:  # If the color is too dark
-                for j in range(3):
-                    if colors_rgb[i][j] == M:
-                        colors_rgb[i][j] = min(50 + 3 * colors_rgb[i][j], 255)
-                    elif colors_rgb[i][j] == m:
-                        colors_rgb[i][j] = 10 + colors_rgb[i][j]
-                    else:
-                        colors_rgb[i][j] = 25 + 2 * colors_rgb[i][j]
-        self.colors = colors_rgb
+        self.colors = pianoroll.return_colors(self.nb_instruments)
 
     def show(self, indice, nb_rows=3, nb_colums=4):
         nb_images = nb_rows * nb_colums

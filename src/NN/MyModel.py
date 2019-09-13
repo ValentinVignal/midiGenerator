@@ -535,6 +535,7 @@ class MyModel:
 
             # Reshape
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, 2, length, 88, 2)
+            pianoroll.see_compare_generation_step(sample, preds)
             preds_truth = np.array(ms_output)[:, :, np.newaxis, :, :,
                           :]  # (nb_instruments, 1, 1, step_size, input_size, 2)
             # if only one instrument
