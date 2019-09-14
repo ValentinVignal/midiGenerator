@@ -289,8 +289,19 @@ class MyModel:
         self.get_new_full_name()
         print(colored('Training done', 'green'))
 
-    def evaluate(self):
+    def evaluate(self, batch=None):
+        if batch is not None:
+            self.batch = batch
+        if self.batch is None:
+            self.batch = 4
         cprint('Evaluation', 'blue')
+        if self.my_sequence is None:
+            self.my_sequence = MySequenceBeat(
+                path=str(self.data_transformed_pathlib),
+                nb_steps=int(self.model_id.split(',')[2]),
+                batch_size=self.batch,
+                work_on=self.work_on
+            )
         evaluation = self.my_nn.evaluate(generator=self.my_sequence)
 
         metrics_names = self.my_nn.model.metrics_names
@@ -535,7 +546,7 @@ class MyModel:
 
             # Reshape
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, 2, length, 88, 2)
-            pianoroll.see_compare_generation_step(sample, preds)
+            # pianoroll.see_compare_generation_step(sample, preds, np.array(ms_output))
             preds_truth = np.array(ms_output)[:, :, np.newaxis, :, :,
                           :]  # (nb_instruments, 1, 1, step_size, input_size, 2)
             # if only one instrument

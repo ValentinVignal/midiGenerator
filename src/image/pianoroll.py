@@ -117,25 +117,28 @@ def return_colors(nb_instruments):
     return colors_rgb
 
 
-def see_compare_generation_step(inputs, outputs):
+def see_compare_generation_step(inputs, outputs, truth):
     """
 
     :param inputs: (nb_instruments, batch=2, nb_steps, step_size, input_size, 2)
     :param outputs: (nb_instruments, batch=2, step_size, input_size, 2)
+    :param truth: (nb_instruments, batch=1, step_size, input_size, 2)
     :return:
     """
     print('inputs:', inputs.shape, 'outputs:', outputs.shape)
     inputs_a = inputs[:, :, :, :, :, 0]  # (nb_instruments, batch, nb_steps, step_size, input_size)
     np.place(inputs_a, 0.5 <= inputs_a, 1)
-    np.place(inputs_a, inputs_a > 0.5, 0)
+    np.place(inputs_a, inputs_a < 0.5, 0)
     outputs_a = outputs[:, :, :, :, 0]  # (nb_instruments, batch, step_size, input_size)
     np.place(outputs_a, 0.5 <= outputs_a, 1)
-    np.place(outputs_a, outputs_a > 0.5, 0)
+    np.place(outputs_a, outputs_a < 0.5, 0)
     nb_instruments, batch, nb_steps, step_size, input_size = inputs_a.shape
     inputs_a = np.reshape(inputs_a, (
-    nb_instruments, batch, nb_steps * step_size, input_size))  # (nb_instruments, batch, length, input_size)
+        nb_instruments, batch, nb_steps * step_size, input_size))  # (nb_instruments, batch, length, input_size)
 
-    inputs_alone = inputs_a[:, 0]       # (nb_instruments, length, input_size)
+    truth_a = truth[:, 0, :, :, 0]  # (nb_instruments, step_size, input_size)
+
+    inputs_alone = inputs_a[:, 0]  # (nb_instruments, length, input_size)
     inputs_helped = inputs_a[:, 1]
     outputs_alone = outputs_a[:, 0]
     outputs_helped = outputs_a[:, 1]
@@ -146,7 +149,9 @@ def see_compare_generation_step(inputs, outputs):
     final_outputs_alone = np.zeros((step_size, input_size, 3))
     final_inputs_helped = np.zeros((nb_steps * step_size, input_size, 3))
     final_outputs_helped = np.zeros((step_size, input_size, 3))
+    final_truth = np.zeros((step_size, input_size, 3))
 
+    print('final_inputs_helped', np.count_nonzero(final_outputs_alone))
     for inst in range(nb_instruments):
         for i in range(nb_steps * step_size):
             for j in range(input_size):
@@ -160,23 +165,34 @@ def see_compare_generation_step(inputs, outputs):
                     final_outputs_alone[i, j] = colors[inst]
                 if outputs_helped[inst, i, j] == 1:
                     final_outputs_helped[i, j] = colors[inst]
+                if truth_a[inst, i, j] == 1:
+                    final_truth[i, j] = colors[inst]
     print(final_outputs_alone.shape)
     final_inputs_alone = (np.flip(np.transpose(final_inputs_alone, (1, 0, 2)), axis=0)).astype(np.int)
     final_outputs_alone = (np.flip(np.transpose(final_outputs_alone, (1, 0, 2)), axis=0)).astype(np.int)
     final_inputs_helped = (np.flip(np.transpose(final_inputs_helped, (1, 0, 2)), axis=0)).astype(np.int)
     final_outputs_helped = (np.flip(np.transpose(final_outputs_helped, (1, 0, 2)), axis=0)).astype(np.int)
+    final_truth = (np.flip(np.transpose(final_truth, (1, 0, 2)), axis=0)).astype(np.int)
+    print('final_inputs_helped with colors', np.count_nonzero(final_outputs_alone))
 
-    fig, axs = plt.subplots(2, 2)
+    acc_alone_inst = [1 - (np.count_nonzero(outputs_alone[inst] - truth_a[inst]) / truth_a[inst].size) for
+                      inst in range(nb_instruments)]
+    acc_alone = sum(acc_alone_inst) / len(acc_alone_inst)
+    acc_helped_inst = [1 - (np.count_nonzero(outputs_helped[inst] - truth_a[inst]) / truth_a[inst].size) for
+                      inst in range(nb_instruments)]
+    acc_helped = sum(acc_helped_inst) / len(acc_helped_inst)
+
+    fig, axs = plt.subplots(3, 2)
     axs[0, 0].imshow(final_inputs_alone)
     axs[0, 0].set_title('Inputs Alone')
     axs[0, 1].imshow(final_outputs_alone)
-    axs[0, 1].set_title('Outputs Alone')
+    axs[0, 1].set_title('Outputs Alone' + '\n' + 'Accuracy alone {0}, {1}'.format(acc_alone_inst, acc_alone))
     axs[1, 0].imshow(final_inputs_helped)
     axs[1, 0].set_title('Inputs Helped')
     axs[1, 1].imshow(final_outputs_helped)
-    axs[1, 1].set_title('Outputs Helped')
+    axs[1, 1].set_title('Outputs Helped' + '\n' + 'Accuracy helped {0}, {1}'.format(acc_helped_inst, acc_helped))
+    axs[2, 0].imshow(final_inputs_helped)
+    axs[2, 0].set_title('Inputs Truth')
+    axs[2, 1].imshow(final_truth)
+    axs[2, 1].set_title('Outputs Truth')
     plt.show()
-
-
-
-
