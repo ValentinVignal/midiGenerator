@@ -258,8 +258,8 @@ class MySequenceBeat(tf.keras.utils.Sequence):
                 self.npy_loaded[j][k + (self.nb_steps * self.step_size): k + (
                         self.nb_steps * self.step_size) + self.step_size]
             )  # (batch, step_size, nb_instruments, input_size, 2)
-            k += 1
-            if k == self.all_shapes[i][j][0] - self.nb_steps + 1:
+            k += self.step_size
+            if k >= self.all_shapes[i][j][0] - (self.nb_steps * self.step_size):
                 k = 0
                 j += 1
                 if j == len(self.all_shapes[i]):
@@ -286,13 +286,13 @@ class MySequenceBeat(tf.keras.utils.Sequence):
         self.noise = noise
 
     def change_batch_size(self, batch_size):
-        self.batch_size = batch_size
-        print('step size', self.step_size)
+        if self.batch_size != batch_size:
+            self.batch_size = batch_size
 
-        self.nb_elements = MySequenceBeat.return_nb_elements(self.all_shapes, self.step_size,
-                                                             self.nb_steps)  # nb element available in the generator
-        self.nb_elements = int(self.nb_elements / self.batch_size)
-        self.all_len = self.know_all_len()
+            self.nb_elements = MySequenceBeat.return_nb_elements(self.all_shapes, self.step_size,
+                                                                 self.nb_steps)  # nb element available in the generator
+            self.nb_elements = int(self.nb_elements / self.batch_size)
+            self.all_len = self.know_all_len()
 
     # --------- Helper functions ---------
 

@@ -78,7 +78,7 @@ def main():
     if args.pc:
         # args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
-        args.epochs = 20
+        args.epochs = 15
         args.batch = 3
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
@@ -124,8 +124,10 @@ def main():
         my_model.compare_generation(max_length=None,
                                     no_duration=True,
                                     verbose=1)
+
     if args.check_batch > -1:
-        my_model.compare_test_predict_on_batch(args.check_batch)
+        for i in range(len(my_model.my_sequence)):
+            my_model.compare_test_predict_on_batch(i)
 
     my_model.save_model()
 
