@@ -287,6 +287,7 @@ class MySequenceBeat(tf.keras.utils.Sequence):
 
     def change_batch_size(self, batch_size):
         self.batch_size = batch_size
+        print('step size', self.step_size)
 
         self.nb_elements = MySequenceBeat.return_nb_elements(self.all_shapes, self.step_size,
                                                              self.nb_steps)  # nb element available in the generator

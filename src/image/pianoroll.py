@@ -196,3 +196,69 @@ def see_compare_generation_step(inputs, outputs, truth):
     axs[2, 1].imshow(final_truth)
     axs[2, 1].set_title('Outputs Truth')
     plt.show()
+
+
+def see_compare_on_batch(x, yt, yp):
+    """
+
+    :param x: (nb_instruments, batch, nb_steps, step_size, inputs_size, 2)
+    :param yt: (nb_instruments, batch, step_size, input_size, 2)
+    :param yp: (nb_instruments, batch, step_size, input_size, 2)
+    :return:
+    """
+    # ----- Keep only activation -----
+    x = np.array(x)[:, :, :, :, :, 0]
+    yt = np.array(yt)[:, :, :, :, 0]
+    np.place(yt, 0.5 <= yt, 1)
+    np.place(yt, yt < 0.5, 0)
+    yp = np.array(yp)[:, :, :, :, 0]
+    np.place(yp, 0.5 <= yp, 1)
+    np.place(yp, yp < 0.5, 0)
+
+    nb_instruments, batch, nb_steps, step_size, input_size = x.shape
+    x = np.reshape(x, (nb_instruments, batch, nb_steps * step_size, input_size))
+
+    colors = return_colors(nb_instruments)
+
+    x_final = np.zeros((batch, nb_steps * step_size, input_size, 3))
+    yt_final = np.zeros((batch, step_size, input_size, 3))
+    yp_final = np.zeros((batch, step_size, input_size, 3))
+    for b in range(batch):
+        for inst in range(nb_instruments):
+            for i in range(nb_steps * step_size):
+                for j in range(input_size):
+                    if x[inst, b, i, j] == 1:
+                        x_final[b, i, j] = colors[inst]
+            for i in range(step_size):
+                for j in range(input_size):
+                    if yt[inst, b, i, j] == 1:
+                        yt_final[b, i, j] = colors[inst]
+                    if yp[inst, b, i, j] == 1:
+                        yp_final[b, i, j] = colors[inst]
+    x_final = (np.flip(np.transpose(x_final, (0, 2, 1, 3)), axis=1)).astype(np.int)
+    yt_final = (np.flip(np.transpose(yt_final, (0, 2, 1, 3)), axis=1)).astype(np.int)
+    yp_final = (np.flip(np.transpose(yp_final, (0, 2, 1, 3)), axis=1)).astype(np.int)
+
+    fig, axs = plt.subplots(batch, 3)
+    accs = np.zeros((batch, nb_instruments))
+    for b in range(batch):
+        accs[b] = np.array([1 - (np.count_nonzero(yt[inst, b] - yp[inst, b]) / yp[inst, b].size) for inst in range(nb_instruments)])
+        acc = np.sum(accs[b]) / nb_instruments
+        axs[b, 0].imshow(x_final[b])
+        axs[b, 0].set_title('Input')
+        axs[b, 1].imshow(yt_final[b])
+        axs[b, 1].set_title('Truth')
+        axs[b, 2].imshow(yp_final[b])
+        axs[b, 2].set_title('Predicted\n{0}, {1}'.format(accs[b], acc))
+    accs = np.sum(accs, axis=0) / len(accs)
+    acc = np.sum(accs) / len(accs)
+    plt.title('{0}, {1}'.format(accs, acc))
+    plt.show()
+
+
+
+
+
+
+
+

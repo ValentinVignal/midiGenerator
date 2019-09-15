@@ -312,9 +312,34 @@ class MyModel:
 
     def test_function(self, learning_phase=0):
         cprint('Test function', 'blue')
-        output = self.my_nn.test_function(generator=self.my_sequence,
+        outputs = self.my_nn.test_function(generator=self.my_sequence,
                                           learning_phase=learning_phase)
-        print(output)
+        print(outputs)
+
+    def test_on_batch(self, i=0, batch_size=4):
+        self.my_sequence.change_batch_size(batch_size=batch_size)
+        x, y = self.my_sequence[i]
+        evaluation = self.my_nn.model.test_on_batch(x=x, y=y, sample_weight=None)
+
+        metrics_names = self.my_nn.model.metrics_names
+        text = ''
+        for i in range(len(metrics_names)):
+            text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
+        print(text)
+
+    def predict_on_batch(self, i, batch_size=4):
+        self.my_sequence.change_batch_size(batch_size=batch_size)
+        x, y = self.my_sequence[i]
+        evaluation = self.my_nn.model.predict_on_batch(x=x)
+
+        return evaluation
+
+    def compare_test_predict_on_batch(self, i, batch_size=4):
+        print('compare test predict on batch')
+        self.test_on_batch(i, batch_size=batch_size)
+        x, yt = self.my_sequence[i]
+        yp = self.predict_on_batch(i, batch_size=batch_size)
+        pianoroll.see_compare_on_batch(x, yt, yp)
 
     def save_model(self, path=None):
         """

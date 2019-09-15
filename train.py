@@ -57,6 +57,8 @@ def main():
                         help='Evaluate the model after the training')
     parser.add_argument('--generate', default=False, action='store_true',
                         help='Generation after training')
+    parser.add_argument('--check-batch', type=int, default=-1,
+                        help='Batch to check')
     # ----------------
     load_group = parser.add_mutually_exclusive_group()
     load_group.add_argument('-m', '--model-id', type=str, default='',
@@ -122,6 +124,8 @@ def main():
         my_model.compare_generation(max_length=None,
                                     no_duration=True,
                                     verbose=1)
+    if args.check_batch > -1:
+        my_model.compare_test_predict_on_batch(args.check_batch)
 
     my_model.save_model()
 
