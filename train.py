@@ -58,6 +58,8 @@ def main():
     # ----------------
     parser.add_argument('--evaluate', default=False, action='store_true',
                         help='Evaluate the model after the training')
+    parser.add_argument('--compare-generation', default=False, action='store_true',
+                        help='Compare generation after training')
     parser.add_argument('--generate', default=False, action='store_true',
                         help='Generation after training')
     parser.add_argument('--no-duration', action='store_true', default=False,
@@ -89,6 +91,7 @@ def main():
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
 
+    # -------------------- Create model --------------------
     my_model = MyModel(name=args.name)
     # Choose GPU
     if not args.pc:
@@ -121,20 +124,29 @@ def main():
     elif args.load != '':
         my_model.recreate_model(args.load)
 
+    # -------------------- Train --------------------
     my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
 
+    # -------------------- Test --------------------
     if args.evaluate:
         my_model.evaluate()
 
-    if args.generate:
+    # -------------------- Test overfit --------------------
+    if args.compare_generation:
         my_model.compare_generation(max_length=None,
                                     no_duration=args.no_duration,
                                     verbose=1)
 
+    # -------------------- Generate --------------------
+    if args.generate:
+        my_model.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
+
+    # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
         for i in range(len(my_model.my_sequence)):
             my_model.compare_test_predict_on_batch(i)
 
+    # -------------------- Save the model --------------------
     my_model.save_model()
 
     cprint('---------- Done ----------', 'grey', 'on_green')

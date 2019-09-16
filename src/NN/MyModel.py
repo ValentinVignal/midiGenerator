@@ -5,6 +5,7 @@ import numpy as np
 import progressbar
 from termcolor import colored, cprint
 import math
+import random
 
 from src.NN.MyNN import MyNN
 from src.NN.data_generator import MySequence
@@ -58,6 +59,10 @@ class MyModel:
         if data is not None:
             self.load_data(data)
 
+    # --------------------------------------------------
+    #               Class Methods
+    # --------------------------------------------------
+
     @classmethod
     def from_model(cls, id, name='name', data=None):
         myModel = cls(name=name, data=data)
@@ -85,6 +90,15 @@ class MyModel:
             opt_param=get_value('opt_param'),
         )
         return myModel
+
+    @classmethod
+    def with_model(cls, id, with_weights=True):
+        my_model = cls()
+        my_model.recreate_model(id=id)
+
+    # --------------------------------------------------
+    #                   Names function
+    # --------------------------------------------------
 
     def get_full_name(self, i):
         """
@@ -128,6 +142,8 @@ class MyModel:
         self.name = self.name if name is None else name
         self.get_new_full_name()
 
+    # --------------------------------------------------
+
     def load_data(self, data_transformed_path=None):
         """
 
@@ -143,6 +159,15 @@ class MyModel:
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
+
+    def change_batch_size(self, batch_size):
+        self.batch = batch_size
+        if self.my_sequence is not None:
+            self.my_sequence.change_batch_size(batch_size=batch_size)
+
+    # --------------------------------------------------
+    #               to create or load a NN
+    # --------------------------------------------------
 
     def new_nn_model(self, model_id, work_on=None, opt_param=None, type_loss=g.type_loss, model_options=None,
                      print_model=True):
@@ -213,6 +238,13 @@ class MyModel:
         print('Model', colored(id, 'white', 'on_blue'), 'loaded')
 
     def recreate_model(self, id, with_weigths=True, print_model=True):
+        """
+        create a new model witht the same options as the saved model and then load the weights (if with_weights==True)
+        :param id:
+        :param with_weigths: if we have to load the weight of the model
+        :param print_model:
+        :return:
+        """
         self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
         self.work_on = g.letter2work_on(work_on_letter)
         self.get_full_name(indice)
@@ -257,8 +289,14 @@ class MyModel:
         self.print_model()
         print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
 
+    # --------------------------------------------------
+
     def print_model(self):
         print(self.my_nn.model.summary())
+
+    # --------------------------------------------------
+    #                Train the model
+    # --------------------------------------------------
 
     def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise):
         """
@@ -303,6 +341,10 @@ class MyModel:
         self.get_new_full_name()
         print(colored('Training done', 'green'))
 
+    # --------------------------------------------------
+    #                Test the model
+    # --------------------------------------------------
+
     def evaluate(self, batch=None):
         if batch is not None:
             self.batch = batch
@@ -325,10 +367,13 @@ class MyModel:
         print(text)
 
     def test_function(self, learning_phase=0):
+        """
         cprint('Test function', 'blue')
         outputs = self.my_nn.test_function(generator=self.my_sequence,
                                            learning_phase=learning_phase)
         print(outputs)
+        """
+        raise NotImplementedError()
 
     def test_on_batch(self, i=0, batch_size=4):
         self.my_sequence.change_batch_size(batch_size=batch_size)
@@ -354,6 +399,10 @@ class MyModel:
         x, yt = self.my_sequence[i]
         yp = self.predict_on_batch(i, batch_size=batch_size)
         pianoroll.see_compare_on_batch(x, yt, yp)
+
+    # --------------------------------------------------
+    #                Save the model
+    # --------------------------------------------------
 
     def save_model(self, path=None):
         """
@@ -393,6 +442,8 @@ class MyModel:
         print(colored('Model saved in {0}'.format(path_to_save), 'green'))
         return path_to_save
 
+    # --------------------------------------------------
+
     def print_weights(self):
         """
         Print the weights
@@ -401,6 +452,8 @@ class MyModel:
         for layer in self.my_nn.model.layers:
             lstm_weights = layer.get_weights()  # list of numpy arrays
             print('Lstm weights:', lstm_weights)
+
+    # --------------------------------------------------
 
     def get_new_save_midis_path(self, path=None):
         """
@@ -419,10 +472,16 @@ class MyModel:
             self.save_midis_pathlib = Path(path)
         print('new save path for midi files :', colored(str(self.save_midis_pathlib), 'cyan'))
 
-    def generate(self, seed=None, length=None, new_save_path=None, save_images=False, no_duration=False, verbose=1):
+    # --------------------------------------------------
+    #                   To generate
+    # --------------------------------------------------
+
+    def generate_fom_data(self, nb_seeds=10, new_data_path=None, length=None, new_save_path=None, save_images=False,
+                          no_duration=False, verbose=1):
         """
         Generate midi file from the seed and the trained model
-        :param seed: seed for the generation
+        :param nb_seeds: number of seeds for the generation
+        :param new_data_path: The path of the seed
         :param length: Length of th generation
         :param new_save_path:
         :param save_images: To save the pianoroll of the generation (.jpg images)
@@ -430,24 +489,31 @@ class MyModel:
         :param verbose: Level of verbose
         :return:
         """
-        # --- Verify the inputs ---
-        # -- Nb Steps --
         nb_steps = int(self.model_id.split(',')[2])
-        # -- Seed --
-        if type(seed) is list:
-            pass
-        elif seed is None:
-            seed = 1
-        elif type(seed) is int:
-            if self.work_on == 'note':
-                step_length = 1
-            elif self.work_on == 'beat':
-                step_length = g.step_per_beat
-            elif self.work_on == 'measure':
-                step_length = 4 * g.step_per_beat
-            else:
-                raise Exception('Unkown work_on type : {0}'.format(self.work_on))
-            seed = self.get_seed(nb_steps=nb_steps, step_length=step_length, number=seed)
+
+        # ---------- Verify the inputs ----------
+
+        # ----- Create the seed -----
+        need_new_sequence = False
+        if (new_data_path is not None) and (new_data_path != self.data_transformed_pathlib.as_posix()):
+            self.load_data(new_data_path)
+            need_new_sequence = True
+        if self.data_transformed_pathlib is None:
+            raise Exception('Some data need to be loaded before generating')
+        if self.my_sequence is None:
+            need_new_sequence = True
+        if need_new_sequence:
+            self.my_sequence = MySequence(
+                path=str(self.data_transformed_pathlib),
+                nb_steps=nb_steps,
+                batch_size=1,
+                work_on=self.work_on)
+        else:
+            self.my_sequence.change_batch_size(1)
+
+        seeds_indexes = random.sample(range(len(self.my_sequence)), nb_seeds)
+
+        step_length = g.work_on2nb(self.work_on)
         # -- Length --
         length = length if length is not None else 200
         # -- For save midi path --
@@ -459,29 +525,32 @@ class MyModel:
 
         self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
         cprint('Start generating ...', 'blue')
-        for s in range(len(seed)):
-            cprint('Generation {0}/{1}'.format(s + 1, len(seed)), 'blue')
-            generated = seed[s]
+        for s in range(nb_seeds):
+            cprint('Generation {0}/{1}'.format(s + 1, nb_seeds), 'blue')
+            generated = np.array(
+                self.my_sequence[seeds_indexes[s]][0])  # (nb_instruments, 1, nb_steps, step_size, inputs_size, 2)
             bar = progressbar.ProgressBar(maxval=length,
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                    progressbar.ETA()])
             bar.start()  # To see it working
             for l in range(length):
-                samples = generated[:, np.newaxis, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
+                samples = generated[:, :, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.my_nn.generate(input=list(samples))  # (nb_instruments, 1, length, 88, 2)
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, length, 88, 2)
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, step_size, input_size, 2)
+                preds = preds[:, :, np.newaxis, :, :,
+                        :]  # (nb_instruments, batch=1, nb_steps=1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis, :, :, :, :]
                 next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
-                generated = np.concatenate((generated, next_array), axis=1)  # (nb_instruments, nb_steps, length, 88, 2)
+                generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, nb_steps, length, 88, 2)
 
                 bar.update(l + 1)
             bar.finish()
 
             generated_midi_final = np.reshape(generated, (
-                generated.shape[0], generated.shape[1] * generated.shape[2], generated.shape[3],
-                generated.shape[4]))  # (nb_instruments, nb_step * length, 88 , 2)
+                generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
+                generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
             generated_midi_final = np.transpose(generated_midi_final,
                                                 (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
             output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
@@ -507,6 +576,9 @@ class MyModel:
                                          path=path_to_save_img,
                                          seed_length=nb_steps * step_length,
                                          instruments=self.instruments)
+
+        if self.batch is not None:
+            self.my_sequence.change_batch_size(self.batch)
 
         summary.summarize_generation(str(self.save_midis_pathlib), **{
             'full_name': self.full_name,
@@ -551,7 +623,7 @@ class MyModel:
         """
         # -------------------- Find informations --------------------
         if self.data_transformed_pathlib is None:
-            self.data_transformed_pathlib = self.data_transformed_pathlib
+            raise Exception('Some data need to be loaded before comparing the generation')
         nb_steps = int(self.model_id.split(',')[2])
         if self.my_sequence is None:
             self.my_sequence = MySequence(

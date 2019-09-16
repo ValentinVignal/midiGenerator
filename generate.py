@@ -45,11 +45,11 @@ def main():
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     my_model = MyModel.from_model(id=args.load)  # Load the model
-    my_model.generate(length=args.length,
-                      seed=args.seed,
-                      save_images=args.images,
-                      no_duration=args.no_duration,
-                      verbose=args.verbose)
+    my_model.generate_fom_data(length=args.length,
+                               seed=args.seed,
+                               save_images=args.images,
+                               no_duration=args.no_duration,
+                               verbose=args.verbose)
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 

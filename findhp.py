@@ -184,11 +184,11 @@ def main():
         cprint(
             'Best loss for now : {0}'.format(
                 loss_history.logs[loss_history.best_index]['loss']), 'yellow')
-        my_model.generate(length=args.length,
-                          seed=args.seed,
-                          save_images=args.images,
-                          no_duration=args.no_duration,
-                          verbose=args.verbose_generation)
+        my_model.generate_fom_data(length=args.length,
+                                   seed=args.seed,
+                                   save_images=args.images,
+                                   no_duration=args.no_duration,
+                                   verbose=args.verbose_generation)
 
     loss_history.update_best_summary()
 
