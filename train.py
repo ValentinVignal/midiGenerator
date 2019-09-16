@@ -20,7 +20,7 @@ def main():
                         help='number of epochs to train')
     parser.add_argument('-b', '--batch', type=int, default=4,
                         help='The number of the batches')
-    # ----------------
+    # ---------------- Optimizer ----------------
     parser.add_argument('--lr', type=float, default=g.lr,
                         help='learning rate')
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
@@ -29,9 +29,12 @@ def main():
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=float, default=g.decay_drop,
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-    parser.add_argument('--dropout', type=float, default=g.dropout,
-                        help='Value of the dropout')
     parser.add_argument('--type-loss', type=str, default=g.type_loss,
+                        help='Value of the dropout')
+    parser.add_argument('--lambdas-loss', type=str, default=g.lambdas_loss,
+                        help='Value of the lambdas (activation and duration) for the loss function')
+    # ---------------- Neural Network Model ----------------
+    parser.add_argument('--dropout', type=float, default=g.dropout,
                         help='Value of the dropout')
     parser.add_argument('--all-sequence', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
@@ -39,12 +42,12 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--min-pool', default=False, action='store_true',
                         help='Either to use the min pooling after upsampling')
-    # ------ Batch Norm ------
+    # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')
     parser.add_argument('--bn-momentum', type=float, default=g.bn_momentum,
                         help='The value of the momentum of the batch normalization layers')
-    # ----------------
+    # ---------------- Training options ----------------
     parser.add_argument('--noise', type=float, default=g.noise,
                         help='If not 0, add noise to the input for training')
     # ----------------
@@ -57,6 +60,8 @@ def main():
                         help='Evaluate the model after the training')
     parser.add_argument('--generate', default=False, action='store_true',
                         help='Generation after training')
+    parser.add_argument('--no-duration', action='store_true', default=False,
+                        help='Generate only shortest notes possible')
     parser.add_argument('--check-batch', type=int, default=-1,
                         help='Batch to check')
     # ----------------
@@ -65,7 +70,7 @@ def main():
                             help='The model id modelName,modelParam,nbSteps')
     load_group.add_argument('-l', '--load', type=str, default='',
                             help='The name of the trained model to load')
-    # ----------------
+    # ---------------- Hardware options ----------------
     parser.add_argument('--gpu', type=str, default='0',
                         help='What GPU to use')
     parser.add_argument('--pc', action='store_true', default=False,
@@ -85,7 +90,6 @@ def main():
     data_transformed_path = data_path + '_transformed'
 
     my_model = MyModel(name=args.name)
-    my_model.load_data(data_transformed_path=data_transformed_path)
     # Choose GPU
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -93,6 +97,7 @@ def main():
         pass
 
     if args.model_id != '':
+        my_model.load_data(data_transformed_path=data_transformed_path)
         opt_param = {
             'lr': args.lr,
             'name': args.optimizer,
@@ -105,7 +110,8 @@ def main():
             'lstm_state': args.lstm_state,
             'min_pool': args.min_pool,
             'no_batch_norm': args.no_batch_norm,
-            'bn_momentum': args.bn_momentum
+            'bn_momentum': args.bn_momentum,
+            'lambdas_loss': args.lambdas_loss
         }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
@@ -113,7 +119,7 @@ def main():
                               type_loss=args.type_loss,
                               model_options=model_options)
     elif args.load != '':
-        my_model.load_model(args.load)
+        my_model.recreate_model(args.load)
 
     my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
 
@@ -122,7 +128,7 @@ def main():
 
     if args.generate:
         my_model.compare_generation(max_length=None,
-                                    no_duration=True,
+                                    no_duration=args.no_duration,
                                     verbose=1)
 
     if args.check_batch > -1:

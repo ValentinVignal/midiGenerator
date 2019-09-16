@@ -35,6 +35,8 @@ class MyNN:
         self.decay = None
         self.type_loss = None
 
+        self.model_option = None
+
         # Spare GPU
         tf.logging.set_verbosity(tf.logging.ERROR)
         self.allow_growth()
@@ -95,6 +97,7 @@ class MyNN:
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps
+        self.model_options = model_options
 
     @staticmethod
     def create_optimizer(**kwargs):
@@ -163,7 +166,7 @@ class MyNN:
         """
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
-        self.model.save_weights(str(path / 'm_weigths.h5'))
+        self.model.save_weights(str(path / 'm_weights.h5'))
         self.model.save(str(path / 'm.h5'))
 
         string_loss = dill.dumps(self.losses)
@@ -179,7 +182,8 @@ class MyNN:
                 'decay': string_decay,
                 'opt_param': self.opt_param,
                 'type_loss': self.type_loss,
-                'step_length': self.step_length
+                'step_length': self.step_length,
+                'model_options': self.model_options,
             }, dump_file)
 
     def load(self, path):
@@ -211,6 +215,25 @@ class MyNN:
                                                                 'optimizer': optimizer,
                                                                 'acc_act': nn_losses.acc_act,
                                                                 'mae_dur': nn_losses.mae_dur})
+
+    def recreate(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        path = Path(path)
+        with open(str(path / 'MyNN.p'), 'rb') as dump_file:
+            d = pickle.load(dump_file)
+            model_id = d['model_id']
+            input_param = d['input_param']
+            opt_param = d['input_param']
+            type_loss = d['type_loss']
+            step_length = d['step_length']
+            model_options = d['model_options']
+
+        self.new_model(model_id=model_id, input_param=input_param, opt_param=opt_param, type_loss=type_loss,
+                       step_length=step_length, model_options=model_options)
 
     def load_weights(self, path):
         """

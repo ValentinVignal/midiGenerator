@@ -34,14 +34,11 @@ class MyModel:
         self.work_on = None
         self.get_new_full_name()
 
-        self.saved_model_path = os.path.join('saved_models', self.full_name)  # Where to saved the trained model
-        self.saved_model_pathlib = Path(self.saved_model_path)
+        self.saved_model_pathlib = Path(
+            os.path.join('saved_models', self.full_name))  # Where to saved the trained model
 
         # ----- Data -----
-        self.data_transformed_path = None  # Where are the data to train on
         self.data_transformed_pathlib = None
-
-        self.data_seed_pathlib = None
 
         self.instruments = None  # List of instruments used
         self.notes_range = None
@@ -68,7 +65,7 @@ class MyModel:
         return myModel
 
     @classmethod
-    def with_model(cls, model_infos, name='name', work_on=g.work_on, data=None):
+    def with_new_model(cls, model_infos, name='name', work_on=g.work_on, data=None):
         myModel = cls(name=name, data=data)
 
         def get_value(key):
@@ -97,10 +94,8 @@ class MyModel:
         """
         full_name = '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i,
                                                              g.work_on2letter(self.work_on))
-        saved_model_path = os.path.join('saved_models', full_name)
-        saved_model_pathlib = Path(saved_model_path)
+        saved_model_pathlib = Path(os.path.join('saved_models', full_name))
         self.full_name = full_name
-        self.saved_model_path = saved_model_path
         self.saved_model_pathlib = saved_model_pathlib
         print('Get full_name :', colored(self.full_name, 'blue'))
 
@@ -112,15 +107,12 @@ class MyModel:
         i = 0
         full_name = '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i,
                                                              g.work_on2letter(self.work_on))
-        saved_model_path = os.path.join('saved_models', full_name)
-        saved_model_pathlib = Path(saved_model_path)
+        saved_model_pathlib = Path(os.path.join('saved_models', full_name))
         while saved_model_pathlib.exists():
             i += 1
             full_name = '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs, i,
                                                                  g.work_on2letter(self.work_on))
-            saved_model_path = os.path.join('saved_models', full_name)
-            saved_model_pathlib = Path(saved_model_path)
-        self.saved_model_path = saved_model_path
+            saved_model_pathlib = Path(os.path.join('saved_models', full_name))
         self.saved_model_pathlib = saved_model_pathlib
         self.full_name = full_name
         print('Got new full_name :', colored(self.full_name, 'blue'))
@@ -141,8 +133,8 @@ class MyModel:
 
         :return: load the data
         """
-        self.data_transformed_path = data_transformed_path if data_transformed_path is not None else self.data_transformed_path
-        self.data_transformed_pathlib = Path(self.data_transformed_path)
+        self.data_transformed_pathlib = Path(
+            data_transformed_path) if data_transformed_path is not None else self.data_transformed_pathlib
         self.input_param = {}
         with open(str(self.data_transformed_pathlib / 'infos_dataset.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
@@ -215,11 +207,34 @@ class MyModel:
             d = pickle.load(dump_file)
             self.input_param = d['nn']['input_param']
             self.instruments = d['instruments']
-            self.data_seed_pathlib = Path(d['data_seed_pathlib'])
             self.notes_range = d['notes_range']
             self.work_on = d['work_on']
         self.print_model()
         print('Model', colored(id, 'white', 'on_blue'), 'loaded')
+
+    def recreate_model(self, id, with_weigths=True, print_model=True):
+        self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
+        self.work_on = g.letter2work_on(work_on_letter)
+        self.get_full_name(indice)
+        path_to_load = Path('saved_models',
+                            '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, total_epochs,
+                                                                     indice, work_on_letter))
+        with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
+            d = pickle.load(dump_file)
+            self.input_param = d['nn']['input_param']
+            self.instruments = d['instruments']
+            self.notes_range = d['notes_range']
+            self.work_on = d['work_on']
+            self.data_transformed_pathlib = d['data_transformed_pathlib']
+
+        self.my_nn = MyNN()
+        self.my_nn.recreate((path_to_load / 'MyNN').as_posix())
+
+        if with_weigths:
+            self.my_nn.load_weights((path_to_load / 'MyNN').as_posix())
+            self.total_epochs = int(total_epochs)
+        if print_model:
+            self.print_model()
 
     def load_weights(self, id, keep_name=True):
         """
@@ -285,7 +300,6 @@ class MyModel:
 
         # Update parameters
         self.total_epochs += epochs
-        self.data_seed_pathlib = self.data_transformed_pathlib
         self.get_new_full_name()
         print(colored('Training done', 'green'))
 
@@ -313,7 +327,7 @@ class MyModel:
     def test_function(self, learning_phase=0):
         cprint('Test function', 'blue')
         outputs = self.my_nn.test_function(generator=self.my_sequence,
-                                          learning_phase=learning_phase)
+                                           learning_phase=learning_phase)
         print(outputs)
 
     def test_on_batch(self, i=0, batch_size=4):
@@ -361,7 +375,6 @@ class MyModel:
                     'input_param': self.input_param,
                 },
                 'instruments': self.instruments,
-                'data_seed_pathlib': str(self.data_seed_pathlib),
                 'notes_range': self.notes_range,
                 'work_on': self.work_on,
                 'data_transformed_pathlib': self.data_transformed_pathlib
@@ -514,11 +527,11 @@ class MyModel:
         :return:
         """
         seeds = []
-        with open(self.data_seed_pathlib / 'infos_dataset.p', 'rb') as dump_file:
+        with open(self.data_transformed_pathlib / 'infos_dataset.p', 'rb') as dump_file:
             d = pickle.load(dump_file)
             all_shapes = d['all_shapes']
         for i in range(number):
-            array_list = np.load(str(self.data_seed_pathlib / 'npy' / '{0}.npy'.format(
+            array_list = np.load(str(self.data_transformed_pathlib / 'npy' / '{0}.npy'.format(
                 np.random.randint(0, len(all_shapes))
             )), allow_pickle=True).item()['list']
             array = array_list[np.random.randint(0, len(array_list))]  # The song
@@ -538,7 +551,7 @@ class MyModel:
         """
         # -------------------- Find informations --------------------
         if self.data_transformed_pathlib is None:
-            self.data_transformed_pathlib = self.data_seed_pathlib
+            self.data_transformed_pathlib = self.data_transformed_pathlib
         nb_steps = int(self.model_id.split(',')[2])
         if self.my_sequence is None:
             self.my_sequence = MySequence(

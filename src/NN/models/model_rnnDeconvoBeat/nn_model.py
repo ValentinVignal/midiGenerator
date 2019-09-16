@@ -46,7 +46,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'lstm_state': g.lstm_state,
         'min_pool': False,
         'no_batch_norm': False,
-        'bn_momentum': g.bn_momentum
+        'bn_momentum': g.bn_momentum,
+        'lambdas_loss': g.lambdas_loss
     }
     mmodel_options.update(model_options)
 
@@ -56,6 +57,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     min_pool = mmodel_options['min_pool']
     batch_norm = not mmodel_options['no_batch_norm']
     bn_momentum = mmodel_options['bn_momentum']
+
+    lambda_loss_activation, lambda_loss_duration = g.get_lambdas_loss(mmodel_options['lambdas_loss'])
     # --------- End model options ----------
 
     print('Definition of the graph ...')
@@ -208,14 +211,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
 
     # ------------------ Losses -----------------
-    lambda_activation = 20
-    lambda_duration = 0
-
     # Define losses dict
     losses = {}
     for i in range(nb_instruments):
-        losses['Output_{0}'.format(i)] = l.choose_loss(type_loss)(lambda_activation, lambda_duration)
+        losses['Output_{0}'.format(i)] = l.choose_loss(type_loss)(lambda_loss_activation, lambda_loss_duration)
 
     model.compile(loss=losses, optimizer=optimizer, metrics=[l.acc_act, l.mae_dur])
 
-    return model, losses, (lambda_activation, lambda_duration)
+    return model, losses, (lambda_loss_activation, lambda_loss_duration)

@@ -58,3 +58,14 @@ def letter2work_on(letter):
 
 
 noise = 0
+lambdas_loss = '5,1'
+
+
+def get_lambdas_loss(lambdas_loss):
+    l = lambdas_loss.split(',')
+    return float(l[0]), float(l[1])
+
+
+lambda_loss_activation, lambda_loss_duration = get_lambdas_loss(lambdas_loss)
+
+
