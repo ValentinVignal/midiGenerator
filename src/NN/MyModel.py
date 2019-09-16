@@ -7,7 +7,7 @@ from termcolor import colored, cprint
 import math
 
 from src.NN.MyNN import MyNN
-from src.NN.data_generator import MySequence, MySequenceBeat
+from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
 import src.text.summary as summary
@@ -269,7 +269,7 @@ class MyModel:
             flag_new_sequence = True
 
         if flag_new_sequence:
-            self.my_sequence = MySequenceBeat(
+            self.my_sequence = MySequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
@@ -296,7 +296,7 @@ class MyModel:
             self.batch = 4
         cprint('Evaluation', 'blue')
         if self.my_sequence is None:
-            self.my_sequence = MySequenceBeat(
+            self.my_sequence = MySequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
@@ -541,7 +541,7 @@ class MyModel:
             self.data_transformed_pathlib = self.data_seed_pathlib
         nb_steps = int(self.model_id.split(',')[2])
         if self.my_sequence is None:
-            self.my_sequence = MySequenceBeat(
+            self.my_sequence = MySequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=nb_steps,
                 batch_size=1,
