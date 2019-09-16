@@ -94,7 +94,8 @@ class MyModel:
     @classmethod
     def with_model(cls, id, with_weights=True):
         my_model = cls()
-        my_model.recreate_model(id=id)
+        my_model.recreate_model(id=id, with_weigths=with_weights)
+        return my_model
 
     # --------------------------------------------------
     #                   Names function
@@ -265,6 +266,7 @@ class MyModel:
         if with_weigths:
             self.my_nn.load_weights((path_to_load / 'MyNN').as_posix())
             self.total_epochs = int(total_epochs)
+            self.get_full_name(indice)
         if print_model:
             self.print_model()
 

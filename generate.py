@@ -44,9 +44,9 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    my_model = MyModel.from_model(id=args.load)  # Load the model
+    my_model = MyModel.with_model(id=args.load)  # Load the model
     my_model.generate_fom_data(length=args.length,
-                               seed=args.seed,
+                               nb_seeds=args.seed,
                                save_images=args.images,
                                no_duration=args.no_duration,
                                verbose=args.verbose)
