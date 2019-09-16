@@ -6,6 +6,7 @@ from termcolor import colored
 
 import src.midi.open as midi_open
 import src.midi.create as midi_create
+import src.midi.instruments as midi_inst
 import src.image.pianoroll as p
 
 
@@ -55,6 +56,8 @@ def main():
                         help='To also create the pianoroll')
     parser.add_argument('--notes-range', type=str, default='0:88',
                         help='The length of the data')
+    parser.add_argument('--bach', action='store_true', default=False,
+                        help='To compute the bach data')
 
     args = parser.parse_args()
 
@@ -70,9 +73,10 @@ def main():
     args.notes_range = (int(s[0]), int(s[1]))
 
     # Instruments :
-    instruments = ['Piano', 'Tuba', 'Flute', 'Violin']
     args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
                                 args.instruments.split(',')))
+    if args.bach:
+        args.instruments = midi_inst.bach_instruments
     print('\t', colored('Check_dataset with instruments : ', 'cyan', 'on_white') +
           colored('{0}'.format(args.instruments), 'magenta', 'on_white'), '\n')
 
@@ -85,8 +89,17 @@ def main():
         print(colored("-- {0}/{1} ----- : ----- Checking {2} ----------".format(i + 1, nb_files, midi_path), 'white',
                       'on_blue'))
         print('note_range:', args.notes_range)
-        matrix_midi = midi_open.midi_to_matrix(midi_path.as_posix(), args.instruments, print_instruments=True,
-                                               notes_range=args.notes_range)  # (nb_args.instruments, 128, nb_steps, 2)
+        if args.bach:
+            matrix_midi = midi_open.midi_to_matrix_bach(filename=midi_path.as_posix(),
+                                                         print_instruments=True,
+                                                         notes_range=args.notes_range
+                                                         )
+        else:
+            matrix_midi = midi_open.midi_to_matrix(filename=midi_path.as_posix(),
+                                                   instruments=args.instruments,
+                                                   print_instruments=True,
+                                                   notes_range=args.notes_range
+                                                   )  # (nb_args.instruments, 128, nb_steps, 2)
         if matrix_midi is None:
             continue
         # matrix_midi = np.transpose(matrix_midi, , 3))

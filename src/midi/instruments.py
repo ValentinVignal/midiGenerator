@@ -9,7 +9,7 @@ similar_music21_instruments = [
     ['Organ', 'Pipe Organ', 'Electric Organ', 'Reed Organ', 'Accordion', 'Harmonica'],
     ['StringInstrument', 'Violin', 'Viola', 'Violoncello', 'Contrabass'],
     ['Harp', 'Guitar', 'Acoustic Guitar', 'Electric Guitar'],
-    ['Acoustic Bass', 'Electric Bass', 'Fretless Bass', 'Contrabass', 'Bass Clarinet', 'Bass'],
+    ['Acoustic Bass', 'Electric Bass', 'Fretless Bass', 'Contrabass', 'Bass clarinet', 'Bass'],
     ['Mandolin', 'Ukulele', 'Banjo', 'Lute', 'Sitar', 'Shamisen'],
     ['Koto', 'Woodwind', 'Flute', 'Piccolo', 'Recorder', 'Pan Flute', 'Shakuhachi', 'Whistle', 'Ocarina', 'Oboe',
      'English Horn', 'Clarinet', 'Bass clarinet', 'Bassoon'],
@@ -25,6 +25,7 @@ similar_music21_instruments = [
     ['Voice', 'Soprano', 'Mezzo-Soprano', 'Alto', 'Tenor', 'Baritone', 'Bass']
 ]
 
+bach_instruments = ['Flute', 'Ocarina', 'Tuba', 'Contrabass']
 
 def string2instrument(name):
     """

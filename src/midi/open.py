@@ -223,3 +223,129 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
         final_matrix[i, :, :len(our_matrixes[i][0]), :] = our_matrixes[i]
     final_matrix = no_silence(final_matrix)
     return final_matrix
+
+
+def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_range=None):
+    """
+    convert midi file to matrix for DL architecture.
+    :param filename: path to the midi file
+    :param length: length max of the song
+    :param print_instruments: bool
+    :return: matrix with shape
+    """
+    midi = midifile_to_stream(filename)  # Load the file
+    if midi is None:
+        return None
+    if len(midi) != 4:
+        cprint('Wrong number of part : {0}'.format(len(midi)))
+        return None
+    parts = midi        # No partition by Instruments
+    notes_range = (0, 88) if notes_range is None else notes_range
+
+    # --- Get the instruments names in the file ---
+    instrument_names = []  # Name of the instruments in the file
+    try:
+        for instrument in parts:
+            # learn names of instruments
+            name = instrument.partName
+            if name is None:
+                if len(instrument_names) > 0:
+                    name = instrument_names[-1]
+                else:
+                    name = 'Piano'
+            # name = (str(instrument).split(' ')[-1])[
+            #        :-1]  # str(instrument) = "<midi.stream.Part object Electric Bass>"
+            instrument_names.append(name)
+        if print_instruments:
+            print('instruments :', instrument_names)
+    except TypeError:
+        print(colored('Type is not iterable.', 'red'))
+        return None
+
+    # just take instruments desired parts
+    our_matrixes = []  # Final matrix for deep learning
+    all_first_offset = []
+    for instrument in range(4):
+        try:
+            notes_to_parse = parts.parts[instrument]
+        except TypeError:
+            print(colored('Type is not iterable.', 'red'))
+            return None
+
+        notes_to_parse = notes_to_parse.recurse()
+        duration = float(check_float(notes_to_parse._getDuration().quarterLength))
+
+        durations = []
+        notes = []
+        offsets = []
+
+        in_anacrouse = False
+        anacrouse_value = None
+        first_offset = 0
+
+        for element in notes_to_parse:
+            if in_anacrouse and element.offset > eval(anacrouse_value) * 4 + 2:
+                cprint('Unwanted time signature : {0}'.format(anacrouse_value), 'red')
+            if isinstance(element, music21.note.Note) and not in_anacrouse:  # if it is single note
+                notes.append(int(element.pitch.midi))  # The code number for the pitch
+                duration = str(element.duration)[27:-1]
+                durations.append(check_float(duration))
+                offsets.append(element.offset)
+
+            elif isinstance(element, music21.chord.Chord) and not in_anacrouse:  # if it is chord
+                notes.append('.'.join(str(n.midi)
+                                      for n in element.pitches))
+                duration = str(element.duration)[27:-1]
+                durations.append(check_float(duration))
+                offsets.append(element.offset)
+            elif isinstance(element, music21.meter.TimeSignature):
+                # Check if it is correct
+                if element.ratioString != '4/4':
+                    if len(notes) == 0:     # Then it is an anacrouse
+                        in_anacrouse = True
+                        anacrouse_value = element.ratioString
+                    else:
+                        cprint('Unwanted time signature : {0}'.format(element.ratioString), 'red')
+                        return None
+                else:
+                    in_anacrouse = False
+                    first_offset = element.offset
+        our_matrix = notes_to_matrix(notes, durations, offsets)  # (88, nb_steps, 2)
+        if first_offset != 0:
+            all_first_offset.append(first_offset)
+
+        try:
+            freq, time, _ = our_matrix.shape
+        except AttributeError:
+            print(colored("'tuple' object has no attribute 'shape'", 'red'))
+            return None
+
+        # To change shape
+        if length is not None:
+            try:
+                our_matrix = our_matrix[:, :length, :]
+            except IndexError:
+                print(colored('{0} is not long enough, shape : {1}'.format(filename, our_matrix.shape), 'red'))
+
+        our_matrixes.append(our_matrix[notes_range[0]:notes_range[1]])
+
+    # Normalization of the duration : make them all finish at the same time
+    max_len = 0
+    for matrix in our_matrixes:
+        if len(matrix[0]) > max_len:  # matrix has shape : (88, length, 2)
+            max_len = len(matrix[0])
+
+    final_matrix = np.zeros(
+        (len(our_matrixes), notes_range[1] - notes_range[0], max_len, 2))  # (nb_instruments, 88, max_len, 2)
+    for i in range(len(our_matrixes)):
+        final_matrix[i, :, :len(our_matrixes[i][0]), :] = our_matrixes[i]
+
+    if len(all_first_offset) >= 1:
+        if all(f_o == all_first_offset[0] for f_o in all_first_offset):
+            print('balbal', all_first_offset[0] * g.step_per_beat)
+            final_matrix = final_matrix[:, :, int(all_first_offset[0] * g.step_per_beat):, :]
+        else:
+            cprint('Anacrouses not with the same length :{0}'.format(all_first_offset), 'red')
+
+    final_matrix = no_silence(final_matrix)
+    return final_matrix

@@ -67,19 +67,7 @@ def save_pianoroll(array, path, seed_length, instruments):
     :return:
     """
     # Colors
-    colors = [Color('#' + ''.join([random.choice('0123456789abcdef') for j in range(6)])) for i in instruments]
-    colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
-    for i in range(len(colors_rgb)):  # Make a light color
-        m = min(colors_rgb[i])
-        M = max(colors_rgb[i])
-        if M <= 100:  # If the color is too dark
-            for j in range(3):
-                if colors_rgb[i][j] == M:
-                    colors_rgb[i][j] = min(50 + 2 * colors_rgb[i][j], 255)
-                elif colors_rgb[i][j] == m:
-                    colors_rgb[i][j] = 10 + int(1.3 * colors_rgb[i][j])
-                else:
-                    colors_rgb[i][j] = 25 + int(1.7 * colors_rgb[i][j])
+    colors_rgb = return_colors(len(instruments))
 
     activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape

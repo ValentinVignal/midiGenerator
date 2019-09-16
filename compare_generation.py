@@ -21,7 +21,7 @@ def main():
     parser.add_argument('-l', '--length', default=None,
                         help='The length of the generated music')
     parser.add_argument('--no-duration', action='store_true', default=False,
-                        help='Generate only shortest notes possible')
+                        help='generate only shortest notes possible')
     parser.add_argument('-v', '--verbose', type=int, default=1,
                         help='Level of verbose')
 

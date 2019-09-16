@@ -77,7 +77,7 @@ class MySequence(tf.keras.utils.Sequence):
                         self.nb_steps * self.step_size) + self.step_size]
             )  # (batch, step_size, nb_instruments, input_size, 2)
             k += self.step_size
-            if k >= self.all_shapes[i][j][0] - (self.nb_steps * self.step_size):
+            if k >= self.all_shapes[i][j][0] - ((self.nb_steps + 1) * self.step_size):
                 k = 0
                 j += 1
                 if j == len(self.all_shapes[i]):
