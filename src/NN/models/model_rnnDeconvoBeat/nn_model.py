@@ -77,16 +77,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for instrument in range(nb_instruments):
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size, 2)]
 
-    # --------- Only activation ----------
-    inputs_activation = []
-    for instrument in range(nb_instruments):
-        inputs_activation.append(Lambda(lambda xl: xl[:, :, :, :, 0])(
-            inputs_midi[instrument]))  # activation (batch, nb_steps, step_length, input_size)
-        inputs_activation[instrument] = layers.Reshape((nb_steps, step_length, input_size, 1))(
-            inputs_activation[instrument])
-
     # ---------- All together ----------
-    x = layers.concatenate(inputs_activation, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
+    x = layers.concatenate(inputs_midi, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
 
     # ----- Convolutional Layer -----
     convo = model_param['convo']
