@@ -93,7 +93,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
             x = layers.LeakyReLU()(x)
             x = layers.Dropout(dropout / 2)(x)
-        #x = layers.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 1, 2), padding='same')(x)
+        # x = layers.MaxPool3D(pool_size=(1, 3, 3), strides=(1, 1, 2), padding='same')(x)
     shape_before_fc = x.shape
     x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(
         x)  # (batch, nb_steps, lenght * size * filters)

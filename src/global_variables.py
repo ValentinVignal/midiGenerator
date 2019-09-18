@@ -58,7 +58,7 @@ def letter2work_on(letter):
 
 
 noise = 0
-lambdas_loss = '2,1'
+lambdas_loss = '2,2'
 
 
 def get_lambdas_loss(lambdas_loss):
