@@ -162,8 +162,8 @@ class MyModel:
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def change_batch_size(self, batch_size):
-        self.batch = batch_size
-        if self.my_sequence is not None:
+        if self.my_sequence is not None and self.batch != batch_size:
+            self.batch = batch_size
             self.my_sequence.change_batch_size(batch_size=batch_size)
 
     # --------------------------------------------------

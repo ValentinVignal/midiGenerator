@@ -44,7 +44,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'dropout': g.dropout,
         'all_sequence': g.all_sequence,
         'lstm_state': g.lstm_state,
-        'min_pool': False,
         'no_batch_norm': False,
         'bn_momentum': g.bn_momentum,
         'lambdas_loss': g.lambdas_loss
@@ -54,7 +53,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     dropout = mmodel_options['dropout']
     all_sequence = mmodel_options['all_sequence']
     lstm_state = mmodel_options['lstm_state']
-    min_pool = mmodel_options['min_pool']
     batch_norm = not mmodel_options['no_batch_norm']
     bn_momentum = mmodel_options['bn_momentum']
 
@@ -183,8 +181,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             x = layers.LeakyReLU()(x)
             x = layers.Dropout(dropout / 2)(x)
         x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
-        if min_pool:
-            x = Lambda(min_max_pool3d, output_shape=min_max_pool3d_output_shape)(x)  # (batch, 1, size, filters)
 
     x = layers.Flatten()(x)
 

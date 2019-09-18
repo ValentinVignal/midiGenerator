@@ -40,8 +40,6 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--lstm-state', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
-    parser.add_argument('--min-pool', default=False, action='store_true',
-                        help='Either to use the min pooling after upsampling')
     # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')
@@ -111,7 +109,6 @@ def main():
             'dropout': args.dropout,
             'all_sequence': args.all_sequence,
             'lstm_state': args.lstm_state,
-            'min_pool': args.min_pool,
             'no_batch_norm': args.no_batch_norm,
             'bn_momentum': args.bn_momentum,
             'lambdas_loss': args.lambdas_loss
