@@ -91,7 +91,7 @@ def main():
 
     # ----- Actually compute the datas -----
     print('----- Compute the data in', colored(data_path, 'grey', 'on_white'), '-----')
-    print('Number of songs : ', colored(len(all_midi_paths_dataset), 'magenta'))
+    print('Number of files : ', colored(len(all_midi_paths_dataset), 'magenta'))
     bach_string = ''
     if args.bach:
         bach_string = colored('(Bach)', 'magenta')

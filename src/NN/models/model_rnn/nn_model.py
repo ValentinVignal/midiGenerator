@@ -10,18 +10,9 @@ K = tf.keras.backend
 
 """
 
-LSTM with encoder convolutional layers
+LSTM with encoder convolutional layers and the deconder use transposed convolutional layer
 
 """
-
-
-def min_max_pool3d(x):
-    min_x = -K.pool3d(-x, pool_size=(1, 2, 3), strides=(1, 1, 1), padding='same')
-    return min_x
-
-
-def min_max_pool3d_output_shape(input_shape):
-    return input_shape
 
 
 def create_model(input_param, model_param, nb_steps, step_length, optimizer, type_loss=g.type_loss,
@@ -172,10 +163,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for i in range(len(transposed_convo) - 1):
         transposed_convo[i] = transposed_convo[i][1:] + [transposed_convo[i + 1][0]]
     transposed_convo[-1] = transposed_convo[-1][1:] + [model_param['last_convo']]
-    for i in transposed_convo:
-        for s in i:
+    for tc in transposed_convo:
+        for s_idx, s in enumerate(tc):
+            strides = (1, 1, 1) if s_idx < len(tc) - 1 else (1, 1, 2)
             size = s
-            x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 3), padding='same')(x)
+            x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 3), padding='same', strides=strides)(x)
             if batch_norm:
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
             x = layers.LeakyReLU()(x)
