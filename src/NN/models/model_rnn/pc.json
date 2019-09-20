@@ -1,4 +1,6 @@
 {
-  "fc": ["nb_instruments * 12"],
-  "LSTM": ["24 * nb_instruments"]
+  "convo": [[4, 8], [16]],
+  "fc": ["nb_instruments * 16"],
+  "LSTM": ["nb_steps * nb_instruments * 12"],
+  "last_convo": 4
 }

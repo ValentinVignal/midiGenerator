@@ -1,5 +1,0 @@
-{
-  "LSTM": [0.5, 0.5],
-  "fc_common": [0.5],
-  "fc_separated": [1]
-}
