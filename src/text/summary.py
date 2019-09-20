@@ -116,20 +116,31 @@ def save_train_history(train_history, nb_instruments, pathlib):
     :param pathlib:
     :return:
     """
+
+    print('history')
+    print(train_history)
     loss = train_history['loss']
+    val_loss = train_history['val_loss']
     losses = [train_history['Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
+    val_losses = [train_history['val_Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
     accs_act = [train_history['Output_{0}_acc_act'.format(i)] for i in range(nb_instruments)]
+    val_accs_act = [train_history['val_Output_{0}_acc_act'.format(i)] for i in range(nb_instruments)]
     mae_dur = [train_history['Output_{0}_mae_dur'.format(i)] for i in range(nb_instruments)]
+    val_mae_dur = [train_history['val_Output_{0}_mae_dur'.format(i)] for i in range(nb_instruments)]
 
     epochs = range(1, len(loss) + 1)
 
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
     # ----- Save losses -----
     plt.figure()
-    plt.plot(epochs, loss, label='Loss')
+    plt.plot(epochs, loss, label='Loss', color=colors[0], linestyle='-')
+    plt.plot(epochs, val_loss, label='val_Loss', color=colors[0], linestyle='--')
     for i in range(nb_instruments):
-        plt.plot(epochs, losses[i], label='Output_{0}_loss'.format(i))
+        plt.plot(epochs, losses[i], label='Output_{0}_loss'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, val_losses[i], label='val_Output_{0}_loss'.format(i), color=colors[i+1], linestyle='--')
 
-    plt.title('Variation of the Loss through the epochs\n{0}'.format(loss[-1]))
+    plt.title(f'Variation of the Loss through the epochs\nLoss : {loss[-1]}\nval_Loss : {val_loss[-1]}')
     plt.xlabel('Epochs')
     plt.ylabel('Loss value')
     plt.legend()
@@ -139,7 +150,8 @@ def save_train_history(train_history, nb_instruments, pathlib):
     # ----- Save accuracies -----
     plt.figure()
     for i in range(nb_instruments):
-        plt.plot(epochs, accs_act[i], label='Output_{0}_acc_act'.format(i))
+        plt.plot(epochs, accs_act[i], label='Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, val_accs_act[i], label='val_Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='--')
 
     plt.title('Variation of the accuracy through the epochs\n')
     plt.xlabel('Epochs')
@@ -151,7 +163,8 @@ def save_train_history(train_history, nb_instruments, pathlib):
     # ----- Save durations -----
     plt.figure()
     for i in range(nb_instruments):
-        plt.plot(epochs, mae_dur[i], label='Output_{0}_acc_act'.format(i))
+        plt.plot(epochs, mae_dur[i], label='Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, val_mae_dur[i], label='val_Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='--')
 
     plt.title('Variation of the accuracy mae through the epochs\n')
     plt.xlabel('Epochs')
@@ -167,8 +180,11 @@ def save_train_history(train_history, nb_instruments, pathlib):
     for i in range(nb_instruments):
         text += '\tInstrument {0}\n'.format(i)
         text += '\t\t Loss : {0}\t--\t{1}\n'.format(losses[i][-1], losses[i])
+        text += '\t\t Validation Loss : {0}\t--\t{1}\n'.format(val_losses[i][-1], val_losses[i])
         text += '\t\t Accuracy activation : {0}\t--\t{1}\n'.format(accs_act[i][-1], accs_act[i])
+        text += '\t\t Validation Accuracy activation : {0}\t--\t{1}\n'.format(val_accs_act[i][-1], val_accs_act[i])
         text += '\t\t Duration mae : {0}\t--\t{1}\n'.format(mae_dur[i][-1], mae_dur[i])
+        text += '\t\t Validation Duration mae : {0}\t--\t{1}\n'.format(val_mae_dur[i][-1], val_mae_dur[i])
     with open((pathlib / 'Summary.txt').as_posix(), 'w') as f:
         f.write(text)
 

@@ -54,6 +54,8 @@ def main():
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
     # ----------------
+    parser.add_argument('--validation', type=float, default=0.1,
+                        help='Fraction of the training data to be used as validation data')
     parser.add_argument('--evaluate', default=False, action='store_true',
                         help='Evaluate the model after the training')
     parser.add_argument('--compare-generation', default=False, action='store_true',
@@ -122,7 +124,7 @@ def main():
         my_model.recreate_model(args.load)
 
     # -------------------- Train --------------------
-    my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise)
+    my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation)
 
     # -------------------- Test --------------------
     if args.evaluate:

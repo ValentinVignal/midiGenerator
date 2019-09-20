@@ -13,6 +13,7 @@ import numpy as np
 
 import src.NN.losses as nn_losses
 import src.global_variables as g
+import src.NN.data_generator as dg
 
 K = tf.keras.backend
 
@@ -35,7 +36,7 @@ class MyNN:
         self.decay = None
         self.type_loss = None
 
-        self.model_option = None
+        self.model_options = None
 
         # Spare GPU
         tf.logging.set_verbosity(tf.logging.ERROR)
@@ -139,18 +140,26 @@ class MyNN:
 
         return dill.dumps(step_decay)
 
-    def train_seq(self, epochs, generator, callbacks=[], verbose=1):
+    def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0):
         """
 
         :param epochs:
         :param generator:
         :param callbacks:
         :param verbose:
+        :param validation:
         :return:
         """
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
-        a = self.model.fit_generator(epochs=epochs, generator=generator,
-                                     shuffle=True, verbose=verbose, callbacks=callback_list)
+
+        if validation > 0:
+            generator_train, generator_valid = dg.get_train_valid_mysequence(generator, validation_split=validation)
+
+            a = self.model.fit_generator(epochs=epochs, generator=generator_train, validation_data=generator_valid,
+                                         shuffle=True, verbose=verbose, callbacks=callback_list)
+        else:       # So it won't print a lot of lines for nothing
+            a = self.model.fit_generator(epochs=epochs, generator=generator,
+                                         shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return a.history
 

@@ -300,7 +300,7 @@ class MyModel:
     #                Train the model
     # --------------------------------------------------
 
-    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise):
+    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise, validation=0.0):
         """
 
         :param epochs:
@@ -308,6 +308,7 @@ class MyModel:
         :param callbacks:
         :param verbose:
         :param noise:
+        :param validation:
         :return: train the model
         """
 
@@ -336,7 +337,7 @@ class MyModel:
         # Actual train
         print(colored('Training...', 'blue'))
         self.train_history = self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks,
-                                                  verbose=verbose)
+                                                  verbose=verbose, validation=validation)
 
         # Update parameters
         self.total_epochs += epochs
