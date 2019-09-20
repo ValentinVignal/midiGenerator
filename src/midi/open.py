@@ -237,7 +237,7 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
     if midi is None:
         return None
     if len(midi) != 4:
-        cprint('Wrong number of part : {0}'.format(len(midi)))
+        cprint('Wrong number of parts : {0}'.format(len(midi)), 'red')
         return None
     parts = midi        # No partition by Instruments
     notes_range = (0, 88) if notes_range is None else notes_range
@@ -286,6 +286,7 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
         for element in notes_to_parse:
             if in_anacrouse and element.offset > eval(anacrouse_value) * 4 + 2:
                 cprint('Unwanted time signature : {0}'.format(anacrouse_value), 'red')
+                return None
             if isinstance(element, music21.note.Note) and not in_anacrouse:  # if it is single note
                 notes.append(int(element.pitch.midi))  # The code number for the pitch
                 duration = str(element.duration)[27:-1]
@@ -342,10 +343,11 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
 
     if len(all_first_offset) >= 1:
         if all(f_o == all_first_offset[0] for f_o in all_first_offset):
-            print('balbal', all_first_offset[0] * g.step_per_beat)
             final_matrix = final_matrix[:, :, int(all_first_offset[0] * g.step_per_beat):, :]
         else:
             cprint('Anacrouses not with the same length :{0}'.format(all_first_offset), 'red')
 
     final_matrix = no_silence(final_matrix)
     return final_matrix
+
+

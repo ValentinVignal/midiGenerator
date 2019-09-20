@@ -6,6 +6,7 @@ from termcolor import colored
 
 import src.midi.open as midi_open
 import src.midi.create as midi_create
+import src.midi.common as midi_common
 import src.midi.instruments as midi_inst
 import src.image.pianoroll as p
 
@@ -72,6 +73,11 @@ def main():
     s = args.notes_range.split(':')
     args.notes_range = (int(s[0]), int(s[1]))
 
+    # Stat
+    max_notes_range, min_notes_range = 0, int(s[1]) - int(s[0])
+    nb_correct_files = 0
+    nb_measures = 0
+
     # Instruments :
     args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
                                 args.instruments.split(',')))
@@ -91,9 +97,9 @@ def main():
         print('note_range:', args.notes_range)
         if args.bach:
             matrix_midi = midi_open.midi_to_matrix_bach(filename=midi_path.as_posix(),
-                                                         print_instruments=True,
-                                                         notes_range=args.notes_range
-                                                         )
+                                                        print_instruments=True,
+                                                        notes_range=args.notes_range
+                                                        )
         else:
             matrix_midi = midi_open.midi_to_matrix(filename=midi_path.as_posix(),
                                                    instruments=args.instruments,
@@ -102,12 +108,26 @@ def main():
                                                    )  # (nb_args.instruments, 128, nb_steps, 2)
         if matrix_midi is None:
             continue
+
+        # Update stats
+        matrix_bound_min, matrix_bound_max = midi_common.range_notes_in_matrix(matrix_midi)
+        min_notes_range = min(min_notes_range, matrix_bound_min)
+        max_notes_range = max(max_notes_range, matrix_bound_max)
+        nb_correct_files += 1
+        nb_measures += midi_common.nb_measures(matrix_midi)
+
         # matrix_midi = np.transpose(matrix_midi, , 3))
         output_notes = midi_create.matrix_to_midi(matrix_midi, instruments=args.instruments,
                                                   notes_range=args.notes_range)
         midi_create.save_midi(output_notes, args.instruments, checked_file_name.as_posix())
         p.save_pianoroll(matrix_midi, path=checked_file_name_image.as_posix(), seed_length=0,
                          instruments=args.instruments)
+    min_notes_range += args.notes_range[0]
+    max_notes_range += args.notes_range[0]
+    print('----------', colored('Checking is done', 'white', 'on_green'), '----------')
+    print('Number of correct files :', colored(nb_correct_files, 'magenta'), '-- nb measures :',
+          colored(nb_measures, 'magenta'))
+    print('Range of notes :', colored(min_notes_range, 'magenta'), ':', colored(max_notes_range, 'magenta'))
 
 
 if __name__ == '__main__':
