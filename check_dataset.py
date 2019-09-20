@@ -59,13 +59,13 @@ def main():
 
     all_midi_paths = midi_open.all_midi_files(data_checked_path.as_posix(), False)
     nb_files = len(all_midi_paths)
+    print('note_range:', colored(args.notes_range, 'magenta'))
     for i in range(nb_files):
         midi_path = Path(all_midi_paths[i])
         checked_file_name = Path(midi_path.parent, midi_path.stem + '_checked' + midi_path.suffix)
         checked_file_name_image = Path(midi_path.parent, midi_path.stem + '_checked.jpg')
         print(colored("-- {0}/{1} ----- : ----- Checking {2} ----------".format(i + 1, nb_files, midi_path), 'white',
                       'on_blue'))
-        print('note_range:', args.notes_range)
         if args.bach:
             matrix_midi = midi_open.midi_to_matrix_bach(filename=midi_path.as_posix(),
                                                         print_instruments=True,
