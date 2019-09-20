@@ -117,8 +117,6 @@ def save_train_history(train_history, nb_instruments, pathlib):
     :return:
     """
 
-    print('history')
-    print(train_history)
     loss = train_history['loss']
     val_loss = train_history['val_loss']
     losses = [train_history['Output_{0}_loss'.format(i)] for i in range(nb_instruments)]

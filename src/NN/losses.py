@@ -92,6 +92,39 @@ def custom_loss_linearround(lambda_a, lambda_d):
     return loss_function
 
 
+def custom_loss_duration(lambda_a, lambda_d):
+
+    def filter_duration(inputs):
+        p_d = inputs[0]
+        t_a = inputs[1]
+        return tf.math.multiply(p_d, t_a)
+
+    def loss_dur(t_d, p_d):
+        diff = (t_d - p_d)
+        pow = tf.math.multiply(diff, diff)
+        return tf.reduce_sum(pow, axis=2)
+
+    def loss_function(y_true, y_pred):
+        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
+        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
+        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
+
+        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
+
+        y_pred_d = Lambda(filter_duration)([y_pred_d, y_true_a])
+        # loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
+        loss_d = loss_dur(y_true_d, y_pred_d)
+        print('loss a', loss_a)
+        print('loss d', loss_d)
+
+        loss = lambda_a * loss_a + lambda_d * loss_d
+
+        return tf.reduce_mean(loss, axis=None)
+
+    return loss_function
+
+
 def compare_losses_random(n=20):
     yt = np.random.randint(2, size=(n, 2))       # Only activations
     yp = np.random.randint(2, size=(n, 2))       # Only activations
@@ -139,6 +172,8 @@ def choose_loss(type_loss):
         return custom_loss_smoothround
     elif type_loss == 'linear_round':
         return custom_loss_linearround
+    elif type_loss == 'dur':
+        return custom_loss_duration
     else:
         raise Exception('type_loss "{0}" not known'.format(type_loss))
 
