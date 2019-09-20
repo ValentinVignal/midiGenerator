@@ -11,35 +11,6 @@ import src.midi.instruments as midi_inst
 import src.image.pianoroll as p
 
 
-def all_midi_files(path, small_data):
-    """
-
-    :param path: the root path
-    :param small_data: if we want to keep only a small amount of data
-    :return: An array of all the path of all the .mid files in the directory
-    """
-    nb_small_data = 10
-    fichiers = []
-    if small_data:
-        j = 0
-        for root, dirs, files in os.walk(path):
-            if j == nb_small_data:
-                break
-            for i in files:
-                if j == nb_small_data:
-                    break
-                if i.endswith('.mid'):
-                    fichiers.append(os.path.join(root, i))
-                    j += 1
-    else:
-        for root, dirs, files in os.walk(path):
-            for i in files:
-                if i.endswith('.mid'):
-                    fichiers.append(os.path.join(root, i))
-
-    return fichiers
-
-
 def main():
     """
         Entry point
@@ -86,7 +57,7 @@ def main():
     print('\t', colored('Check_dataset with instruments : ', 'cyan', 'on_white') +
           colored('{0}'.format(args.instruments), 'magenta', 'on_white'), '\n')
 
-    all_midi_paths = all_midi_files(data_checked_path.as_posix(), False)
+    all_midi_paths = midi_open.all_midi_files(data_checked_path.as_posix(), False)
     nb_files = len(all_midi_paths)
     for i in range(nb_files):
         midi_path = Path(all_midi_paths[i])

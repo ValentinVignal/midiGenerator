@@ -13,35 +13,6 @@ import src.text.summary as summary
 import src.midi.instruments as midi_inst
 
 
-def all_midi_files(path, small_data):
-    """
-
-    :param path: the root path
-    :param small_data: if we want to keep only a small amount of data
-    :return: An array of all the path of all the .mid files in the directory
-    """
-    nb_small_data = 10
-    fichiers = []
-    if small_data:
-        j = 0
-        for root, dirs, files in os.walk(path):
-            if j == nb_small_data:
-                break
-            for i in files:
-                if j == nb_small_data:
-                    break
-                if i.endswith('.mid'):
-                    fichiers.append(os.path.join(root, i))
-                    j += 1
-    else:
-        for root, dirs, files in os.walk(path):
-            for i in files:
-                if i.endswith('.mid'):
-                    fichiers.append(os.path.join(root, i))
-
-    return fichiers
-
-
 def main():
     """
         Entry point
@@ -109,7 +80,7 @@ def main():
             all_midi_paths_dataset = d[
                 'midi']  # All the path for every files in the dataset (including the ones with errors)
     else:
-        all_midi_paths_dataset = all_midi_files(data_path, args.pc)
+        all_midi_paths_dataset = midi_open.all_midi_files(data_path, args.pc)
         with open(all_dataset_p, 'wb') as dump_file:
             pickle.dump({
                 'midi': all_midi_paths_dataset,

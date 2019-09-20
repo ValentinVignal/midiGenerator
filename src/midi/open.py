@@ -4,6 +4,7 @@ import music21
 import functools
 from termcolor import colored, cprint
 import math
+import os
 
 import src.midi.instruments as midi_inst
 
@@ -350,4 +351,32 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
     final_matrix = no_silence(final_matrix)
     return final_matrix
 
+
+def all_midi_files(path, small_data):
+    """
+
+    :param path: the root path
+    :param small_data: if we want to keep only a small amount of data
+    :return: An array of all the path of all the .mid files in the directory
+    """
+    nb_small_data = 10
+    fichiers = []
+    if small_data:
+        j = 0
+        for root, dirs, files in os.walk(path):
+            if j == nb_small_data:
+                break
+            for i in files:
+                if j == nb_small_data:
+                    break
+                if i.endswith('.mid'):
+                    fichiers.append(os.path.join(root, i))
+                    j += 1
+    else:
+        for root, dirs, files in os.walk(path):
+            for i in files:
+                if i.endswith('.mid'):
+                    fichiers.append(os.path.join(root, i))
+
+    return fichiers
 

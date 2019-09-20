@@ -12,7 +12,7 @@ Generate midi file with deep neural network :notes:
 
 Use the option `--bach`
 
-| | nb songs | nb accepted song :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: |
+| | nb songs | nb accepted songs :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: |
 | :---: | :---: | :---: | :---: | :---: |
 | **Small** | 3 | 2 | 22:54 | 23 |
 | **Medium** | 15 | 11 | 19:58 | 155 |
