@@ -21,7 +21,7 @@ def main():
     parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
                         help='The name of the data')
     # ----------------
-    parser.add_argument('-e', '--epochs', type=int, default=100,
+    parser.add_argument('-e', '--epochs', type=int, default=200,
                         help='number of epochs to train')
     parser.add_argument('-b', '--batch', type=int, default=8,
                         help='The number of the batches')
@@ -34,9 +34,9 @@ def main():
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=str, default='0.25:0.5:0.25',
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-    parser.add_argument('--dropout', type=str, default='0.1:0.3:0.1',
+    parser.add_argument('--dropout', type=str, default='0.1:0.2:0.1',
                         help='Value of the dropout')
-    parser.add_argument('--type-loss', type=str, default='no_round',
+    parser.add_argument('--type-loss', type=str, default=g.type_loss,
                         help='Value of the dropout')
     parser.add_argument('--all-sequence', type=str, default='False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
@@ -48,7 +48,7 @@ def main():
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
     # ----------------
-    parser.add_argument('--model-name', type=str, default='rnnDeconvoBeat',
+    parser.add_argument('--model-name', type=str, default='rnnBeat',
                             help='The model name')
     parser.add_argument('--model-param', type=str, default='pc,0,1',
                         help='the model param (json file)')
