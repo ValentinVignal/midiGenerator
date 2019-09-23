@@ -1,23 +1,21 @@
+# ------------------------------------------------------------
 # ---------- For midi files ----------
+# ------------------------------------------------------------
 max_length_note_music21 = 4
 step_per_beat = 4
 max_length_note_array = max_length_note_music21 * step_per_beat
 
 
+# ------------------------------------------------------------
 # ---------- For the computed midi files ----------
+# ------------------------------------------------------------
 nb_file_per_npy = 20
 
-# ---------- Neural Network ----------
-lr = 0.005
-dropout = 0.2
-epochs_drop = 50
-decay_drop = 0.5
-type_loss = 'dur'
-all_sequence = False
-lstm_state = False
+# ------------------------------------------------------------
+# ---------- Model ID ----------
+# ------------------------------------------------------------
 work_on = 'beat'
-epochs = 200
-bn_momentum = 0.99
+split_model_id = ','
 
 
 def work_on2nb(wo):
@@ -57,7 +55,18 @@ def letter2work_on(letter):
         raise Exception('Unknow work_on letter :{0}'.format(letter))
 
 
-noise = 0
+# ------------------------------------------------------------
+# ---------- Neural Network ----------
+# ------------------------------------------------------------
+# ----- Optimizer -----
+lr = 0.005
+dropout = 0.2
+epochs_drop = 50
+decay_drop = 0.5
+epochs = 200
+bn_momentum = 0.99
+# ----- Loss -----
+type_loss = 'dur'
 lambdas_loss = '2,2'
 
 
@@ -67,5 +76,13 @@ def get_lambdas_loss(lambdas_loss):
 
 
 lambda_loss_activation, lambda_loss_duration = get_lambdas_loss(lambdas_loss)
+# ----- Architecture -----
+all_sequence = False
+lstm_state = False
+# ----- Data -----
+noise = 0
+
+
+
 
 

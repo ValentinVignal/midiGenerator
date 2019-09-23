@@ -62,14 +62,14 @@ class MyNN:
             self.type_loss = g.type_loss
         self.step_length = step_length
 
-        model_name, model_param_s, nb_steps = model_id.split(',')
+        model_name, model_param_s, nb_steps = model_id.split(g.split_model_id)
         nb_steps = int(nb_steps)
 
         # Load .py file with the model in it
         path = os.path.join('src',
                             'NN',
                             'models',
-                            'model_{0}'.format(model_name),
+                            model_name,
                             'nn_model.py')
         spec = importlib.util.spec_from_file_location('nn_model', path)
         nn_model = importlib.util.module_from_spec(spec)
@@ -79,7 +79,7 @@ class MyNN:
         json_path = os.path.join('src',
                                  'NN',
                                  'models',
-                                 'model_{0}'.format(model_name),
+                                 model_name,
                                  '{0}.json'.format(model_param_s))
         with open(json_path) as json_file:
             model_param = json.load(json_file)
