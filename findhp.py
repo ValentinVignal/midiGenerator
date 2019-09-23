@@ -48,7 +48,7 @@ def main():
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
     # ----------------
-    parser.add_argument('--model-name', type=str, default='rnnBeat',
+    parser.add_argument('--model-name', type=str, default='rnn',
                             help='The model name')
     parser.add_argument('--model-param', type=str, default='pc,0,1',
                         help='the model param (json file)')
@@ -70,6 +70,8 @@ def main():
                         help='Generate only shortest notes possible')
     parser.add_argument('--verbose_generation', type=int, default=1,
                         help='Level of verbose')
+    parser.add_argument('--validation', type=float, default=0.1,
+                        help='Fraction of the training data to be used as validation data')
 
     args = parser.parse_args()
 
@@ -183,7 +185,7 @@ def main():
                               print_model=False)
 
         my_model.train(epochs=args.epochs, batch=args.batch, callbacks=[loss_history],
-                       verbose=1)
+                       verbose=1, validation=args.validation)
 
         path = my_model.save_model()
         hparams = params
