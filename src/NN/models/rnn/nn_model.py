@@ -1,4 +1,5 @@
 import tensorflow as tf
+import warnings
 
 import src.eval_string as es
 import src.NN.losses as l
@@ -63,6 +64,21 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'nb_steps': nb_steps
     }
 
+    if step_length == 8 or step_length == 1:
+        # It is working either on 'Beat' or on 'Note'
+        # We don't want to stride on the time axis
+        time_stride = 1
+    elif step_length == 16:
+        # It is working on 'Measure'
+        # We want to stride on the time axis (the size is considered as big enough)
+        time_stride = 2
+    else:
+        warnings.warn(
+            f'The model is not designed wo work with a step+length {step_length}' + 'not included in (8, 16),' +
+            'some errors might occur',
+            Warning)
+        time_stride = 1 if step_length < 16 else 2
+
     midi_shape = (nb_steps, step_length, input_size, 2)  # (batch, step_length, nb_step, input_size, 2)
     inputs_midi = []
     for instrument in range(nb_instruments):
@@ -80,12 +96,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # --------------------------------------------------
     convo_shapes = []  # to reconstruct the good shape in Decoder and Transposed convolutions
     convo = model_param['convo']
-    for i in convo:
+    for i, c in enumerate(convo):
         convo_shapes.append(x.shape)
-        for index, s in enumerate(i):
+        for index, s in enumerate(c):
             size = s
-            if index + 1 == len(i):
-                x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), strides=(1, 1, 2), padding='same')(x)
+            if index + 1 == len(c) and i < 2:
+                x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), strides=(1, time_stride, 2), padding='same')(x)
             else:
                 x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
             if batch_norm:
@@ -219,15 +235,20 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     for tc_idx, tc in enumerate(transposed_convo):
         for s_idx, s in enumerate(tc):
-            if s_idx == 0:
-                strides = (1, 1, 2)
+            if s_idx == 0 and tc_idx > 0:
+                strides = (1, time_stride, 2)
             else:
                 strides = (1, 1, 1)
             size = s
             x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 5), padding='same', strides=strides)(
                 x)  # (batch, nb_step=1, step_size, input_size, filters)
-            if s_idx == 0 and x.shape[3] != convo_shapes[- (tc_idx + 1)][3]:
-                x = layers.Lambda(lambda x: x[:, :, :, :-1])(x)
+            if s_idx == 0 and tc_idx > 0:
+                if x.shape[3] != convo_shapes[- (tc_idx + 1)][3]:
+                    # Correction of the input size (if it was an odd number, we need to -1)
+                    x = layers.Lambda(lambda x: x[:, :, :, :-1])(x)
+                if x.shape[2] != convo_shapes[- (tc_idx + 1)][2]:
+                    # Correction of the step_length (if it was an odd number, we need to -1)
+                    x = layers.Lambda(lambda x: x[:, :, :-1])(x)
             if batch_norm:
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
             x = layers.LeakyReLU()(x)
@@ -235,7 +256,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         # x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
 
     # Delete the dimension nb_steps = 1
-    x = layers.Reshape((x.shape[2:]))(x)        # (batch, step_size, input_size, 2 * nb_instruments)
+    x = layers.Reshape((x.shape[2:]))(x)  # (batch, step_size, input_size, 2 * nb_instruments)
 
     if last_fc:
         """
