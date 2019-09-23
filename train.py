@@ -40,6 +40,8 @@ def main():
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--lstm-state', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
+    parser.add_argument('--last-fc', default=False, action='store_true',
+                        help='To use a last fully connected layer at the end to summarize')
     # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')
@@ -113,7 +115,8 @@ def main():
             'lstm_state': args.lstm_state,
             'no_batch_norm': args.no_batch_norm,
             'bn_momentum': args.bn_momentum,
-            'lambdas_loss': args.lambdas_loss
+            'lambdas_loss': args.lambdas_loss,
+            'last_fc': args.last_fc
         }
         my_model.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,

@@ -115,8 +115,6 @@ def custom_loss_duration(lambda_a, lambda_d):
         y_pred_d = Lambda(filter_duration)([y_pred_d, y_true_a])
         # loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
         loss_d = loss_dur(y_true_d, y_pred_d)
-        print('loss a', loss_a)
-        print('loss d', loss_d)
 
         loss = lambda_a * loss_a + lambda_d * loss_d
 
