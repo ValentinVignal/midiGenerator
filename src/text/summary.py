@@ -195,3 +195,72 @@ def save_train_history(train_history, nb_instruments, pathlib):
     with open((pathlib / 'Summary.txt').as_posix(), 'w') as f:
         f.write(text)
 
+
+def save_train_history_one_note(train_history, nb_instruments, pathlib):
+    """
+
+    :param train_history:
+    :param nb_instruments:
+    :param pathlib:
+    :return:
+    """
+    validation_in_train = 'val_loss' in train_history
+
+    loss = train_history['loss']
+    losses = [train_history['Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
+    accs = [train_history['Output_{0}_categorical_accuracy'.format(i)] for i in range(nb_instruments)]
+    if validation_in_train:
+        val_loss = train_history['val_loss']
+        val_losses = [train_history['val_Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
+        val_accs = [train_history['val_Output_{0}_categorical_accuracy'.format(i)] for i in range(nb_instruments)]
+
+    epochs = range(1, len(loss) + 1)
+
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    # ----- Save losses -----
+    plt.figure()
+    plt.plot(epochs, loss, label='Loss', color=colors[0], linestyle='-')
+    if validation_in_train:
+        plt.plot(epochs, val_loss, label='val_Loss', color=colors[0], linestyle='--')
+    for i in range(nb_instruments):
+        plt.plot(epochs, losses[i], label='Output_{0}_loss'.format(i), color=colors[i+1], linestyle='-')
+        if validation_in_train:
+            plt.plot(epochs, val_losses[i], label='val_Output_{0}_loss'.format(i), color=colors[i+1], linestyle='--')
+
+    plt.title(f'Variation of the Loss through the epochs\nLoss : {loss[-1]}\nval_Loss : {val_loss[-1]}')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss value')
+    plt.legend()
+    plt.grid()
+    plt.savefig((pathlib / 'Losses.png').as_posix())
+
+    # ----- Save accuracies -----
+    plt.figure()
+    for i in range(nb_instruments):
+        plt.plot(epochs, accs[i], label='Output_{0}_categorical_accuracy'.format(i), color=colors[i+1], linestyle='-')
+        if validation_in_train:
+            plt.plot(epochs, val_accs[i], label='val_Output_{0}_categorical_accuracy'.format(i), color=colors[i+1], linestyle='--')
+
+    plt.title('Variation of the accuracy through the epochs\n')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy value')
+    plt.legend()
+    plt.grid()
+    plt.savefig((pathlib / 'Accuracies_activation.png').as_posix())
+
+    # ----- Text -----
+    text = 'Loss : {0}'.format(loss[-1])
+    text += '\n\n'
+    text += 'By instrument :\n'
+    for i in range(nb_instruments):
+        text += '\tInstrument {0}\n'.format(i)
+        text += '\t\t Loss : {0}\t--\t{1}\n'.format(losses[i][-1], losses[i])
+        if validation_in_train:
+            text += '\t\t Validation Loss : {0}\t--\t{1}\n'.format(val_losses[i][-1], val_losses[i])
+        text += '\t\t Accuracy : {0}\t--\t{1}\n'.format(accs[i][-1], accs[i])
+        if validation_in_train:
+            text += '\t\t Validation Accuracy : {0}\t--\t{1}\n'.format(val_accs[i][-1], val_accs[i])
+    with open((pathlib / 'Summary.txt').as_posix(), 'w') as f:
+        f.write(text)
+

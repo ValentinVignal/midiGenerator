@@ -3,12 +3,20 @@ Generate midi file with deep neural network :notes:
 
 # Dataset 
 
-## Simple Dataset
+## One note Dataset
+
+| Dataset | Can use `one_note` :musical_note: |
+| :---: | :---: |
+| Bach(...) | :heavy_check_mark: |
+| SimpleDataset | :x: |
+
+## Informations
+### Simple Dataset
 
 - 1 songs
 - notes range : **20** : **38**
 
-## BachChorale
+### BachChorale
 
 Use the option `--bach`
 
@@ -17,4 +25,5 @@ Use the option `--bach`
 | **Small** | 3 | 2 | 22:54 | 23 |
 | **Medium** | 15 | 11 | 19:58 | 155 |
 | **Medium2** | 30 | 21 | 18:61 | 322 |
+
 

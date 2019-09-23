@@ -57,9 +57,10 @@ def see_MySequence(x, y):
     img.show()
 
 
-def save_pianoroll(array, path, seed_length, instruments):
+def save_pianoroll(array, path, seed_length, instruments, one_note=False):
     """
 
+    :param one_note:
     :param array: shape (nb_instruments, 128, nb_steps, 2)
     :param path:
     :param seed_length:
@@ -68,8 +69,10 @@ def save_pianoroll(array, path, seed_length, instruments):
     """
     # Colors
     colors_rgb = return_colors(len(instruments))
-
-    activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
+    if one_note:
+        activations = array[:, :-1]  # (nb_instruments, 88, nb_steps)
+    else:
+        activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)

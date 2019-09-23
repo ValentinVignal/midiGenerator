@@ -6,18 +6,25 @@ from termcolor import colored, cprint
 import src.midi.instruments as midi_inst
 
 
-def normalize_activation(arr, threshold=0.5):
+def normalize_activation(arr, threshold=0.5, one_note=False):
     """
 
+    :param one_note:
     :param arr: (nb_instruments, nb_steps=1, lenght, 88, 2)
     :param threshold:
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
-    activations = arr[:, :, :, :, 0]
-    np.place(activations, threshold <= activations, 1)
-    np.place(activations, activations < threshold, 0)
-    arr[:, :, :, :, 0] = activations
-    return arr
+    if one_note:
+        argmax = np.argmax(arr, axis=-1)
+        new_arr = np.zeros(arr.shape)
+        new_arr[np.arange(arr.shape[0])[:, None, None], np.arange(arr.shape[1])[:, None], np.arange(arr.shape[2]), argmax] = 1
+        return new_arr
+    else:
+        activations = arr[:, :, :, :, 0]
+        np.place(activations, threshold <= activations, 1)
+        np.place(activations, activations < threshold, 0)
+        arr[:, :, :, :, 0] = activations
+        return arr
 
 
 def converter_func(arr, no_duration=False):
@@ -59,6 +66,34 @@ def converter_func(arr, no_duration=False):
     return matrix_norm
 
 
+def converter_func_one_note(arr):
+    """
+
+    :param arr: (nb_instruments, 88, nb_steps)
+    :param no_duration: if True : all notes will be the shortest length possible
+    :return:
+    """
+    argmax = np.argmax(arr, axis=1)
+    arr_norm = np.zeros(arr.shape)
+    arr_norm[np.arange(arr.shape[0])[:, None], argmax, np.arange(arr.shape[2])] = 1
+    # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+
+    nb_instruments, nb_notes, nb_steps = arr_norm.shape
+    nb_notes -= 1
+    matrix_norm = np.zeros((nb_instruments, nb_notes - 1, nb_steps))
+    for instrument in range(nb_instruments - 1, -1, -1):
+        duration = 1
+        for step in range(nb_steps - 1, -1, -1):
+            if arr_norm[instrument, -1, step] == 1:
+                duration += 1
+            else:
+                argmax = np.argmax(arr_norm[instrument, :, step])
+                matrix_norm[instrument, argmax, step] = duration
+                duration = 1
+
+    return matrix_norm
+
+
 def int_to_note(integer):
     # convert pitch value to the note which is a letter form.
     note_base_name = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -71,21 +106,25 @@ def int_to_note(integer):
     return note
 
 
-def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False):
+def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False, one_note=False):
     """
 
+    :param one_note:
     :param matrix: shape (nb_instruments, 128, nb_steps, 2)
     :param instruments: The instruments,
     :param notes_range:
     :param no_duration: if True : all notes will be the shortest length possible
     :return:
     """
-    nb_instuments, nb_notes, nb_steps, _ = matrix.shape
+    nb_instuments, nb_notes, nb_steps = matrix.shape[:3]
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
     notes_range = (0, 88) if notes_range is None else notes_range
 
-    matrix_norm = converter_func(matrix,
-                                 no_duration=no_duration)  # Make it consistent      # (nb_instruments, 128, nb_steps)
+    if one_note:
+        matrix_norm = converter_func_one_note(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
+    else:
+        matrix_norm = converter_func(matrix,
+                                     no_duration=no_duration)  # Make it consistent   # (nb_instruments, 128, nb_steps)
     # ---- Delete silence in the beginning of the song ----
     how_many_in_start_zeros = 0
     for step in range(nb_steps):

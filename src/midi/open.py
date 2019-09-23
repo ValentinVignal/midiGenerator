@@ -240,7 +240,7 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
     if len(midi) != 4:
         cprint('Wrong number of parts : {0}'.format(len(midi)), 'red')
         return None
-    parts = midi        # No partition by Instruments
+    parts = midi  # No partition by Instruments
     notes_range = (0, 88) if notes_range is None else notes_range
 
     # --- Get the instruments names in the file ---
@@ -303,7 +303,7 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
             elif isinstance(element, music21.meter.TimeSignature):
                 # Check if it is correct
                 if element.ratioString != '4/4':
-                    if len(notes) == 0:     # Then it is an anacrouse
+                    if len(notes) == 0:  # Then it is an anacrouse
                         in_anacrouse = True
                         anacrouse_value = element.ratioString
                     else:
@@ -380,3 +380,17 @@ def all_midi_files(path, small_data):
 
     return fichiers
 
+
+def to_one_note_matrix(matrix):
+    """
+
+    :param matrix: (nb_instruments, 88, nb_steps, 2)
+    :return:
+    """
+    nb_instruments, input_size, nb_steps, _ = matrix.shape
+    one_note = np.zeros((nb_instruments, input_size + 1, nb_steps))     # Last note is the "rest" note
+    one_note[:, :-1, :] = matrix[:, :, :, 0]  # (nb_instruments, 88, nb_steps) (we don't need the duration)
+    np.place(one_note[:, -1, :],
+             np.all(one_note[:, :-1] == 0, axis=1),
+             1)
+    return one_note
