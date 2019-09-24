@@ -381,7 +381,7 @@ def all_midi_files(path, small_data):
     return fichiers
 
 
-def to_one_note_matrix(matrix):
+def to_mono_matrix(matrix):
     """
 
     :param matrix: (nb_instruments, 88, nb_steps, 2)
@@ -393,4 +393,4 @@ def to_one_note_matrix(matrix):
     np.place(one_note[:, -1, :],
              np.all(one_note[:, :-1] == 0, axis=1),
              1)
-    return one_note
+    return one_note[..., np.newaxis]

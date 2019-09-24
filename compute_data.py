@@ -67,7 +67,7 @@ def main():
                         help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
     parser.add_argument('--bach', action='store_true', default=False,
                         help='To compute the bach data')
-    parser.add_argument('--one-note', action='store_true', default=False,
+    parser.add_argument('--mono', action='store_true', default=False,
                         help='To compute the data where there is only one note at the same time')
 
     args = parser.parse_args()
@@ -126,13 +126,10 @@ def main():
         if matrix_of_single_midi is None:  # It means an error happened
             continue
 
-        if args.one_note:
+        if args.mono:
             matrix_of_single_midi = midi_open.to_one_note_matrix(matrix_of_single_midi)
-            matrix_of_single_midi = np.transpose(matrix_of_single_midi,
-                                                 (2, 0, 1))  # (length, nb_instruments, 88)
-        else:
-            matrix_of_single_midi = np.transpose(matrix_of_single_midi,
-                                                 (2, 0, 1, 3))  # (length, nb_instruments, 88, 2)
+        matrix_of_single_midi = np.transpose(matrix_of_single_midi,
+                                             (2, 0, 1, 3))  # (length, nb_instruments, 88, 2)
 
         # ---------- Add the matrix ----------
         all_midi_paths.append(single_midi_path)
@@ -179,7 +176,7 @@ def main():
             'all_shapes': all_shapes,
             'input_size': all_shapes[0][0][2],  # The number of notes
             'notes_range': args.notes_range,
-            'one_note': args.one_note
+            'mono': args.mono
         }, dump_file)
 
     summary.summarize_compute_data(data_transformed_path,

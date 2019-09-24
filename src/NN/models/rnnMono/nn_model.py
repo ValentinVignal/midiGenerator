@@ -79,18 +79,13 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             Warning)
         time_stride = 1 if step_length < 16 else 2
 
-    midi_shape = (nb_steps, step_length, input_size)  # (batch, step_length, nb_step, input_size)
+    midi_shape = (nb_steps, step_length, input_size, 1)  # (batch, step_length, nb_step, input_size)
     inputs_midi = []
     for instrument in range(nb_instruments):
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size)]
 
-    # ----- Reshape -----
-    inputs_reshaped = []
-    for instrument in range(nb_instruments):
-        inputs_reshaped.append(layers.Reshape((nb_steps, step_length, input_size, 1))(inputs_midi[instrument]))
-
     # ---------- All together ----------
-    x = layers.concatenate(inputs_reshaped, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
+    x = layers.concatenate(inputs_midis, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
 
     # ================================================================================
     #                                  Encoder
@@ -257,11 +252,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             if batch_norm:
                 x = layers.BatchNormalization(momentum=bn_momentum)(x)
             x = layers.LeakyReLU()(x)
-            x = layers.Dropout(dropout / 2)(x)
+            x = layers.Dropout(dropout / 2)(x)      # (batch, 1, step_size, input_size, nb_instruments)
         # x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
 
     # Delete the dimension nb_steps = 1
-    x = layers.Reshape((x.shape[2:]))(x)  # (batch, step_size, input_size, nb_instruments)
+    x = layers.Reshape((*x.shape[2:], 1))(x)  # (batch, step_size, input_size, nb_instruments, 1)
 
     if last_fc:
         """
@@ -272,7 +267,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         # --------------------------------------------------
         x = layers.Flatten()(x)
         x = layers.Dense((step_length * input_size * nb_instruments))(x)
-        x = layers.Reshape((step_length, input_size, nb_instruments))(x)
+        x = layers.Reshape((step_length, input_size, nb_instruments, 1))(x)
 
     # x : (batch, step_size, input_size, 2 * nb_instruments)
     x = layers.Softmax(axis=-2)(x)      # Along axis of Input Size

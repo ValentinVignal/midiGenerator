@@ -47,7 +47,7 @@ class MyModel:
         # ----- MySequence -----
         self.my_sequence = None  # Instance of MySequence Generator
         self.batch = None  # Size if the batch
-        self.one_note = None  # If this is not polyphonic instrument and no rest
+        self.mono = None  # If this is not polyphonic instrument and no rest
 
         # ----- Neural Network -----
         self.input_param = None  # The parameters for the neural network
@@ -160,7 +160,7 @@ class MyModel:
             self.input_param['nb_instruments'] = d['nb_instruments']
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
-            self.one_note = d['one_note']
+            self.mono = d['one_note']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def change_batch_size(self, batch_size):
@@ -555,21 +555,14 @@ class MyModel:
                 bar.update(l + 1)
             bar.finish()
 
-            if self.one_note:
-                generated_midi_final = np.reshape(generated, (
-                    generated.shape[0], generated.shape[2] * generated.shape[3],
-                    generated.shape[4]))  # (nb_instruments, nb_step * length, 88)
-                generated_midi_final = np.transpose(generated_midi_final,
-                                                    (0, 2, 1))  # (nb_instruments, 88, nb_steps * length)
-            else:
-                generated_midi_final = np.reshape(generated, (
-                    generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
-                    generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-                generated_midi_final = np.transpose(generated_midi_final,
-                                                    (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+            generated_midi_final = np.reshape(generated, (
+                generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
+                generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+            generated_midi_final = np.transpose(generated_midi_final,
+                                                (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
             output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
                                                            notes_range=self.notes_range, no_duration=no_duration,
-                                                           one_note=self.one_note)
+                                                           mono=self.mono)
 
             # --- find the name for the midi_file ---
             i = 0
@@ -591,7 +584,7 @@ class MyModel:
                                          path=path_to_save_img,
                                          seed_length=nb_steps * step_length,
                                          instruments=self.instruments,
-                                         one_note=self.one_note)
+                                         mono=self.mono)
 
         if self.batch is not None:
             self.my_sequence.change_batch_size(self.batch)
@@ -626,14 +619,9 @@ class MyModel:
             start = np.random.randint(0, (math.floor(array.shape[0] / step_length) - nb_steps)) * step_length
             seed = array[
                    start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
-            if self.one_note:
-                seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1],
-                                         seed.shape[2]))  # (nb_steps, step_length, nb_instruments, input_size)
-                seed = np.transpose(seed, (2, 0, 1, 3))  # (nb_instruments, nb_steps, step_lenght, input_size)
-            else:
-                seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
-                                         seed.shape[3]))  # (nb_steps, step_length, nb_instruments, input_size, 2)
-                seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, step_lenght, input_size, 2)
+            seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
+                                     seed.shape[3]))  # (nb_steps, step_length, nb_instruments, input_size, 2)
+            seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, step_lenght, input_size, 2)
             seeds.append(seed)
         return seeds
 
@@ -680,17 +668,11 @@ class MyModel:
             # pianoroll.see_compare_generation_step(sample, preds, np.array(ms_output))
             preds_truth = np.array(ms_output)[:, :, np.newaxis]  # (nb_instruments, 1, 1, step_size, input_size, 2)
             # if only one instrument
-            if self.one_note:
-                if len(preds.shape) == 3:  # Only one instrument : output of nn not a list
-                    preds = preds[np.newaxis]
-                if len(preds_truth.shape) == 3:  # Only one instrument : output of nn not a list
-                    preds_truth = preds_truth[np.newaxis]
-            else:
-                if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
-                    preds = preds[np.newaxis]
-                if len(preds_truth.shape) == 4:  # Only one instrument : output of nn not a list
-                    preds_truth = preds_truth[np.newaxis]
-            preds = midi_create.normalize_activation(preds, one_note=self.one_note)  # Normalize the activation part
+            if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
+                preds = preds[np.newaxis]
+            if len(preds_truth.shape) == 4:  # Only one instrument : output of nn not a list
+                preds_truth = preds_truth[np.newaxis]
+            preds = midi_create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
             preds_helped = preds[:, 1][:, np.newaxis, np.newaxis]  # (nb_instruments, 1, 1, length, 88, 2)
             preds = preds[:, 0][:, np.newaxis, np.newaxis]
 
@@ -704,54 +686,33 @@ class MyModel:
 
         # -------------------- Compute notes list --------------------
         # Generated
-        if self.one_note:
-            generated_midi_final = np.reshape(generated, (
-                generated.shape[0], generated.shape[2] * generated.shape[3],
-                generated.shape[4]))  # (nb_instruments, nb_step * length, 88)
-            generated_midi_final = np.transpose(generated_midi_final,
-                                                (0, 2, 1))  # (nb_instruments, 88, nb_steps * length)
-        else:
-            generated_midi_final = np.reshape(generated, (
-                generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
-                generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-            generated_midi_final = np.transpose(generated_midi_final,
-                                                (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        generated_midi_final = np.reshape(generated, (
+            generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
+            generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+        generated_midi_final = np.transpose(generated_midi_final,
+                                            (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
         output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
                                                        notes_range=self.notes_range, no_duration=no_duration,
-                                                       one_note=self.one_note)
+                                                       mono=self.mono)
         # Helped
-        if self.one_note:
-            generated_midi_final_helped = np.reshape(generated_helped, (
-                generated_helped.shape[0], generated_helped.shape[2] * generated_helped.shape[3],
-                generated_helped.shape[4]))  # (nb_instruments, nb_step * length, 88)
-            generated_midi_final_helped = np.transpose(generated_midi_final_helped,
-                                                       (0, 2, 1))  # (nb_instruments, 88, nb_steps * length)
-        else:
-            generated_midi_final_helped = np.reshape(generated_helped, (
-                generated_helped.shape[0], generated_helped.shape[2] * generated_helped.shape[3],
-                generated_helped.shape[4], generated_helped.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-            generated_midi_final_helped = np.transpose(generated_midi_final_helped,
-                                                       (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        generated_midi_final_helped = np.reshape(generated_helped, (
+            generated_helped.shape[0], generated_helped.shape[2] * generated_helped.shape[3],
+            generated_helped.shape[4], generated_helped.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+        generated_midi_final_helped = np.transpose(generated_midi_final_helped,
+                                                   (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
         output_notes_list_helped = midi_create.matrix_to_midi(generated_midi_final_helped, instruments=self.instruments,
                                                               notes_range=self.notes_range, no_duration=no_duration,
-                                                              one_note=self.one_note)
+                                                              mono=self.mono)
         # Truth
-        if self.one_note:
-            generated_midi_final_truth = np.reshape(generated_truth, (
-                generated_truth.shape[0], generated_truth.shape[2] * generated_truth.shape[3],
-                generated_truth.shape[4]))  # (nb_instruments, nb_step * length, 88)
-            generated_midi_final_truth = np.transpose(generated_midi_final_truth,
-                                                      (0, 2, 1))  # (nb_instruments, 88, nb_steps * length)
-        else:
-            generated_midi_final_truth = np.reshape(generated_truth, (
-                generated_truth.shape[0], generated_truth.shape[2] * generated_truth.shape[3], generated_truth.shape[4],
-                generated_truth.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-            generated_midi_final_truth = np.transpose(generated_midi_final_truth,
-                                                      (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        generated_midi_final_truth = np.reshape(generated_truth, (
+            generated_truth.shape[0], generated_truth.shape[2] * generated_truth.shape[3], generated_truth.shape[4],
+            generated_truth.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
+        generated_midi_final_truth = np.transpose(generated_midi_final_truth,
+                                                  (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
         output_notes_list_truth = midi_create.matrix_to_midi(generated_midi_final_truth,
                                                              instruments=self.instruments,
                                                              notes_range=self.notes_range, no_duration=no_duration,
-                                                             one_note=self.one_note)
+                                                             mono=self.mono)
 
         # ---------- find the name for the midi_file ----------
         self.get_new_save_midis_path()
@@ -770,9 +731,8 @@ class MyModel:
         midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
                                        notes_list=output_notes_list, verbose=verbose)
         # Print the accuracy
-        if self.one_note:
+        if self.mono:
             argmax = np.argmax(generated_midi_final, axis=1)
-            print('argmax', argmax.shape)
             argmax_truth = np.argmax(generated_midi_final_truth, axis=1)
             accuracies = [(np.count_nonzero(
                 argmax[i, nb_steps * step_length:] == argmax_truth[i,
@@ -799,7 +759,7 @@ class MyModel:
                                  path=path_to_save_img,
                                  seed_length=nb_steps * step_length,
                                  instruments=self.instruments,
-                                 one_note=self.one_note)
+                                 mono=self.mono)
 
         # -- Helped --
         path_to_save = str(self.save_midis_pathlib / 'generated_helped.mid')
@@ -807,7 +767,7 @@ class MyModel:
         midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_helped,
                                        notes_list=output_notes_list_helped, verbose=verbose)
         # Print the accuracy
-        if self.one_note:
+        if self.mono:
             argmax_helped = np.argmax(generated_midi_final_helped, axis=1)
             argmax_truth = np.argmax(generated_midi_final_truth, axis=1)
             accuracies_helped = [(np.count_nonzero(
@@ -836,7 +796,7 @@ class MyModel:
                                  path=path_to_save_img,
                                  seed_length=nb_steps * step_length,
                                  instruments=self.instruments,
-                                 one_note=self.one_note)
+                                 mono=self.mono)
 
         # -- Truth --
         path_to_save = str(self.save_midis_pathlib / 'generated_truth.mid')
@@ -851,7 +811,7 @@ class MyModel:
                                  path=path_to_save_img,
                                  seed_length=nb_steps * step_length,
                                  instruments=self.instruments,
-                                 one_note=self.one_note)
+                                 mono=self.mono)
 
         text = 'Generated :\n\tAccuracy : {0}, Accuracies : {1}\n'.format(accuracy, accuracies)
         text += 'Generated Helped :\n\tAccuracy : {0}, Accuracies : {1}'.format(accuracy_helped, accuracies_helped)

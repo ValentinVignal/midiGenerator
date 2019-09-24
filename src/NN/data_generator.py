@@ -42,7 +42,6 @@ class MySequence(tf.keras.utils.Sequence):
             d = pickle.load(dump_file)
             self.nb_files = d['nb_files']  # nb available files in the dataset
             self.all_shapes = d['all_shapes']  # [nb_files, nb_song_in_file], (length, nb_instrument, input_size, 2)
-            self.one_note = d['one_note']
 
         self.i_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded
@@ -63,13 +62,6 @@ class MySequence(tf.keras.utils.Sequence):
         return self.nb_elements
 
     def __getitem__(self, item):
-        if self.one_note:
-            return self.getitem_one_note(item)
-        else:
-            return self.getitem(item)
-
-    def get_matrixes(self, item):
-
         i_start = item * self.batch_size
         i, j, k = self.return_ijk(i_start)
         x = []  # (batch, nb_steps * step_size, nb_instruments, input_size, 2)
@@ -93,10 +85,6 @@ class MySequence(tf.keras.utils.Sequence):
                     j = 0
                     i += 1
         x, y = np.asarray(x), np.asarray(y)
-        return x, y
-
-    def getitem(self, item):
-        x, y = self.get_matrixes(item)
         batch, nb_steps_size, nb_instruments, input_size, channels = x.shape
         x = np.reshape(x, (self.batch_size, self.nb_steps, self.step_size, nb_instruments, input_size, channels))
         # x = (batch, nb_steps, step_size, nb_instruments, input_size, channels)
@@ -106,24 +94,8 @@ class MySequence(tf.keras.utils.Sequence):
 
         if self.noise is not None and self.noise > 0:
             # Creation of the noise
-            noise = np.random.binomial(n=1, p=self.noise, size=x[:, :, :, :, :, 0].shape)
-            x[:, :, :, :, :, 0] = np.abs(x[:, :, :, :, :, 0] - noise)
-
-        return list(x), list(y)
-
-    def getitem_one_note(self, item):
-        x, y = self.get_matrixes(item)
-        batch, nb_steps_size, nb_instruments, input_size = x.shape
-        x = np.reshape(x, (self.batch_size, self.nb_steps, self.step_size, nb_instruments, input_size))
-        # x = (batch, nb_steps, step_size, nb_instruments, input_size)
-
-        x = np.transpose(x, (3, 0, 1, 2, 4))  # (nb_instruments, batch, nb_steps, step_size, input_size)
-        y = np.transpose(y, (2, 0, 1, 3))  # (nb_instruments, batch, step_size, input_size)
-
-        if self.noise is not None and self.noise > 0:
-            # Creation of the noise
-            noise = np.random.binomial(n=1, p=self.noise, size=x.shape)
-            x = np.abs(x - noise)
+            noise = np.random.binomial(n=1, p=self.noise, size=x[..., 0].shape)
+            x[..., 0] = np.abs(x[..., 0] - noise)
 
         return list(x), list(y)
 

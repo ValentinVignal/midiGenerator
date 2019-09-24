@@ -6,18 +6,18 @@ from termcolor import colored, cprint
 import src.midi.instruments as midi_inst
 
 
-def normalize_activation(arr, threshold=0.5, one_note=False):
+def normalize_activation(arr, threshold=0.5, mono=False):
     """
 
-    :param one_note:
+    :param mono:
     :param arr: (nb_instruments, nb_steps=1, lenght, 88, 2)
     :param threshold:
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
-    if one_note:
-        argmax = np.argmax(arr, axis=-1)
+    if mono:
+        argmax = np.argmax(arr, axis=-2)
         new_arr = np.zeros(arr.shape)
-        new_arr[np.arange(arr.shape[0])[:, None, None], np.arange(arr.shape[1])[:, None], np.arange(arr.shape[2]), argmax] = 1
+        new_arr[..., argmax, :] = 1
         return new_arr
     else:
         activations = arr[:, :, :, :, 0]
@@ -66,16 +66,15 @@ def converter_func(arr, no_duration=False):
     return matrix_norm
 
 
-def converter_func_one_note(arr):
+def converter_func_mono(arr):
     """
 
-    :param arr: (nb_instruments, 88, nb_steps)
-    :param no_duration: if True : all notes will be the shortest length possible
+    :param arr: (nb_instruments, 88, nb_steps, 1)
     :return:
     """
     argmax = np.argmax(arr, axis=1)
     arr_norm = np.zeros(arr.shape)
-    arr_norm[np.arange(arr.shape[0])[:, None], argmax, np.arange(arr.shape[2])] = 1
+    arr_norm[:, argmax] = 1
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
     nb_instruments, nb_notes, nb_steps = arr_norm.shape
@@ -87,8 +86,11 @@ def converter_func_one_note(arr):
             if arr_norm[instrument, -1, step] == 1:
                 duration += 1
             else:
-                argmax = np.argmax(arr_norm[instrument, :, step])
-                matrix_norm[instrument, argmax, step] = duration
+                am = np.argmax(arr_norm[instrument, :, step])
+                if am < matrix_norm.shape[1]:
+                    matrix_norm[instrument, argmax, step] = duration
+                else:
+                    cprint(f'Got an argmax == {argmax} == size matrix_norm', 'red')
                 duration = 1
 
     return matrix_norm
@@ -106,10 +108,10 @@ def int_to_note(integer):
     return note
 
 
-def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False, one_note=False):
+def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False, mono=False):
     """
 
-    :param one_note:
+    :param mono:
     :param matrix: shape (nb_instruments, 128, nb_steps, 2)
     :param instruments: The instruments,
     :param notes_range:
@@ -120,8 +122,8 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
     notes_range = (0, 88) if notes_range is None else notes_range
 
-    if one_note:
-        matrix_norm = converter_func_one_note(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
+    if mono:
+        matrix_norm = converter_func_mono(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     else:
         matrix_norm = converter_func(matrix,
                                      no_duration=no_duration)  # Make it consistent   # (nb_instruments, 128, nb_steps)
