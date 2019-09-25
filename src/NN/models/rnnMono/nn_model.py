@@ -85,7 +85,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size)]
 
     # ---------- All together ----------
-    x = layers.concatenate(inputs_midis, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
+    x = layers.concatenate(inputs_midi, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
 
     # ================================================================================
     #                                  Encoder
@@ -282,8 +282,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # Define losses dict
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = tf.keras.losses.categorical_crossentropy
+        losses[f'Output_{inst}'] = l.loss_function_mono
 
-    model.compile(loss=losses, optimizer=optimizer, metrics=['categorical_accuracy'])
+    model.compile(loss=losses, optimizer=optimizer, metrics=[l.acc_mono])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)

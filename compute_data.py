@@ -127,7 +127,7 @@ def main():
             continue
 
         if args.mono:
-            matrix_of_single_midi = midi_open.to_one_note_matrix(matrix_of_single_midi)
+            matrix_of_single_midi = midi_open.to_mono_matrix(matrix_of_single_midi)
         matrix_of_single_midi = np.transpose(matrix_of_single_midi,
                                              (2, 0, 1, 3))  # (length, nb_instruments, 88, 2)
 

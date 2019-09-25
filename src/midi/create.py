@@ -73,7 +73,7 @@ def converter_func_mono(arr):
     :return:
     """
     argmax = np.argmax(arr, axis=1)
-    arr_norm = np.zeros(arr.shape)
+    arr_norm = np.zeros(arr.shape[:-1])     # (nb_instruments, 88, nb_steps)
     arr_norm[:, argmax] = 1
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 

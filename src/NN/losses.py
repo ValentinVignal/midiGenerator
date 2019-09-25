@@ -176,6 +176,14 @@ def choose_loss(type_loss):
         raise Exception('type_loss "{0}" not known'.format(type_loss))
 
 
+def loss_function_mono(y_true, y_pred):
+    y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
+    y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+
+    loss = tf.keras.losses.categorical_crossentropy(y_true_a, y_pred_a)
+
+    return tf.reduce_mean(loss, axis=None)
+
 # ---------- LSTM ----------
 
 
@@ -209,3 +217,13 @@ def mae_dur(y_true, y_pred):
     mae = tf.keras.metrics.mean_squared_error(y_true_d, y_pred_d)
 
     return tf.reduce_mean(mae, axis=None)
+
+
+def acc_mono(y_true, y_pred):
+    y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
+    y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+
+    acc = tf.keras.metrics.categorical_accuracy(y_true_a, y_pred_a)
+
+    return tf.reduce_mean(acc, axis=None)
+

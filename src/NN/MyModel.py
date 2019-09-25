@@ -160,7 +160,7 @@ class MyModel:
             self.input_param['nb_instruments'] = d['nb_instruments']
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
-            self.mono = d['one_note']
+            self.mono = d['mono']
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def change_batch_size(self, batch_size):
@@ -431,7 +431,8 @@ class MyModel:
                 'instruments': self.instruments,
                 'notes_range': self.notes_range,
                 'work_on': self.work_on,
-                'data_transformed_pathlib': self.data_transformed_pathlib
+                'data_transformed_pathlib': self.data_transformed_pathlib,
+                'mono': self.mono
             }, dump_file)
         summary.summarize_train(path_to_save, **{
             'full_name': self.full_name,
@@ -442,8 +443,8 @@ class MyModel:
             'work_on': self.work_on
         })
 
-        if self.one_note:
-            summary.save_train_history_one_note(self.train_history, len(self.instruments), path_to_save)
+        if self.mono:
+            summary.save_train_history_mono(self.train_history, len(self.instruments), path_to_save)
         else:
             summary.save_train_history(self.train_history, len(self.instruments), path_to_save)
 
