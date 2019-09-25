@@ -15,9 +15,11 @@ def normalize_activation(arr, threshold=0.5, mono=False):
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
     if mono:
-        argmax = np.argmax(arr, axis=-2)
+        argmax = np.argmax(arr, axis=3)
         new_arr = np.zeros(arr.shape)
-        new_arr[..., argmax, :] = 1
+        idx = list(np.ogrid[[slice(arr.shape[ax]) for ax in range(arr.ndim) if ax != 3]])
+        idx.insert(3, argmax)
+        new_arr[tuple(idx)] = 1
         return new_arr
     else:
         activations = arr[:, :, :, :, 0]
@@ -72,14 +74,20 @@ def converter_func_mono(arr):
     :param arr: (nb_instruments, 88, nb_steps, 1)
     :return:
     """
+
+    print('arr', arr.shape)
     argmax = np.argmax(arr, axis=1)
-    arr_norm = np.zeros(arr.shape[:-1])     # (nb_instruments, 88, nb_steps)
-    arr_norm[:, argmax] = 1
+    arr_norm = np.zeros(arr.shape)     # (nb_instruments, 88, nb_steps)
+    idx = list(np.ogrid[[slice(arr_norm.shape[ax]) for ax in range(arr_norm.ndim) if ax != 1]])
+    idx.insert(1, argmax)
+    arr_norm[tuple(idx)] = 1
+    arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])
+    print('arr_norm', arr_norm.shape)
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
     nb_instruments, nb_notes, nb_steps = arr_norm.shape
-    nb_notes -= 1
     matrix_norm = np.zeros((nb_instruments, nb_notes - 1, nb_steps))
+    print('matrix norm', matrix_norm.shape)
     for instrument in range(nb_instruments - 1, -1, -1):
         duration = 1
         for step in range(nb_steps - 1, -1, -1):
@@ -88,9 +96,9 @@ def converter_func_mono(arr):
             else:
                 am = np.argmax(arr_norm[instrument, :, step])
                 if am < matrix_norm.shape[1]:
-                    matrix_norm[instrument, argmax, step] = duration
+                    matrix_norm[instrument, am, step] = duration
                 else:
-                    cprint(f'Got an argmax == {argmax} == size matrix_norm', 'red')
+                    cprint(f'Got an argmax == {am} == size matrix_norm', 'red')
                 duration = 1
 
     return matrix_norm

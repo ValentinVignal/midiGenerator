@@ -70,7 +70,7 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False):
     # Colors
     colors_rgb = return_colors(len(instruments))
     if mono:
-        activations = array[:, :-1, 0]  # (nb_instruments, 88, nb_steps)
+        activations = array[:, :-1, :, 0]  # (nb_instruments, 88, nb_steps)
     else:
         activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape
