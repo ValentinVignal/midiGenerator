@@ -269,8 +269,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         x = layers.Dense((step_length * input_size * nb_instruments))(x)
         x = layers.Reshape((step_length, input_size, nb_instruments, 1))(x)
 
-    # x : (batch, step_size, input_size, 2 * nb_instruments)
-    x = layers.Softmax(axis=-2)(x)      # Along axis of Input Size
+    # x : (batch, step_size, input_size, nb_instruments, 1)
+    x = layers.Softmax(axis=2)(x)      # Along axis of Input Size
 
     outputs = []
     for inst in range(nb_instruments):
