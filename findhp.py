@@ -170,7 +170,7 @@ def main():
               '- all_sequence :', colored(params['all_sequence'], 'magenta'),
               '- lstm_state :', colored(params['lstm_state'], 'magenta'),
               '- model_id :', colored(params['model_id'], 'magenta'),
-              '- last_fc :', colored(params['last_fc']))
+              '- last_fc :', colored(params['last_fc'], 'magenta'))
 
         opt_param = {
             'lr': params['lr'],
