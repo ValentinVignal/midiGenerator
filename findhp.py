@@ -44,6 +44,8 @@ def main():
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
+    parser.add_argument('--last-fc', type=str, default=str(g.last_fc),
+                        help='Use a FC at the end of the model')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
@@ -119,6 +121,8 @@ def main():
     args.model_param = args.model_param.split(',')
     # Nb Steps
     args.nb_steps = args.nb_steps.split(',')
+    # Last FC
+    args.last_fc = [x == 'True' for x in args.last_fc.split(',')]
 
     # ---------- Generation ----------
     args.images = True
@@ -139,17 +143,19 @@ def main():
                                 for lstm_state in args.lstm_state:
                                     for model_param in args.model_param:
                                         for nb_steps in args.nb_steps:
-                                            all_params.append({
-                                                'lr': lr,
-                                                'optimizer': optimizer,
-                                                'epochs_drop': epochs_drop,
-                                                'decay_drop': decay_drop,
-                                                'dropout': dropout,
-                                                'type_loss': type_loss,
-                                                'all_sequence': all_sequence,
-                                                'lstm_state': lstm_state,
-                                                'model_id': args.model_name + ',' + model_param + ',' + nb_steps
-                                            })
+                                            for last_fc in args.last_fc:
+                                                all_params.append({
+                                                    'lr': lr,
+                                                    'optimizer': optimizer,
+                                                    'epochs_drop': epochs_drop,
+                                                    'decay_drop': decay_drop,
+                                                    'dropout': dropout,
+                                                    'type_loss': type_loss,
+                                                    'all_sequence': all_sequence,
+                                                    'lstm_state': lstm_state,
+                                                    'model_id': args.model_name + ',' + model_param + ',' + nb_steps,
+                                                    'last_fc': last_fc
+                                                })
 
     for index, params in enumerate(all_params):
         my_model = MyModel(name=args.name)
@@ -163,7 +169,8 @@ def main():
               '- type_loss :', colored(params['type_loss'], 'magenta'),
               '- all_sequence :', colored(params['all_sequence'], 'magenta'),
               '- lstm_state :', colored(params['lstm_state'], 'magenta'),
-              '- model_id :', colored(params['model_id'], 'magenta'))
+              '- model_id :', colored(params['model_id'], 'magenta'),
+              '- last_fc :', colored(params['last_fc']))
 
         opt_param = {
             'lr': params['lr'],
@@ -175,6 +182,7 @@ def main():
             'dropout': params['dropout'],
             'all_sequence': params['all_sequence'],
             'lstm_state': params['lstm_state'],
+            'last_fc': params['last_fc']
 
         }
         my_model.new_nn_model(model_id=params['model_id'],
