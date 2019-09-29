@@ -266,7 +266,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         o = layers.Flatten()(o)
         o = layers.Dense((step_length * input_size))(o)
         o = layers.Reshape((step_length, input_size, 1))(o)
-        o = layers.Softmax(axis=1, name=f'Output_{inst}')(o)
+        o = layers.Softmax(axis=2, name=f'Output_{inst}')(o)
         outputs.append(o)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
