@@ -13,8 +13,11 @@ Generate midi file with deep neural network :notes:
 ## Informations
 ### Simple Dataset
 
-- 1 songs
-- notes range : **20** : **38**
+| Name | Number of songs | Piano | Trombone | Flute | Violin | Poly | Mono |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **(1)** | 1 | 43:54 | 20:35 | 46:59 | 43:54 | 20:59 | 20:59 |
+| **2** | 3 | 42:56 | 20:44 | 46:63 | 36:54 | 20:63 |20:63 |
+
 
 ### BachChorale
 

@@ -48,7 +48,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     lstm_state = mmodel_options['lstm_state']
     batch_norm = not mmodel_options['no_batch_norm']
     bn_momentum = mmodel_options['bn_momentum']
-    last_fc = mmodel_options['last_fc']
 
     lambda_loss_activation, lambda_loss_duration = g.get_lambdas_loss(mmodel_options['lambdas_loss'])
     # --------- End model options ----------
@@ -258,23 +257,17 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # Delete the dimension nb_steps = 1
     x = layers.Reshape((*x.shape[2:], 1))(x)  # (batch, step_size, input_size, nb_instruments, 1)
 
-    if last_fc:
-        """
-            If we want to add an extra fully connected at the end to "summarize"
-        """
-        # --------------------------------------------------
-        # ---------- Instruments separately ----------
-        # --------------------------------------------------
-        x = layers.Flatten()(x)
-        x = layers.Dense((step_length * input_size * nb_instruments))(x)
-        x = layers.Reshape((step_length, input_size, nb_instruments, 1))(x)
-
-    # x : (batch, step_size, input_size, nb_instruments, 1)
-    x = layers.Softmax(axis=2)(x)      # Along axis of Input Size
-
+    # --------------------------------------------------
+    # ---------- Instruments separately ----------
+    # --------------------------------------------------
     outputs = []
     for inst in range(nb_instruments):
-        outputs.append(layers.Lambda(lambda x_: x_[:, :, :, inst], name=f'Output_{inst}')(x))
+        o = layers.Lambda(lambda x_: x_[:, :, :, inst])(x)
+        o = layers.Flatten()(o)
+        o = layers.Dense((step_length * input_size))(o)
+        o = layers.Reshape((step_length, input_size, 1))(o)
+        o = layers.Softmax(axis=1, name=f'Output_{inst}')(o)
+        outputs.append(o)
 
     model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
 
