@@ -55,6 +55,8 @@ def main():
                         help='Name given to the model')
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
+    parser.add_argument('--mono', default=False, action='store_true',
+                        help='To work with monophonic instruments')
     # ----------------
     parser.add_argument('--validation', type=float, default=0.1,
                         help='Fraction of the training data to be used as validation data')
@@ -92,6 +94,8 @@ def main():
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
+    if args.mono:
+        data_transformed_path += 'Mono'
 
     # -------------------- Create model --------------------
     my_model = MyModel(name=args.name)

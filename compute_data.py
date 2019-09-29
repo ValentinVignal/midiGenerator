@@ -25,6 +25,8 @@ def check_args(args):
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
+    if args.mono:
+        data_transformed_path += 'Mono'
 
     if os.path.exists(data_transformed_path):  # Delete the folder of the transformed data
         shutil.rmtree(data_transformed_path)
