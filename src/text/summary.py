@@ -231,7 +231,10 @@ def save_train_history_mono(train_history, nb_instruments, pathlib):
         if validation_in_train:
             plt.plot(epochs, val_losses[i], label='val_Output_{0}_loss'.format(i), color=colors[i+1], linestyle='--')
 
-    plt.title(f'Variation of the Loss through the epochs\nLoss : {loss[-1]}\nval_Loss : {val_loss[-1]}')
+    title = f'Variation of the Loss through the epochs\nLoss : {loss[-1]}'
+    if validation_in_train:
+        title += '\nval_Loss: {val_loss[-1]}'
+    plt.title(title)
     plt.xlabel('Epochs')
     plt.ylabel('Loss value')
     plt.legend()

@@ -75,19 +75,16 @@ def converter_func_mono(arr):
     :return:
     """
 
-    print('arr', arr.shape)
     argmax = np.argmax(arr, axis=1)
     arr_norm = np.zeros(arr.shape)     # (nb_instruments, 88, nb_steps)
     idx = list(np.ogrid[[slice(arr_norm.shape[ax]) for ax in range(arr_norm.ndim) if ax != 1]])
     idx.insert(1, argmax)
     arr_norm[tuple(idx)] = 1
     arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])
-    print('arr_norm', arr_norm.shape)
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
     nb_instruments, nb_notes, nb_steps = arr_norm.shape
     matrix_norm = np.zeros((nb_instruments, nb_notes - 1, nb_steps))
-    print('matrix norm', matrix_norm.shape)
     for instrument in range(nb_instruments - 1, -1, -1):
         duration = 1
         for step in range(nb_steps - 1, -1, -1):
