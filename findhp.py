@@ -44,8 +44,6 @@ def main():
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--work-on', type=str, default=g.work_on,
                         help='note, beat or measure')
-    parser.add_argument('--last-fc', type=str, default=str(g.last_fc),
-                        help='Use a FC at the end of the model')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',
                         help='Name given to the model')
@@ -64,12 +62,14 @@ def main():
     parser.add_argument('--mono', action='store_true', default=False,
                         help='To work with monophonic instruments')
     # ---------- Generation ----------
+    parser.add_argument('--compare-generation', default=False, action='store_true',
+                        help='Compare generation after training')
+    parser.add_argument('--generate', default=False, action='store_true',
+                        help='Generation after training')
     parser.add_argument('--seed', default=4,
                         help='number of seeds or the path to the folder with the seeds')
     parser.add_argument('--length', type=int, default=20,
                         help='The length of the generated music')
-    parser.add_argument('--images', action='store_true', default=False,
-                        help='Save the images for each instruments')
     parser.add_argument('--no-duration', action='store_true', default=False,
                         help='Generate only shortest notes possible')
     parser.add_argument('--verbose_generation', type=int, default=1,
@@ -125,8 +125,6 @@ def main():
     args.model_param = args.model_param.split(',')
     # Nb Steps
     args.nb_steps = args.nb_steps.split(',')
-    # Last FC
-    args.last_fc = [x == 'True' for x in args.last_fc.split(',')]
 
     # ---------- Generation ----------
     args.images = True
@@ -147,19 +145,17 @@ def main():
                                 for lstm_state in args.lstm_state:
                                     for model_param in args.model_param:
                                         for nb_steps in args.nb_steps:
-                                            for last_fc in args.last_fc:
-                                                all_params.append({
-                                                    'lr': lr,
-                                                    'optimizer': optimizer,
-                                                    'epochs_drop': epochs_drop,
-                                                    'decay_drop': decay_drop,
-                                                    'dropout': dropout,
-                                                    'type_loss': type_loss,
-                                                    'all_sequence': all_sequence,
-                                                    'lstm_state': lstm_state,
-                                                    'model_id': args.model_name + ',' + model_param + ',' + nb_steps,
-                                                    'last_fc': last_fc
-                                                })
+                                            all_params.append({
+                                                'lr': lr,
+                                                'optimizer': optimizer,
+                                                'epochs_drop': epochs_drop,
+                                                'decay_drop': decay_drop,
+                                                'dropout': dropout,
+                                                'type_loss': type_loss,
+                                                'all_sequence': all_sequence,
+                                                'lstm_state': lstm_state,
+                                                'model_id': args.model_name + ',' + model_param + ',' + nb_steps,
+                                            })
 
     for index, params in enumerate(all_params):
         my_model = MyModel(name=args.name)
@@ -186,8 +182,6 @@ def main():
             'dropout': params['dropout'],
             'all_sequence': params['all_sequence'],
             'lstm_state': params['lstm_state'],
-            'last_fc': params['last_fc']
-
         }
         my_model.new_nn_model(model_id=params['model_id'],
                               work_on=args.work_on,
@@ -209,11 +203,17 @@ def main():
         cprint(
             'Best loss for now : {0}'.format(
                 loss_history.logs[loss_history.best_index]['loss']), 'yellow')
-        my_model.generate_fom_data(length=args.length,
-                                   nb_seeds=args.seed,
-                                   save_images=args.images,
-                                   no_duration=args.no_duration,
-                                   verbose=args.verbose_generation)
+        if args.compare_generation:
+            my_model.compare_generation(max_length=None,
+                                        no_duration=args.no_duration,
+                                        verbose=1)
+
+        if args.generate:
+            my_model.generate_fom_data(length=args.length,
+                                       nb_seeds=args.seed,
+                                       save_images=True,
+                                       no_duration=args.no_duration,
+                                       verbose=args.verbose_generation)
         K.clear_session()
         del my_model.my_sequence
         del my_model.my_nn
