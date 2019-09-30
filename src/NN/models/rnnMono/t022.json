@@ -1,0 +1,5 @@
+{
+  "convo": [[4, 8], [16], [16, 8]],
+  "fc": ["nb_instruments * 32", "nb_instruments * 32"],
+  "LSTM": ["nb_steps * nb_instruments * 36"]
+}
