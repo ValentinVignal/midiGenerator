@@ -61,6 +61,8 @@ def main():
                         help='What GPU to use')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='To work on a small computer with a cpu')
+    parser.add_argument('--mono', action='store_true', default=False,
+                        help='To work with monophonic instruments')
     # ---------- Generation ----------
     parser.add_argument('--seed', default=4,
                         help='number of seeds or the path to the folder with the seeds')
@@ -87,6 +89,8 @@ def main():
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
+    if args.mono:
+        data_transformed_path += 'Mono'
 
     # Choose GPU
     if not args.pc:
