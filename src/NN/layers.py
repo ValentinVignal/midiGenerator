@@ -1,93 +1,83 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
-from tensorflow.python.keras.engine.base_layer import Layer, InputSpec
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras import constraints
+import src.global_variables as g
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
-class BatchNormalization(layers.Layer):
+class EncoderConvBlock3D(layers.Layer):
+    def __init__(self, filters, strides=(1, 1, 1), dropout=g.dropout):
+        self.strides = strides
+        self.conv = layers.Conv3D(filters=filters,
+                                  kernel_size=(1, 5, 5),
+                                  strides=strides,
+                                  padding='same')
+        self.batch_norm = layers.BatchNormalization()
+        self.leaky_relu = layers.LeakyReLU()
+        self.dropout = layers.Dropout(dropout)
+        super(EncoderConvBlock3D, self).__init__()
 
-    def __init__(self, axis=-1, momentum=0.999, epsilon=1e-3, **kwargs):
-        super(BatchNormalization, self).__init__(**kwargs)
-        self.axis = axis
-        self.momentum = momentum
-        self.epsilon = epsilon
+    def build(self, input_shape):
+        self.conv.build(input_shape)
+        new_shape = self.conv.compute_output_shape(input_shape)
+        self.batch_norm.build(new_shape)
+        self.leaky_relu.build(new_shape)
+        self.dropout.build(new_shape)
+        self._trainable_weights = self.conv.trainable_weights + self.batch_norm.trainable_weights
+        self._non_trainable_weights = self.batch_norm.non_trainable_weights
+        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        super(EncoderConvBlock3D, self).build(input_shape)
 
-        self.shape = None
-
-        self._axis = None
-        self.scale = None
-        self.beta = None
-        self.pop_mean = None
-        self.pop_var = None
-
-    def build(self, inputs_shape):
-        # ----- Shape -----
-        if type(self.axis) is int:
-            shape = (inputs_shape[self.axis], )
-            self._axis = [i for i in range(len(inputs_shape))]
-            self._axis = self._axis[:self.axis] + self._axis[self.axis+1:]
-        elif type(self.axis) is list or type(self.axis) is tuple:
-            shape = []
-            axis_abs = []
-            for i in range(len(self.axis)):
-                shape.append(inputs_shape[self.axis[i]])
-                if self.axis[i] >= 0:
-                    axis_abs.append(self.axis[i])
-                else:
-                    axis_abs.append(len(inputs_shape) - self.axis[i])
-            shape = tuple(shape)
-            self._axis = []
-            for i in range(len(inputs_shape)):
-                if i not in axis_abs:
-                    self._axis.append(i)
-        else:
-            raise TypeError('{0}: axis should be an int, list or tuple. Not a {1}'.format(self.name, type(self.axis)))
-        self.shape = shape
-        # ----- _axis -----
-
-        self.scale = self.add_weight(name='batch_norm_scale',
-                                     shape=shape,
-                                     initializer=tf.keras.initializers.ones)
-        self.beta = self.add_weight(name='batch_norm_beta',
-                                    shape=shape,
-                                    initializer=tf.keras.initializers.zeros)
-        self.pop_mean = self.add_weight(name='batch_norm_pop_mean',
-                                        shape=shape,
-                                        initializer=tf.keras.initializers.zeros,
-                                        trainable=False)
-        self.pop_var = self.add_weight(name='batch_norm_pop_var',
-                                       shape=shape,
-                                       initializer=tf.keras.initializers.ones,
-                                       trainable=False)
-
-    def call(self, inputs, training=None):
-
-        def batch_norm_train():
-            batch_mean, batch_var = tf.nn.moments(inputs, self._axis)
-            train_mean = tf.assign(self.pop_mean,
-                                   self.pop_mean * self.momentum + batch_mean * (1 - self.momentum))
-            train_var = tf.assign(self.pop_var,
-                                  self.pop_var * self.momentum + batch_var * (1 - self.momentum))
-            with tf.control_dependencies([train_mean, train_var]):
-                return tf.nn.batch_normalization(inputs,
-                    batch_mean, batch_var, self.scale, self.beta, self.epsilon)
-
-        def batch_norm_no_train():
-            return tf.nn.batch_normalization(inputs,
-                                         self.pop_mean, self.pop_var, self.scale, self.beta, self.epsilon)
-
-        return K.in_train_phase(batch_norm_train, batch_norm_no_train, training=training)
+    def call(self, inputs):
+        x = self.conv(inputs)
+        x = self.batch_norm(x)
+        x = self.leaky_relu(x)
+        return self.dropout(x)
 
     def compute_output_shape(self, input_shape):
-        return input_shape
+        return self.conv.compute_output_shape(input_shape)
 
-    # TODO(not implemented): code get_config method
+
+class DecoderConvBlock3D(layers.Layer):
+    def __init__(self, filters, strides=(1, 1, 1), dropout=g.dropout, final_shape=None):
+        self.conv_transposed = layers.Conv3DTranspose(filters=filters,
+                                                      kernel_size=(1, 5, 5),
+                                                      padding='same',
+                                                      strides=strides)
+        self.batch_norm = layers.BatchNormalization()
+        self.leaky_relu = layers.LeakyReLU()
+        self.dropout = layers.Dropout(dropout)
+        super(DecoderConvBlock3D, self).__init__()
+
+        self.final_shape = final_shape
+
+    def build(self, input_shape):
+        self.conv_transposed.build(input_shape)
+        if self.final_shape is None:
+            new_shape = self.conv_transposed.compute_output_shape(input_shape)
+        else:
+            new_shape = self.final_shape
+        self.batch_norm.build(new_shape)
+        self.leaky_relu.build(new_shape)
+        self.dropout.build(new_shape)
+        self._trainable_weights = self.conv_transposed.trainable_weights + self.batch_norm.trainable_weights
+        self._non_trainable_weights = self.batch_norm.non_trainable_weights
+        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        super(DecoderConvBlock3D, self).build(input_shape)
+
+    def call(self, inputs):
+        x = self.conv_transposed(inputs)
+        if self.final_shape is not None:
+            if x.shape[3] != self.final_shape[3]:
+                x = x[:, :, :, :-1]
+            if x.shape[2] != self.final_shape[2]:
+                x = x[:, :, :-1]
+        x = self.batch_norm(x)
+        x = self.leaky_relu(x)
+        return self.dropout(x)
+
+    def compute_output_shape(self, input_shape):
+        return self.conv_transposed.compute_output_shape(input_shape)
+
+
 
