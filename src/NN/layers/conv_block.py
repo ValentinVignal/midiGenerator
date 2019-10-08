@@ -5,7 +5,7 @@ K = tf.keras.backend
 layers = tf.keras.layers
 
 
-class EncoderConvBlock3D(layers.Layer):
+class ConvBlock3D(layers.Layer):
     def __init__(self, filters, strides=(1, 1, 1), dropout=g.dropout):
         self.strides = strides
         self.conv = layers.Conv3D(filters=filters,
@@ -15,7 +15,7 @@ class EncoderConvBlock3D(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
         self.dropout = layers.Dropout(dropout)
-        super(EncoderConvBlock3D, self).__init__()
+        super(ConvBlock3D, self).__init__()
 
     def build(self, input_shape):
         self.conv.build(input_shape)
@@ -26,7 +26,7 @@ class EncoderConvBlock3D(layers.Layer):
         self._trainable_weights = self.conv.trainable_weights + self.batch_norm.trainable_weights
         self._non_trainable_weights = self.batch_norm.non_trainable_weights
         # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
-        super(EncoderConvBlock3D, self).build(input_shape)
+        super(ConvBlock3D, self).build(input_shape)
 
     def call(self, inputs):
         x = self.conv(inputs)
@@ -38,7 +38,7 @@ class EncoderConvBlock3D(layers.Layer):
         return self.conv.compute_output_shape(input_shape)
 
 
-class DecoderConvBlock3D(layers.Layer):
+class ConvTransposedBlock3D(layers.Layer):
     def __init__(self, filters, strides=(1, 1, 1), dropout=g.dropout, final_shape=None):
         self.conv_transposed = layers.Conv3DTranspose(filters=filters,
                                                       kernel_size=(1, 5, 5),
@@ -47,7 +47,7 @@ class DecoderConvBlock3D(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
         self.dropout = layers.Dropout(dropout)
-        super(DecoderConvBlock3D, self).__init__()
+        super(ConvTransposedBlock3D, self).__init__()
 
         self.final_shape = final_shape
 
@@ -63,7 +63,7 @@ class DecoderConvBlock3D(layers.Layer):
         self._trainable_weights = self.conv_transposed.trainable_weights + self.batch_norm.trainable_weights
         self._non_trainable_weights = self.batch_norm.non_trainable_weights
         # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
-        super(DecoderConvBlock3D, self).build(input_shape)
+        super(ConvTransposedBlock3D, self).build(input_shape)
 
     def call(self, inputs):
         x = self.conv_transposed(inputs)
