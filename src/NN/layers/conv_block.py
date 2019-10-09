@@ -77,7 +77,10 @@ class ConvTransposedBlock3D(layers.Layer):
         return self.dropout(x)
 
     def compute_output_shape(self, input_shape):
-        return self.conv_transposed.compute_output_shape(input_shape)
+        if self.final_shape is not None:
+            return self.final_shape
+        else:
+            return self.conv_transposed.compute_output_shape(input_shape)
 
 
 
