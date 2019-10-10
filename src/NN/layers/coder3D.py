@@ -140,13 +140,13 @@ class ConvDecoder3D(layers.Layer):
 
 
 class Decoder3D(layers.Layer):
-    def __init__(self, encoder_param, dropout=g.dropout, time_stride=1, final_shapes=None, shape_before_conv=None):
+    def __init__(self, decoder_param, dropout=g.dropout, time_stride=1, final_shapes=None, shape_before_conv=None):
         self.final_shapes = final_shapes
         self.init_shape_before_conv(shape_before_conv)
-        self.dense_dec = dense_coder.DenseCoder(size_list=encoder_param['dense'],
+        self.dense_dec = dense_coder.DenseCoder(size_list=decoder_param['dense'],
                                                 dropout=dropout)
         self.reshape = layers.Reshape(self.shape_before_conv)
-        self.conv_dec = ConvDecoder3D(filters_list=encoder_param['conv'],
+        self.conv_dec = ConvDecoder3D(filters_list=decoder_param['conv'],
                                       dropout=dropout,
                                       time_stride=time_stride,
                                       final_shapes=final_shapes)
