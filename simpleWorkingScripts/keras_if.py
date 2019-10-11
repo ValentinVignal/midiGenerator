@@ -22,6 +22,7 @@ class ChooseLayer(layers.Layer):
         super(ChooseLayer, self).__init__()
 
     def build(self, input_shape):
+        print('shape', input_shape)
         self.d0.build(input_shape[0])
         self.d1.build(input_shape[0])
         self._trainable_weights = []
@@ -43,15 +44,20 @@ def choose(i, m):
     return o
 
 
-cl = ChooseLayer()
-#x = d0(inputs)
-x = cl([inputs, masks])
+class MyModel(tf.keras.Model):
+    def __init__(self, **kwargs):
+        super(MyModel, self).__init__(**kwargs)
+        self.l = ChooseLayer()
 
-output = x
+    def call(self, inputs):
+        output = self.l(inputs)
+        return output
 
-model = tf.keras.Model(inputs=[inputs, masks], outputs=output)
+
+model = MyModel()
 optimizer = tf.keras.optimizers.Adam(lr=0.01)
 model.compile(optimizer=optimizer, loss='mae')
+model.build([(None, 1), (None, 1)])
 print('model', model.summary())
 
 # -----------------------
@@ -90,5 +96,6 @@ model.fit(x=[x_np, m_np], y=y_np, epochs=10, batch_size=batch_size)
 y_p = model.predict(x=[x_np, m_np], batch_size=batch_size)
 
 print('after', np.concatenate([x_np, y_np, y_p], axis=1))
+print('model', model.summary())
 
 
