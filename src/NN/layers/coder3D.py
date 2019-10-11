@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-import src.NN.layers.conv_block as conv_block
-import src.NN.layers.dense_coder as dense_coder
+import src.NN.layers.conv as conv_block
+import src.NN.layers.dense as dense_coder
 import src.global_variables as g
 
 K = tf.keras.backend
@@ -142,6 +142,7 @@ class ConvDecoder3D(layers.Layer):
 class Decoder3D(layers.Layer):
     def __init__(self, decoder_param, dropout=g.dropout, time_stride=1, final_shapes=None, shape_before_conv=None):
         self.final_shapes = final_shapes
+        self.shape_before_conv = None
         self.init_shape_before_conv(shape_before_conv)
         self.dense_dec = dense_coder.DenseCoder(size_list=decoder_param['dense'],
                                                 dropout=dropout)
@@ -185,3 +186,5 @@ class Decoder3D(layers.Layer):
         new_shape = self.reshape.compute_output_shape(new_shape)
         new_shape = self.conv_dec.compute_output_shape(new_shape)
         return new_shape
+
+

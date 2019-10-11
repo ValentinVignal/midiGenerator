@@ -1,5 +1,6 @@
 import tensorflow as tf
 import src.global_variables as g
+import math
 
 K = tf.keras.backend
 layers = tf.keras.layers
@@ -83,4 +84,66 @@ class ConvTransposedBlock3D(layers.Layer):
             return self.conv_transposed.compute_output_shape(input_shape)
 
 
+def new_shape_conv(input_shape, strides, filters):
+    """
+    To handle with padding = 'same'
+    number of dim = len(input_shapes) (without batch)
+    :param input_shape:
+    :param strides:
+    :param filters:
+    :return:
+    """
+    new_shape = []
+    for dim, stride in zip(input_shape[:-1], strides):
+        new_shape.append(math.floor(dim / stride))
+    new_shape.append(filters)
+    return tuple(new_shape)
+
+
+def new_shapes_conv(input_shape, strides_list, filters_list):
+    """
+    Use to find the output shapes of several convolutional layers
+    :param input_shape:
+    :param strides_list:
+    :param filters_list:
+    :return:
+    """
+    new_shapes = [input_shape]
+    for strides, filters in zip(strides_list, filters_list):
+        new_shapes.append(new_shape_conv(new_shapes[-1], strides, filters))
+    return new_shapes
+
+
+def reverse_conv_param(original_dim, param_list):
+    """
+
+    ----------
+    (nb_instrument * 2 ->) [[a, b], [c, d, e]] has to become (e ->) [[d, c, b], [a, nb_instruments]]
+    And the UpSampling is done on the first convolution
+
+    To do so:
+        (1)     [[a, b]] , [c, d, e]]       <-- param_list
+        (2)     [a, b, c, d, e]       # dims = [2, 3]
+        (3)     [e, d, c, b, a]       # dims = [3, 2]
+        (3)     [d, c, b, a , original_dim]       # save dims = [3, 2]
+        (4)     [[d, c, b], [a, original_dim]]     <-- reversed_param_list
+    ----------
+
+    :param original_dim:
+    :param param_list: ex [[a, b], [c, d, e]]
+    :return: ex [[d, c, b], [a, original_dim]]
+    """
+
+    reversed_param_list_dims = [len(sublist) for sublist in param_list]
+    reversed_param_list_temp = [size for sublist in param_list['convo'] for size in
+                             sublist]  # Flatten the 2-level list
+    reversed_param_list_temp = reversed_param_list_temp[::-1]  # Reversed
+    reversed_param_list_dims = reversed_param_list_dims[::-1]
+    reversed_param_list_temp = reversed_param_list_temp[1:] + [original_dim]  # Update shapes
+    reversed_param_list = []  # Final reversed_param_list parameters
+    offset = 0
+    for sublist_size in reversed_param_list_dims:
+        reversed_param_list.append(reversed_param_list_temp[offset: offset + sublist_size])
+        offset += sublist_size
+    return reversed_param_list
 

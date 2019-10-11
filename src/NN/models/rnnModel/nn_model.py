@@ -5,7 +5,8 @@ import src.eval_string as es
 import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers.coder3D as coder3D
-import src.NN.layers.rnn as rnn
+import src.NN.layers.rnn as l_rnn
+import src.NN.layers.conv as l_conv
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -89,25 +90,50 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     class MyModel(tf.keras.Model):
 
-        def __init__(self, **kwargs):
+        def __init__(self, input_shape, model_param, **kwargs):
             super(MyModel, self).__init__(name='MyModel', **kwargs)
-            self.encoder = coder3D.Encoder3D(encoder_param=model_param,
+            self.model_param_enc = model_param
+            self.model_param_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
+            self.encoder = coder3D.Encoder3D(encoder_param=self.model_param_enc,
                                              dropout=dropout,
                                              time_stride=time_stride)
-            self.rnn = rnn.LstmRNN(model_param['lstm'])
-            self.decoder = coder3D.Decoder3D(decoder_param=model_param,
+            self.rnn = l_rnn.LstmRNN(model_param['lstm'])       # TODO : Put eval in it and declare nb_instrument blablabla...
+            self.decoder = coder3D.Decoder3D(decoder_param=self.model_param_dec,
                                              dropout=dropout,
                                              time_stride=time_stride,
                                              final_shapes=None)
             self.last_layer = None
 
-            def call(self, inputs):
-                x = layers.concatenate(inputs, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
-                x = self.encoder(x)
-                x = self.rnn(x)
-                x = self.decoder(x)
-                x = self.last_layer(x)
-                return x
+        @staticmethod
+        def compute_model_param_dec(input_shape, model_param_enc):
+            conv_enc = model_param_enc['conv']
+            dense_enc = model_param['dense']
+
+            # --- Compute the last size of the convolution (so we can add a dense layer of this size in the decoder ---
+            nb_pool = len(conv_enc) - 1     # nb_times there is a stride == 2 in the conv encoder
+            # 1. compute the last shape
+            last_shape_conv_enc = l_conv.new_shapes_conv(input_shape=input_shape,
+                                                         strides_list=[(1, 2, 2) for i in range(nb_pool)],
+                                                         filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])[-1]
+            # 2. compute the last size
+            last_size_conv_enc = 1
+            for s in last_shape_conv_enc:
+                last_size_conv_enc *= s
+
+            # --- Create the dictionnary to return ---
+            model_param_dec = dict(
+                dense=dense_enc[::-1] + [last_size_conv_enc],
+                conv=l_conv.reverse_conv_param(original_dim=input_shape[-1], param_list=conv_enc)
+            )
+            return model_param_dec
+
+        def call(self, inputs):
+            x = layers.concatenate(inputs, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
+            x = self.encoder(x)
+            x = self.rnn(x)
+            x = self.decoder(x)
+            x = self.last_layer(x)
+            return x
 
 
 
