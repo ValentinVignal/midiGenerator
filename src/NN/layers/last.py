@@ -25,14 +25,16 @@ class LastInstMono(layers.Layer):
 
     def build(self, input_shape):
         self.mlambda.build(input_shape)
-        new_shape = self.mlambda.compute_output_shape(input_shape)
-        self.flatten.build(new_shape)
-        new_shape = self.flatten.compute_output_shape(new_shape)
+        new_shape_lambda = self.mlambda.compute_output_shape(input_shape)
+        self.flatten.build(new_shape_lambda)
+        new_shape = self.flatten.compute_output_shape(new_shape_lambda)
+        print('new shape after flatten', new_shape)
         self.dense.build(new_shape)
+        print('new shape after dense ', new_shape)
+        print('input shape in last Inst mono ', input_shape)
         new_shape = self.dense.compute_output_shape(new_shape)
-        self.reshape.build(new_shape)
         if not self.already_built:
-            self.reshape = layers.Reshape(input_shape[1:])  # Don't take the batch shape
+            self.reshape = layers.Reshape(new_shape_lambda)  # Don't take the batch shape
             self.already_built = True
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)
@@ -56,9 +58,10 @@ class LastInstMono(layers.Layer):
 
 
 class LastMono(layers.Layer):
-    def __init__(self, softmax_axis):
+    def __init__(self, softmax_axis, names=None):
         super(LastMono, self).__init__()
         self.sofmax_axis = softmax_axis
+        self.names = names
 
         self.last_inst_mono_list = []
         self.already_build = False

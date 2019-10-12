@@ -36,6 +36,7 @@ class DenseBlock(layers.Layer):
 
 class DenseCoder(layers.Layer):
     def __init__(self, size_list, dropout=g.dropout):
+        print('size list in dense', size_list)
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
         super(DenseCoder, self).__init__()
@@ -80,7 +81,7 @@ class DenseSameShape(layers.Layer):
         if not self.already_built:
             self.dense = layers.Dense(units=input_shape[-1], **self.kwargs)
             self.already_built = True
-        self.dense.build()
+        self.dense.build(input_shape)
         self._trainable_weights = self.dense.trainable_weights
         self._non_trainable_weights = self.dense.non_trainable_weights
         # TODO Verify there is no need to consider non_trainable_variable and trainable_variable

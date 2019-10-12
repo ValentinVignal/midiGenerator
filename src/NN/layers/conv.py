@@ -50,7 +50,14 @@ class ConvTransposedBlock3D(layers.Layer):
         self.dropout = layers.Dropout(dropout)
         super(ConvTransposedBlock3D, self).__init__()
 
-        self.final_shape = final_shape
+        self.final_shape = ConvTransposedBlock3D.init_final_shape(final_shape)
+
+    @staticmethod
+    def init_final_shape(final_shape):
+        if final_shape is None or len(final_shape) == 5:
+            return final_shape
+        else:
+            return (None, *final_shape)
 
     def build(self, input_shape):
         self.conv_transposed.build(input_shape)
@@ -95,7 +102,7 @@ def new_shape_conv(input_shape, strides, filters):
     """
     new_shape = []
     for dim, stride in zip(input_shape[:-1], strides):
-        new_shape.append(math.floor(dim / stride))
+        new_shape.append(math.ceil(dim / stride))
     new_shape.append(filters)
     return tuple(new_shape)
 
@@ -108,6 +115,7 @@ def new_shapes_conv(input_shape, strides_list, filters_list):
     :param filters_list:
     :return:
     """
+    print('input shape new shape conv', input_shape)
     new_shapes = [input_shape]
     for strides, filters in zip(strides_list, filters_list):
         new_shapes.append(new_shape_conv(new_shapes[-1], strides, filters))
@@ -135,8 +143,7 @@ def reverse_conv_param(original_dim, param_list):
     """
 
     reversed_param_list_dims = [len(sublist) for sublist in param_list]
-    reversed_param_list_temp = [size for sublist in param_list['convo'] for size in
-                             sublist]  # Flatten the 2-level list
+    reversed_param_list_temp = [size for sublist in param_list for size in sublist]  # Flatten the 2-level list
     reversed_param_list_temp = reversed_param_list_temp[::-1]  # Reversed
     reversed_param_list_dims = reversed_param_list_dims[::-1]
     reversed_param_list_temp = reversed_param_list_temp[1:] + [original_dim]  # Update shapes
@@ -145,5 +152,5 @@ def reverse_conv_param(original_dim, param_list):
     for sublist_size in reversed_param_list_dims:
         reversed_param_list.append(reversed_param_list_temp[offset: offset + sublist_size])
         offset += sublist_size
+    print('reversed_param list', reversed_param_list)
     return reversed_param_list
-

@@ -4,9 +4,7 @@ import warnings
 import src.eval_string as es
 import src.NN.losses as l
 import src.global_variables as g
-import src.NN.layers.coder3D as coder3D
-import src.NN.layers.rnn as l_rnn
-import src.NN.layers.conv as l_conv
+import src.NN.layers as mlayers
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -37,20 +35,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # ---------- Model options ----------
     mmodel_options = {
         'dropout': g.dropout,
-        'all_sequence': g.all_sequence,
-        'lstm_state': g.lstm_state,
-        'no_batch_norm': False,
-        'bn_momentum': g.bn_momentum,
         'lambdas_loss': g.lambdas_loss,
-        'last_fc': g.last_fc
     }
     mmodel_options.update(model_options)
 
     dropout = mmodel_options['dropout']
-    all_sequence = mmodel_options['all_sequence']
-    lstm_state = mmodel_options['lstm_state']
-    batch_norm = not mmodel_options['no_batch_norm']
-    bn_momentum = mmodel_options['bn_momentum']
 
     lambda_loss_activation, lambda_loss_duration = g.get_lambdas_loss(mmodel_options['lambdas_loss'])
 
@@ -94,15 +83,27 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             super(MyModel, self).__init__(name='MyModel', **kwargs)
             self.model_param_enc = model_param
             self.model_param_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
-            self.encoder = coder3D.Encoder3D(encoder_param=self.model_param_enc,
-                                             dropout=dropout,
-                                             time_stride=time_stride)
-            self.rnn = l_rnn.LstmRNN(model_param['lstm'])       # TODO : Put eval in it and declare nb_instrument blablabla...
-            self.decoder = coder3D.Decoder3D(decoder_param=self.model_param_dec,
-                                             dropout=dropout,
-                                             time_stride=time_stride,
-                                             final_shapes=None)
-            self.last_layer = None
+            self.final_shapes = MyModel.compute_final_shapes(input_shape=input_shape,
+                                                             model_param_conv=self.model_param_enc['conv'])
+            print('final shapes', self.final_shapes)
+            self.encoder = mlayers.coder3D.Encoder3D(encoder_param=self.model_param_enc,
+                                                     dropout=dropout,
+                                                     time_stride=time_stride)
+            self.rnn = mlayers.rnn.LstmRNN(
+                model_param['lstm'])  # TODO : Put eval in it and declare nb_instrument blablabla...
+            self.decoder = mlayers.coder3D.Decoder3D(decoder_param=self.model_param_dec,
+                                                     dropout=dropout,
+                                                     time_stride=time_stride,
+                                                     final_shapes=self.final_shapes)
+            self.last_layer = mlayers.last.LastMono(softmax_axis=2)
+
+        @staticmethod
+        def compute_final_shapes(input_shape, model_param_conv):
+            return mlayers.conv.new_shapes_conv(
+                input_shape=(*input_shape[:-1], nb_instruments),
+                strides_list=[(1, time_stride, 2) for i in range(len(model_param_conv))],
+                filters_list=[l[-1] for l in model_param_conv]
+            )[::-1]
 
         @staticmethod
         def compute_model_param_dec(input_shape, model_param_enc):
@@ -110,210 +111,50 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             dense_enc = model_param['dense']
 
             # --- Compute the last size of the convolution (so we can add a dense layer of this size in the decoder ---
-            nb_pool = len(conv_enc) - 1     # nb_times there is a stride == 2 in the conv encoder
+            nb_pool = len(conv_enc) - 1  # nb_times there is a stride == 2 in the conv encoder
             # 1. compute the last shape
-            last_shape_conv_enc = l_conv.new_shapes_conv(input_shape=input_shape,
-                                                         strides_list=[(1, 2, 2) for i in range(nb_pool)],
-                                                         filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])[-1]
+            last_shapes_conv_enc = mlayers.conv.new_shapes_conv(input_shape=(*input_shape[:-1], nb_instruments),
+                                                               strides_list=[(1, time_stride, 2) for i in range(nb_pool)],
+                                                               filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
+            print('last shapes conv enc', last_shapes_conv_enc)
+            last_shape_conv_enc = last_shapes_conv_enc[-1]
             # 2. compute the last size
             last_size_conv_enc = 1
-            for s in last_shape_conv_enc:
+            for i, s in enumerate(last_shape_conv_enc[1:]):
                 last_size_conv_enc *= s
+            print('l')
 
             # --- Create the dictionnary to return ---
             model_param_dec = dict(
                 dense=dense_enc[::-1] + [last_size_conv_enc],
-                conv=l_conv.reverse_conv_param(original_dim=input_shape[-1], param_list=conv_enc)
+                conv=mlayers.conv.reverse_conv_param(original_dim=nb_instruments, param_list=conv_enc)
             )
             return model_param_dec
+
+        def build(self, input_shape):
+            print('input shape', input_shape)
+            new_shape = (*input_shape[0][:-1], input_shape[0][-1] * len(input_shape))
+            print('new shape 1', new_shape)
+            self.encoder.build(new_shape)
+            new_shape = self.encoder.compute_output_shape(new_shape)
+            print('new shape 2', new_shape)
+            self.rnn.build(new_shape)
+            new_shape = self.rnn.compute_output_shape(new_shape)
+            self.decoder.build(new_shape)
+            new_shape = self.decoder.compute_output_shape(new_shape)
+            self.last_layer.build(new_shape)
+            super(MyModel, self).build(input_shape)
 
         def call(self, inputs):
             x = layers.concatenate(inputs, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
             x = self.encoder(x)
             x = self.rnn(x)
             x = self.decoder(x)
-            x = self.last_layer(x)
+            x = self.last_layer(x, names='Output_')
             return x
 
-
-
-
-    convo_shapes = []  # to reconstruct the good shape in Decoder and Transposed convolutions
-    convo = model_param['convo']
-    for i, c in enumerate(convo):
-        convo_shapes.append(x.shape)
-        for index, s in enumerate(c):
-            size = s
-            if index + 1 == len(c) and i < 2:
-                x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), strides=(1, time_stride, 2), padding='same')(x)
-            else:
-                x = layers.Conv3D(filters=size, kernel_size=(1, 5, 5), padding='same')(x)
-            if batch_norm:
-                x = layers.BatchNormalization(momentum=bn_momentum)(x)
-            x = layers.LeakyReLU()(x)
-            x = layers.Dropout(dropout / 2)(x)
-
-    # --------------------------------------------------
-    # ---------- Fully Connected ----------
-    # --------------------------------------------------
-    shape_before_fc = x.shape  # Do  the bridge between Fully Connected Transposed Convolution in the Decoder
-    x = layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(
-        x)  # (batch, nb_steps, lenght * size * filters)
-    fc = model_param['fc']
-    for s in fc:
-        size = eval(s, env)
-        x = layers.TimeDistributed(layers.Dense(size))(x)
-        if batch_norm:
-            x = layers.BatchNormalization(momentum=bn_momentum)(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.Dropout(dropout)(x)
-
-    # ================================================================================
-    #                         Recurrent Neural Network
-    # ================================================================================
-
-    # --------------------------------------------------
-    # ---------- LSTM -----------
-    # --------------------------------------------------
-    # -- Loop --
-    lstm = model_param['LSTM']
-    for s in lstm[:-1]:
-        size = eval(s, env)
-        x = layers.LSTM(size,
-                        return_sequences=True,
-                        unit_forget_bias=True,
-                        dropout=dropout,
-                        recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        if batch_norm:
-            x = layers.BatchNormalization(momentum=bn_momentum)(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.Dropout(dropout)(x)
-    # -- Last one --
-    if lstm_state:
-        s = lstm[-1]
-        size = eval(s, env)
-        x, state_h, state_c = layers.LSTM(size,
-                                          return_sequences=all_sequence,
-                                          return_state=True,
-                                          unit_forget_bias=True,
-                                          dropout=dropout,
-                                          recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        if batch_norm:
-            x = layers.BatchNormalization(momentum=bn_momentum)(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.Dropout(dropout)(x)
-        if all_sequence:
-            x = layers.Flatten()(x)
-
-        x = layers.concatenate([x, state_h, state_c], axis=1)  # (batch, 3 *  size)
-    else:
-        s = lstm[-1]
-        size = eval(s, env)
-        x = layers.LSTM(size,
-                        return_sequences=all_sequence,
-                        return_state=False,
-                        unit_forget_bias=True,
-                        dropout=dropout,
-                        recurrent_dropout=dropout)(x)  # (batch, nb_steps, size)
-        if batch_norm:
-            x = layers.BatchNormalization(momentum=bn_momentum)(x)
-        x = layers.LeakyReLU()(x)
-        if all_sequence:
-            x = layers.Flatten()(x)
-        x = layers.Dropout(dropout)(x)
-
-    # ================================================================================
-    #                                  Decoder
-    # ================================================================================
-
-    # --------------------------------------------------
-    # ----- Fully Connected ------
-    # --------------------------------------------------
-    fc_decoder = model_param['fc'][::-1] + [
-        shape_before_fc[2] * shape_before_fc[3] * shape_before_fc[4]]  # Do the fully connected but backward
-    """
-    We keep the last layer (so now the first one in fc_decoder) because the output shape of the lstm is the number of
-    units in the last LSMT layer (and possibly * le length of the all sequence + size of the state) != last dimension
-    of the fully connected layers.
-    
-    We add another layer at the end of fc_decoder to have the same size as the last layer of the flatten encoder
-    convolution.
-    """
-    for s in fc_decoder:
-        size = es.eval_all(s, env)
-        x = layers.Dense(size)(x)
-        if batch_norm:
-            x = layers.BatchNormalization(momentum=bn_momentum)(x)
-        x = layers.LeakyReLU()(x)
-        x = layers.Dropout(dropout)(x)  # (batch, size)
-
-    # --------------------------------------------------
-    # ----- Transposed Convolution -----
-    # --------------------------------------------------
-    x = layers.Reshape((1, shape_before_fc[2], shape_before_fc[3], shape_before_fc[4]))(
-        x)  # (batch, nb_steps=1, length, size, filters)
-    # Create the parameters transposed_convo
-    """
-    (nb_instrument * 2 ->) [[a, b], [c, d, e]] has to become (e ->) [[d, c, b], [a, nb_instruments]]
-    And the UpSampling is done on the first convolution
-    
-    To do so:
-        (1)     [[a, b]] , [c, d, e]]       <-- model_param['convo']
-        (2)     [a, b, c, d, e]       # dims = [2, 3]
-        (3)     [e, d, c, b, a]       # dims = [3, 2]
-        (3)     [d, c, b, a , 2 * nb_instruments]       # save dims = [3, 2]
-        (4)     [[d, c, b], [a, nb_instuments]]     <-- transposed_convo
-    """
-    transposed_convo_dims = [len(sublist) for sublist in model_param['convo']]
-    transposed_convo_temp = [size for sublist in model_param['convo'] for size in
-                             sublist]  # Flatten the 2-level list
-    transposed_convo_temp = transposed_convo_temp[::-1]  # Reversed
-    transposed_convo_dims = transposed_convo_dims[::-1]
-    transposed_convo_temp = transposed_convo_temp[1:] + [nb_instruments]  # Update shapes
-    transposed_convo = []  # Final transposed_convo parameters
-    offset = 0
-    for sublist_size in transposed_convo_dims:
-        transposed_convo.append(transposed_convo_temp[offset: offset + sublist_size])
-        offset += sublist_size
-
-    for tc_idx, tc in enumerate(transposed_convo):
-        for s_idx, s in enumerate(tc):
-            if s_idx == 0 and tc_idx > 0:
-                strides = (1, time_stride, 2)
-            else:
-                strides = (1, 1, 1)
-            size = s
-            x = layers.Conv3DTranspose(filters=size, kernel_size=(1, 5, 5), padding='same', strides=strides)(
-                x)  # (batch, nb_step=1, step_size, input_size, filters)
-            if s_idx == 0 and tc_idx > 0:
-                if x.shape[3] != convo_shapes[- (tc_idx + 1)][3]:
-                    # Correction of the input size (if it was an odd number, we need to -1)
-                    x = layers.Lambda(lambda x: x[:, :, :, :-1])(x)
-                if x.shape[2] != convo_shapes[- (tc_idx + 1)][2]:
-                    # Correction of the step_length (if it was an odd number, we need to -1)
-                    x = layers.Lambda(lambda x: x[:, :, :-1])(x)
-            if batch_norm:
-                x = layers.BatchNormalization(momentum=bn_momentum)(x)
-            x = layers.LeakyReLU()(x)
-            x = layers.Dropout(dropout / 2)(x)      # (batch, 1, step_size, input_size, nb_instruments)
-        # x = layers.UpSampling3D(size=(1, 1, 2))(x)  # Batch size
-
-    # Delete the dimension nb_steps = 1
-    x = layers.Reshape((*x.shape[2:], 1))(x)  # (batch, step_size, input_size, nb_instruments, 1)
-
-    # --------------------------------------------------
-    # ---------- Instruments separately ----------
-    # --------------------------------------------------
-    outputs = []
-    for inst in range(nb_instruments):
-        o = layers.Lambda(lambda x_: x_[:, :, :, inst])(x)
-        o = layers.Flatten()(o)
-        o = layers.Dense((step_length * input_size))(o)
-        o = layers.Reshape((step_length, input_size, 1))(o)
-        o = layers.Softmax(axis=2, name=f'Output_{inst}')(o)
-        outputs.append(o)
-
-    model = tf.keras.Model(inputs=inputs_midi, outputs=outputs)
+    model = MyModel(input_shape=midi_shape, model_param=model_param)
+    model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     # ------------------ Losses -----------------
     # Define losses dict
@@ -321,6 +162,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = l.loss_function_mono
 
-    model.compile(loss=losses, optimizer=optimizer, metrics=[l.acc_mono])
+    model.compile(loss='mae', optimizer=optimizer, metrics=[l.acc_mono])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)

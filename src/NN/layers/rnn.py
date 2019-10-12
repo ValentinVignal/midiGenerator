@@ -19,7 +19,7 @@ class LstmBlock(layers.Layer):
         super(LstmBlock, self).__init__()
 
     def build(self, input_shape):
-        self.conv.build(input_shape)
+        self.lstm.build(input_shape)
         new_shape = self.lstm.compute_output_shape(input_shape)
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
@@ -36,7 +36,7 @@ class LstmBlock(layers.Layer):
         return self.dropout(x)
 
     def compute_output_shape(self, input_shape):
-        return self.self.compute_output_shape(input_shape)
+        return self.lstm.compute_output_shape(input_shape)
 
 
 class LstmRNN(layers.Layer):
