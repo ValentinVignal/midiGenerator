@@ -5,6 +5,7 @@ import src.eval_string as es
 import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers as mlayers
+import src.mtypes as t
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -79,13 +80,19 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     class MyModel(tf.keras.Model):
 
-        def __init__(self, input_shape, model_param, **kwargs):
+        type_model_param_conv = t.Sequence[t.Sequence[int]]
+        type_model_param = t.Dict[str, t.Union[
+            type_model_param_conv,  # conv
+            t.Sequence[int]  # dense, lstm
+        ]]
+
+        def __init__(self, input_shape: t.shape, model_param: type_model_param, **kwargs):
             super(MyModel, self).__init__(name='MyModel', **kwargs)
             self.model_param_enc = model_param
             self.model_param_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
             self.final_shapes = MyModel.compute_final_shapes(input_shape=input_shape,
                                                              model_param_conv=self.model_param_enc['conv'])
-            print('final shapes', self.final_shapes)
+            print('MyModel final shapes', self.final_shapes)
             self.encoder = mlayers.coder3D.Encoder3D(encoder_param=self.model_param_enc,
                                                      dropout=dropout,
                                                      time_stride=time_stride)
@@ -98,15 +105,17 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             self.last_layer = mlayers.last.LastMono(softmax_axis=2)
 
         @staticmethod
-        def compute_final_shapes(input_shape, model_param_conv):
-            return mlayers.conv.new_shapes_conv(
+        def compute_final_shapes(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.Sequence[t.bshape]:
+            final_shapes: t.Sequence[t.shape] = mlayers.conv.new_shapes_conv(
                 input_shape=(*input_shape[:-1], nb_instruments),
                 strides_list=[(1, time_stride, 2) for i in range(len(model_param_conv))],
                 filters_list=[l[-1] for l in model_param_conv]
             )[::-1]
+            final_bshapes = [t.Bshape.cast_from(shape, t.shape) for shape in final_shapes]
+            return final_bshapes
 
         @staticmethod
-        def compute_model_param_dec(input_shape, model_param_enc):
+        def compute_model_param_dec(input_shape: t.shape, model_param_enc: type_model_param) -> type_model_param:
             conv_enc = model_param_enc['conv']
             dense_enc = model_param['dense']
 
@@ -114,8 +123,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             nb_pool = len(conv_enc) - 1  # nb_times there is a stride == 2 in the conv encoder
             # 1. compute the last shape
             last_shapes_conv_enc = mlayers.conv.new_shapes_conv(input_shape=(*input_shape[:-1], nb_instruments),
-                                                               strides_list=[(1, time_stride, 2) for i in range(nb_pool)],
-                                                               filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
+                                                                strides_list=[(1, time_stride, 2) for i in
+                                                                              range(nb_pool)],
+                                                                filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
             print('last shapes conv enc', last_shapes_conv_enc)
             last_shape_conv_enc = last_shapes_conv_enc[-1]
             # 2. compute the last size

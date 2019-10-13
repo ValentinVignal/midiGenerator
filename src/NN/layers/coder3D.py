@@ -2,22 +2,37 @@ import tensorflow as tf
 
 import src.NN.layers as mlayers
 import src.global_variables as g
+import src.mtypes as t
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
 class ConvEncoder3D(layers.Layer):
-    def __init__(self, filters_list, dropout=g.dropout, time_stride=1):
+    type_filters_list = t.Sequence[t.Sequence[int]]
+
+    def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
+                 last_pool: bool = False):
+        """
+
+        :param filters_list: Sequence[Sequence[int]]:
+        :param dropout: float:
+        :param time_stride: int:
+        :type last_pool: bool:
+        """
+        super(ConvEncoder3D, self).__init__()
+        self.last_pool = last_pool
         self.conv_blocks = []
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride)
-        super(ConvEncoder3D, self).__init__()
 
-    def init_conv_blocks(self, filters_list, dropout=g.dropout, time_stride=1):
+    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1):
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):
-                if (index_list < len(filters_list) - 1) and (index == len(size_list) - 1):
-                    strides = (1, time_stride, 2)
+                if index == len(size_list) - 1:
+                    if (index_list < len(filters_list) - 1) or self.last_pool:
+                        strides = (1, time_stride, 2)
+                    else:
+                        strides = (1, 1, 1)
                 else:
                     strides = (1, 1, 1)
                 self.conv_blocks.append(mlayers.conv.ConvBlock3D(filters=size,
@@ -50,10 +65,30 @@ class ConvEncoder3D(layers.Layer):
 
 
 class Encoder3D(layers.Layer):
-    def __init__(self, encoder_param, dropout=g.dropout, time_stride=1, time_distributed=True):
+    type_encoder_param = t.Dict[str, t.Union[
+        t.Sequence[t.Sequence[int]],  # conv
+        t.Sequence[int]  # dense
+    ]]
+
+    def __init__(self, encoder_param: type_encoder_param, dropout: float = g.dropout, time_stride: int = 1,
+                 time_distributed: bool = True, last_pool: bool = False):
+        """
+
+        :param encoder_param: {
+            'conv': [[4, 8], [16, 8], [4, 8]],
+            'dense': [24, 12]
+        }
+        :param dropout: float:
+        :param time_stride: int:
+        :param time_distributed: bool:
+        :param last_pool: bool:
+        """
+        self.last_pool = last_pool
+
         self.conv_enc = ConvEncoder3D(filters_list=encoder_param['conv'],
                                       dropout=dropout,
-                                      time_stride=time_stride)
+                                      time_stride=time_stride,
+                                      last_pool=self.last_pool)
         if time_distributed:
             self.flatten = layers.TimeDistributed(layers.Flatten())
         else:
@@ -96,18 +131,37 @@ class Encoder3D(layers.Layer):
 
 
 class ConvDecoder3D(layers.Layer):
-    def __init__(self, filters_list, dropout=g.dropout, time_stride=1, final_shapes=None):
-        self.conv_blocks = []
+    type_filters_list = t.Sequence[t.Sequence[int]]
+    type_final_shapes = t.Optional[t.Sequence[t.bshape]]
+
+    def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
+                 final_shapes: type_final_shapes = None, first_pool: bool = False):
+        """
+
+        :param filters_list: Sequence[Sequence[int]]:
+        :param dropout: float:
+        :param time_stride: int:
+        :param final_shapes: Optional[Sequence[bshape]]: The shapes after a pool (even the first one if first_pool = True)
+        :param first_pool: bool:
+        """
         self.final_shapes = final_shapes
+        self.first_pool = first_pool
+
+        self.conv_blocks = []
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride, final_shapes=final_shapes)
         super(ConvDecoder3D, self).__init__()
 
-    def init_conv_blocks(self, filters_list, dropout=g.dropout, time_stride=1, final_shapes=None):
+    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
+                         final_shapes: type_final_shapes = None, first_pool: bool = False):
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):
-                if (index_list > 0) and (index == 0):
-                    strides = (1, time_stride, 2)
-                    final_shape = final_shapes[index_list]
+                if index == 0:
+                    if index_list > 0 or first_pool:
+                        strides = (1, time_stride, 2)
+                        final_shape = final_shapes[index_list]
+                    else:
+                        strides = (1, 1, 1)
+                        final_shape = None
                 else:
                     strides = (1, 1, 1)
                     final_shape = None
@@ -121,7 +175,7 @@ class ConvDecoder3D(layers.Layer):
         self._trainable_weights = []
         self._non_trainable_weights = []
         for conv in self.conv_blocks:
-            print('new_shape in build ConvDecoder3D', new_shape)
+            print('ConvDecoder3D build new_shape', new_shape)
             conv.build(new_shape)
             new_shape = conv.compute_output_shape(new_shape)
             self._trainable_weights += conv.trainable_weights
@@ -131,7 +185,8 @@ class ConvDecoder3D(layers.Layer):
 
     def call(self, inputs):
         x = inputs
-        for conv in self.conv_blocks:
+        for index, conv in enumerate(self.conv_blocks):
+            print('ConvDecoder3D call', index, x.shape)
             x = conv(x)
         return x
 
@@ -143,18 +198,48 @@ class ConvDecoder3D(layers.Layer):
 
 
 class Decoder3D(layers.Layer):
-    def __init__(self, decoder_param, dropout=g.dropout, time_stride=1, final_shapes=None):
+
+    type_decoder_param = t.Dict[str, t.Union[
+        t.Sequence[t.Sequence[int]],  # conv
+        t.Sequence[int]  # dense
+    ]]
+    type_final_shapes = t.Optional[t.Sequence[t.bshape]]
+
+    def __init__(self, decoder_param: type_decoder_param, dropout: float = g.dropout, time_stride: int = 1,
+                 final_shapes: type_final_shapes = None, first_pool: bool = False):
+        """
+
+        :param decoder_param: {
+            'conv': [[4, 8], [16, 8], [4, 8]],
+            'dense': [24, 12]
+        }
+        :param dropout: float:
+        :param time_stride: int:
+        :param final_shapes: Optional[Sequence[bshape]]:
+            ⚠ batch dim IS IN the shape ⚠
+        :param first_pool: bool:
+        """
+        super(Decoder3D, self).__init__()
         print('decoder param', decoder_param)
+        print('Decoder3D final_shapes', final_shapes)
         self.final_shapes = final_shapes
-        self.shape_before_conv = (1, *self.final_shapes[1][1:-1], self.final_shapes[0][-1])
+        self.first_pool = first_pool
+
+        self.shape_before_conv: t.shape = Decoder3D.compute_shape_before_conv(self.final_shapes, self.first_pool)
+
         self.dense_dec = mlayers.dense.DenseCoder(size_list=decoder_param['dense'],
                                                   dropout=dropout)
         self.reshape = layers.Reshape(self.shape_before_conv)
         self.conv_dec = ConvDecoder3D(filters_list=decoder_param['conv'],
                                       dropout=dropout,
                                       time_stride=time_stride,
-                                      final_shapes=final_shapes)
-        super(Decoder3D, self).__init__()
+                                      final_shapes=final_shapes,
+                                      first_pool=first_pool)
+
+    @staticmethod
+    def compute_shape_before_conv(final_shapes: type_final_shapes, first_pool: bool) -> t.shape:
+        ind = 0 if first_pool else 1
+        return (1, *final_shapes[ind][2:-1], final_shapes[0][-1])
 
     def build(self, input_shape):
         print('decoder input shape', input_shape)

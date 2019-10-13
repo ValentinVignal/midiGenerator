@@ -1,12 +1,14 @@
 import tensorflow as tf
+
 import src.global_variables as g
+import src.mtypes as t
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
 class DenseBlock(layers.Layer):
-    def __init__(self, units, dropout=g.dropout):
+    def __init__(self, units: int, dropout: float = g.dropout):
         """
 
         :param units: int
@@ -45,7 +47,10 @@ class DenseBlock(layers.Layer):
 
 
 class DenseCoder(layers.Layer):
-    def __init__(self, size_list, dropout=g.dropout):
+
+    type_size_list = t.Sequence[int]
+
+    def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
         """
 
         :param size_list: list<int>, (nb_blocks,)
@@ -56,7 +61,7 @@ class DenseCoder(layers.Layer):
         self.init_dense_blocks(size_list, dropout=dropout)
         super(DenseCoder, self).__init__()
 
-    def init_dense_blocks(self, size_list, dropout=g.dropout):
+    def init_dense_blocks(self, size_list: t.Sequence, dropout: float = g.dropout):
         for size in size_list:
             self.dense_blocks.append(DenseBlock(size, dropout=dropout))
 
@@ -101,13 +106,14 @@ class DenseSameShape(layers.Layer):
         self.already_built = False
 
     def build(self, input_shape):
+        print('DenseSameShape input shape', input_shape)
         """
 
         :param input_shape: (?, previous_size)
         :return:
         """
         if not self.already_built:
-            self.dense = layers.Dense(units=input_shape[-1], **self.kwargs)
+            self.dense = layers.Dense(units=int(input_shape[-1]), **self.kwargs)
             self.already_built = True
         self.dense.build(input_shape)
         self._trainable_weights = self.dense.trainable_weights

@@ -2,6 +2,7 @@ import tensorflow as tf
 import math
 
 import src.NN.layers.dense as l_dense
+import src.mtypes as t
 
 K = tf.keras.backend
 layers = tf.keras.layers
@@ -12,12 +13,17 @@ class Split(layers.Layer):
     To split a tensor
     """
 
-    def __init__(self, num_or_size_to_split, axis=-1):
+    type_num_or_size_to_split = t.Union[
+        int,
+        t.Sequence[int]
+    ]
+
+    def __init__(self, num_or_size_to_split: type_num_or_size_to_split, axis: int = -1):
         """
 
+        :param num_or_size_to_split: Union[int, Sequence[int]]:
         :param axis: axis to split the tensor : int:
             ⚠ axis=0 correspond to the batch axis ⚠
-        :param num_or_size_to_split: int or list<int>:
         """
         super(Split, self).__init__()
         self.num_or_size_to_split = num_or_size_to_split
@@ -36,11 +42,31 @@ class Split(layers.Layer):
         if isinstance(self.num_or_size_to_split, list):
             size_splits = self.num_or_size_to_split
         else:
-            size_splits = [math.floor(input_shape[self.axis] / self.num_or_size_to_split) for i in
+            size_splits = [math.floor(int(input_shape[self.axis]) / self.num_or_size_to_split) for i in
                            range(self.num_or_size_to_split)]
+        print('Split size_splits', size_splits)
+        # print('Split', (*input_shape[:self.axis], 1, *input_shape[self.axis + 1:]))
+        print('Split input_shape', input_shape)
+        print('Split axis', self.axis)
 
-        output_shape = [(*input_shape[:self.axis], size_split, *input_shape[self.axis + 1:]) for size_split in
-                        size_splits]
+        if self.axis > 0:
+            normalized_axis = self.axis
+        else:
+            normalized_axis = len(input_shape) + self.axis
+
+        output_shape = []
+        for size_split in size_splits:
+            shape = []
+            for ax in range(len(input_shape)):
+                if ax == normalized_axis:
+                    shape.append(size_split)
+                else:
+                    shape.append(input_shape[ax].value)
+            output_shape.append(tuple(shape))
+
+        # output_shape = [(int(x) for x in (*input_shape[:self.axis], size_split, *input_shape[self.axis + 1:])) for size_split in
+        #                 size_splits]
+        print('Split output_shape', output_shape)
         return output_shape
 
 
@@ -49,34 +75,32 @@ class LastInstMono(layers.Layer):
     Last layer for a model
     """
 
-    def __init__(self, instrument, softmax_axis):
+    def __init__(self, softmax_axis: int):
+        """
+
+        :param softmax_axis: int:
+        """
         super(LastInstMono, self).__init__()
-        self.instrument = instrument
         self.softmax_axis = softmax_axis
 
         self.already_built = False
 
-        self.mlambda = layers.Lambda(self.choose_instrument)
         self.flatten = layers.Flatten()
         self.dense = l_dense.DenseSameShape()
         self.reshape = None
         self.softmax = layers.Softmax(axis=softmax_axis)
 
-    def choose_instrument(self, x):
-        return x[..., self.instrument]
-
     def build(self, input_shape):
-        self.mlambda.build(input_shape)
-        new_shape_lambda = self.mlambda.compute_output_shape(input_shape)
-        self.flatten.build(new_shape_lambda)
-        new_shape = self.flatten.compute_output_shape(new_shape_lambda)
-        print('new shape after flatten', new_shape)
+        print('LastInstMono input_shape', input_shape)
+        self.flatten.build(input_shape)
+        new_shape = self.flatten.compute_output_shape(input_shape)
+        print('LastInstMono new shape after flatten', new_shape)
         self.dense.build(new_shape)
-        print('new shape after dense ', new_shape)
-        print('input shape in last Inst mono ', input_shape)
+        print('LastInstMono new shape after dense ', new_shape)
+        print('LastInstMono input shape in last Inst mono ', input_shape)
         new_shape = self.dense.compute_output_shape(new_shape)
         if not self.already_built:
-            self.reshape = layers.Reshape(new_shape_lambda)  # Don't take the batch shape
+            self.reshape = layers.Reshape(input_shape[1:])  # Don't take the batch shape
             self.already_built = True
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)
@@ -88,8 +112,7 @@ class LastInstMono(layers.Layer):
         super(LastInstMono, self).build(input_shape)
 
     def call(self, inputs):
-        x = self.mlambda(inputs)
-        x = self.flatten(x)
+        x = self.flatten(inputs)
         x = self.dense(x)
         x = self.reshape(x)
         x = self.softmax(x)
@@ -100,25 +123,36 @@ class LastInstMono(layers.Layer):
 
 
 class LastMono(layers.Layer):
-    def __init__(self, softmax_axis, names=None):
+    def __init__(self, softmax_axis: int, names: t.Optional[str] = None):
+        """
+
+        :param softmax_axis:
+        :param names:
+        """
         super(LastMono, self).__init__()
         self.sofmax_axis = softmax_axis
         self.names = names
 
+        self.split = None
         self.last_inst_mono_list = []
         self.already_build = False
         self.nb_instruments = None
 
     def build(self, input_shape):
         if not self.already_build:
-            self.nb_instruments = input_shape[-1]
+            self.nb_instruments = int(input_shape[-1])
+            self.split = Split(num_or_size_to_split=self.nb_instruments, axis=-1)
             for inst in range(self.nb_instruments):
-                self.last_inst_mono_list.append(LastInstMono(instrument=inst, softmax_axis=self.sofmax_axis))
+                self.last_inst_mono_list.append(LastInstMono(softmax_axis=self.sofmax_axis))
             self.already_build = True
+        self.split.build(input_shape)
+        print('LastMono input_shape', input_shape)
+        new_shapes = self.split.compute_output_shape(input_shape)
+        print('LastMono new_shape after split', new_shapes)
         self._trainable_weights = []
         self._non_trainable_weights = []
         for inst in range(self.nb_instruments):
-            self.last_inst_mono_list[inst].build(input_shape)
+            self.last_inst_mono_list[inst].build(new_shapes[inst])
             self._trainable_weights += self.last_inst_mono_list[inst].trainable_weights
             self._non_trainable_weights += self.last_inst_mono_list[inst].non_trainable_weights
             # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
@@ -129,6 +163,4 @@ class LastMono(layers.Layer):
         return x
 
     def compute_output_shape(self, input_shape):
-        output_shape = [self.last_inst_mono_list[inst].compute_output_shape(input_shape) for inst in
-                        range(self.nb_instruments)]
-        return output_shape
+        return self.split.compute_output_shape(input_shape)

@@ -1,13 +1,14 @@
 import tensorflow as tf
 
 import src.global_variables as g
+import src.mtypes as t
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
 class LstmBlock(layers.Layer):
-    def __init__(self, size, dropout=g.dropout, return_sequence=False):
+    def __init__(self, size: int, dropout: float = g.dropout, return_sequence: bool = False):
         self.lstm = layers.LSTM(size,
                                 return_sequences=return_sequence,
                                 unit_forget_bias=True,
@@ -40,7 +41,10 @@ class LstmBlock(layers.Layer):
 
 
 class LstmRNN(layers.Layer):
-    def __init__(self, size_list, dropout=g.dropout):
+
+    type_size_list = t.Sequence[int]
+
+    def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
         self.lstm_blocks = []
         self.size_list = size_list
         self.init_lstm_blocks(size_list, dropout)

@@ -2,12 +2,20 @@ import tensorflow as tf
 import src.global_variables as g
 import math
 
+import src.mtypes as t
+
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
 class ConvBlock3D(layers.Layer):
-    def __init__(self, filters, strides=(1, 1, 1), dropout=g.dropout):
+    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout):
+        """
+
+        :param filters: int: the size of the filters
+        :param strides: tuple<int>: (3,):
+        :param dropout: float:
+        """
         self.strides = strides
         self.conv = layers.Conv3D(filters=filters,
                                   kernel_size=(1, 5, 5),
@@ -18,7 +26,7 @@ class ConvBlock3D(layers.Layer):
         self.dropout = layers.Dropout(dropout)
         super(ConvBlock3D, self).__init__()
 
-    def build(self, input_shape):
+    def build(self, input_shape: t.bshape):
         self.conv.build(input_shape)
         new_shape = self.conv.compute_output_shape(input_shape)
         self.batch_norm.build(new_shape)
@@ -40,7 +48,18 @@ class ConvBlock3D(layers.Layer):
 
 
 class ConvTransposedBlock3D(layers.Layer):
-    def __init__(self, filters, strides=(1, 1, 1), dropout=g.dropout, final_shape=None):
+    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout,
+                 final_shape: t.anyshape_ = None):
+        """
+
+        :param filters: int:
+        :param strides: Tuple[int]:
+        :param dropout: float:
+        :param final_shape: Optional[Tuple[int]]
+            ⚠ Batch dim in the axis0 : (?, a, b, c, d) ⚠
+        """
+        self.filters = filters
+
         self.conv_transposed = layers.Conv3DTranspose(filters=filters,
                                                       kernel_size=(1, 5, 5),
                                                       padding='same',
@@ -50,10 +69,16 @@ class ConvTransposedBlock3D(layers.Layer):
         self.dropout = layers.Dropout(dropout)
         super(ConvTransposedBlock3D, self).__init__()
 
-        self.final_shape = ConvTransposedBlock3D.init_final_shape(final_shape)
+        self.final_shape: t.bshape_ = ConvTransposedBlock3D.check_final_shape(final_shape)
 
     @staticmethod
-    def init_final_shape(final_shape):
+    def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:
+        """
+        if batch dim is not in the shape, then put it
+
+        :param final_shape: tuple<int>: (4,) or (5,): (a, b, c, d) or (?, a, b, c, d)
+        :return: tuple<int>: (5,): (?, a, b, c, d)
+        """
         if final_shape is None or len(final_shape) == 5:
             return final_shape
         else:
@@ -74,12 +99,15 @@ class ConvTransposedBlock3D(layers.Layer):
         super(ConvTransposedBlock3D, self).build(input_shape)
 
     def call(self, inputs):
+        print('ConvTransposedBlock3D call inputs', inputs.shape)
         x = self.conv_transposed(inputs)
+        print('ConvTransposedBlock3D call x after conv', x.shape, 'and filters', self.filters, 'final shape', self.final_shape)
         if self.final_shape is not None:
-            if x.shape[3] != self.final_shape[3]:
+            if x.shape[3] != self.final_shape[3]:       # Input size check
                 x = x[:, :, :, :-1]
-            if x.shape[2] != self.final_shape[2]:
+            if x.shape[2] != self.final_shape[2]:       # step_size check
                 x = x[:, :, :-1]
+        print('ConvTransposedBlock3D call x before batch norm', x.shape)
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
         return self.dropout(x)
@@ -91,28 +119,35 @@ class ConvTransposedBlock3D(layers.Layer):
             return self.conv_transposed.compute_output_shape(input_shape)
 
 
-def new_shape_conv(input_shape, strides, filters):
+def new_shape_conv(input_shape: t.shape, strides: t.strides, filters: int) -> t.shape:
     """
     To handle with padding = 'same'
     number of dim = len(input_shapes) (without batch)
-    :param input_shape:
-    :param strides:
-    :param filters:
-    :return:
+
+    :param input_shape: Tuple[int]:
+        ⚠ batch dim is NOT in the tuple ⚠
+    :param strides: Tuple[int]:
+    :param filters: int:
+
+    :return: Tuple[int]: The shape after a convolutional layer
     """
     new_shape = []
     for dim, stride in zip(input_shape[:-1], strides):
-        new_shape.append(math.ceil(dim / stride))
+        new_shape.append(int(math.ceil(dim / stride)))
     new_shape.append(filters)
     return tuple(new_shape)
 
 
-def new_shapes_conv(input_shape, strides_list, filters_list):
+def new_shapes_conv(input_shape: t.shape, strides_list: t.Sequence[t.strides], filters_list: t.Sequence[int]
+                    ) -> t.Sequence[t.shape]:
     """
     Use to find the output shapes of several convolutional layers
-    :param input_shape:
-    :param strides_list:
-    :param filters_list:
+
+    :param input_shape: Tuple[int]:
+        ⚠ batch dim is NOT in shape ⚠
+    :param strides_list: Sequence[Tuple[int]]:
+    :param filters_list: Sequence[int]:
+
     :return:
     """
     print('input shape new shape conv', input_shape)
@@ -122,7 +157,7 @@ def new_shapes_conv(input_shape, strides_list, filters_list):
     return new_shapes
 
 
-def reverse_conv_param(original_dim, param_list):
+def reverse_conv_param(original_dim: int, param_list: t.Sequence[t.Sequence[int]]) -> t.Sequence[t.Sequence[int]]:
     """
 
     ----------
@@ -137,16 +172,21 @@ def reverse_conv_param(original_dim, param_list):
         (4)     [[d, c, b], [a, original_dim]]     <-- reversed_param_list
     ----------
 
-    :param original_dim:
-    :param param_list: ex [[a, b], [c, d, e]]
-    :return: ex [[d, c, b], [a, original_dim]]
-    """
+    :param original_dim: int
+    :param param_list: Sequence[Sequence[int]]: ex [[a, b], [c, d, e]] : the size of the convolutions
 
+    :return: Sequence[Sequence[int]]: ex [[d, c, b], [a, original_dim]]: the size of the transposed convolutions
+    """
+    # --- (1) ---
+    # --- (2) ---
     reversed_param_list_dims = [len(sublist) for sublist in param_list]
     reversed_param_list_temp = [size for sublist in param_list for size in sublist]  # Flatten the 2-level list
+    # --- (3) ---
     reversed_param_list_temp = reversed_param_list_temp[::-1]  # Reversed
     reversed_param_list_dims = reversed_param_list_dims[::-1]
+    # --- (4) ---
     reversed_param_list_temp = reversed_param_list_temp[1:] + [original_dim]  # Update shapes
+    # --- (5) ---
     reversed_param_list = []  # Final reversed_param_list parameters
     offset = 0
     for sublist_size in reversed_param_list_dims:
