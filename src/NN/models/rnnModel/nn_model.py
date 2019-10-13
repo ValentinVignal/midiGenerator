@@ -1,5 +1,6 @@
 import tensorflow as tf
 import warnings
+import copy
 
 import src.eval_string as es
 import src.NN.losses as l
@@ -90,10 +91,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             super(MyModel, self).__init__(name='MyModel', **kwargs)
             self.model_param_enc = model_param
             print('MyModel model_param_enc', self.model_param_enc)
-            self.model_param_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
-            self.final_shapes = MyModel.compute_final_shapes(input_shape=input_shape,
-                                                             model_param_conv=self.model_param_enc['conv'])
-            print('MyModel final shapes', self.final_shapes)
+            self.model_param_dec, shape_before_conv_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
+            self.shapes_before_pooling = MyModel.compute_shapes_before_pooling(
+                input_shape=input_shape,
+                model_param_conv=self.model_param_enc['conv']
+            )
+            print('MyModel shapes_before_pooling', self.shapes_before_pooling)
             self.encoder = mlayers.coder3D.Encoder3D(encoder_param=self.model_param_enc,
                                                      dropout=dropout,
                                                      time_stride=time_stride)
@@ -101,13 +104,15 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                 model_param['lstm'])  # TODO : Put eval in it and declare nb_instrument blablabla...
             print('MyModel model_param_dec', self.model_param_dec)
             self.decoder = mlayers.coder3D.Decoder3D(decoder_param=self.model_param_dec,
+                                                     shape_before_conv=shape_before_conv_dec,
                                                      dropout=dropout,
                                                      time_stride=time_stride,
-                                                     final_shapes=self.final_shapes)
+                                                     shapes_after_upsize=self.shapes_before_pooling)
             self.last_layer = mlayers.last.LastMono(softmax_axis=2)
 
         @staticmethod
-        def compute_final_shapes(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.List[t.bshape]:
+        def compute_shapes_before_pooling(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.List[
+            t.bshape]:
             """
 
             :param input_shape:
@@ -115,51 +120,52 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             :return:
             """
             # Create the fake filters : model_param_conv = [[a, b], [c], [d, e]]
-            fake_model_param_conv = list(model_param_conv).copy()
+            fake_model_param_conv_temp = copy.deepcopy(model_param_conv)
             # -> [[nb_instruments, a, b], [b, c], [c, d, e]] -> [a, b, d]       (shape before pooling)
-            fake_model_param_conv[0] = ([nb_instruments] + model_param_conv[0])[-2:]
+            fake_model_param_conv_temp[0].insert(0, nb_instruments)
             for i in range(1, len(model_param_conv)):
-                fake_model_param_conv[i] = ([fake_model_param_conv[i-1][-1]] + fake_model_param_conv[i])[-2]
+                fake_model_param_conv_temp[i].insert(0, fake_model_param_conv_temp[i - 1][-1])
+            print('MyModel compute_final_shapes : fake_model_param_conv_temp', fake_model_param_conv_temp)
+            fake_model_param_conv: t.List[int] = [l[-2] for l in fake_model_param_conv_temp]
+            print('MyModel compute_final_shapes : fake_model_param_conv', fake_model_param_conv)
 
             new_shapes: t.List[t.shape] = mlayers.conv.new_shapes_conv(
-                input_shape=(*input_shape[:-1], model_param_conv[0][-1]),
+                input_shape=(1, *input_shape[1:-1], fake_model_param_conv[0]),
                 strides_list=[(1, time_stride, 2) for i in range(len(model_param_conv) - 1)],
-                filters_list=fake_model_param_conv
-            )[:-1]
+                filters_list=fake_model_param_conv[1:]
+            )
             final_shapes = new_shapes[::-1]
-            """
-            for i in range(1, len(final_shapes)):
-                final_shapes[]
-            """
             final_bshapes = [t.Bshape.cast_from(shape, t.shape) for shape in final_shapes]
             return final_bshapes
 
         @staticmethod
-        def compute_model_param_dec(input_shape: t.shape, model_param_enc: type_model_param) -> type_model_param:
+        def compute_model_param_dec(input_shape: t.shape,
+                                    model_param_enc: type_model_param
+                                    ) -> t.Tuple[type_model_param, t.shape]:
             conv_enc = model_param_enc['conv']
             dense_enc = model_param['dense']
 
             # --- Compute the last size of the convolution (so we can add a dense layer of this size in the decoder ---
             nb_pool = len(conv_enc) - 1  # nb_times there is a stride == 2 in the conv encoder
             # 1. compute the last shape
-            last_shapes_conv_enc = mlayers.conv.new_shapes_conv(input_shape=(*input_shape[:-1], nb_instruments),
+            last_shapes_conv_enc = mlayers.conv.new_shapes_conv(input_shape=(*input_shape[:-1], conv_enc[-1][-1]),
                                                                 strides_list=[(1, time_stride, 2) for i in
                                                                               range(nb_pool)],
                                                                 filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
-            print('last shapes conv enc', last_shapes_conv_enc)
+            print('MyModel compute_model_param_dec: last shapes conv enc', last_shapes_conv_enc)
             last_shape_conv_enc = last_shapes_conv_enc[-1]
             # 2. compute the last size
             last_size_conv_enc = 1
-            for i, s in enumerate(last_shape_conv_enc[1:]):
+            for i, s in enumerate(last_shape_conv_enc[1:]):  # Don't take the time axis (1 step only in decoder)
                 last_size_conv_enc *= s
-            print('l')
+            print('MyModel compute_model_param_dec:', 'last_shape_conv_enc', (1, *last_shape_conv_enc[1:]), 'last_size_conv_enc', last_size_conv_enc)
 
             # --- Create the dictionnary to return ---
             model_param_dec = dict(
                 dense=dense_enc[::-1] + [last_size_conv_enc],
                 conv=mlayers.conv.reverse_conv_param(original_dim=nb_instruments, param_list=conv_enc)
             )
-            return model_param_dec
+            return model_param_dec, (1, *last_shape_conv_enc[1:])
 
         def build(self, input_shape):
             print('input shape', input_shape)
@@ -180,7 +186,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             x = self.encoder(x)
             x = self.rnn(x)
             x = self.decoder(x)
-            x = self.last_layer(x, names='Output_')
+            x = self.last_layer(x)
             return x
 
     model = MyModel(input_shape=midi_shape, model_param=model_param)
@@ -192,6 +198,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = l.loss_function_mono
 
-    model.compile(loss='mae', optimizer=optimizer, metrics=[l.acc_mono])
+    model.compile(loss='mae', optimizer=optimizer)#, metrics=[l.acc_mono])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)

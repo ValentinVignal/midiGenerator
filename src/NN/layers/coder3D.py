@@ -132,27 +132,28 @@ class Encoder3D(layers.Layer):
 
 class ConvDecoder3D(layers.Layer):
     type_filters_list = t.List[t.List[int]]
-    type_final_shapes = t.Optional[t.List[t.bshape]]
+    type_shapes_after_upsize = t.Optional[t.List[t.bshape]]
 
     def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
-                 final_shapes: type_final_shapes = None, first_pool: bool = False):
+                 shapes_after_upsize: type_shapes_after_upsize = None, first_pool: bool = False):
         """
 
         :param filters_list: List[List[int]]:
         :param dropout: float:
         :param time_stride: int:
-        :param final_shapes: Optional[List[bshape]]: The shapes after a pool (even the first one if first_pool = True)
+        :param shapes_after_upsize: Optional[List[bshape]]: The shapes after a pool (even the first one if first_pool = True)
         :param first_pool: bool:
         """
-        self.final_shapes = final_shapes
+        self.shapes_after_upsize = shapes_after_upsize
         self.first_pool = first_pool
 
         self.conv_blocks = []
-        self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride, final_shapes=final_shapes)
+        self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride, final_shapes=shapes_after_upsize)
         super(ConvDecoder3D, self).__init__()
 
     def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
-                         final_shapes: type_final_shapes = None, first_pool: bool = False):
+                         final_shapes: type_shapes_after_upsize = None, first_pool: bool = False):
+        print('ConvDecoder3D init_conv_blocks : filters_list', filters_list, 'shapes_after_upsize', final_shapes)
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):
                 if index == 0:
@@ -198,15 +199,16 @@ class ConvDecoder3D(layers.Layer):
 
 
 class Decoder3D(layers.Layer):
-
+    type_decoder_param_conv = t.List[t.List[int]]
     type_decoder_param = t.Dict[str, t.Union[
-        t.List[t.List[int]],  # conv
-        t.List[int]  # dense
+        type_decoder_param_conv,  # conv
+        t.List[int],  # dense,
     ]]
-    type_final_shapes = t.Optional[t.List[t.bshape]]
+    type_shapes_after_upsize = t.Optional[t.List[t.bshape]]
 
-    def __init__(self, decoder_param: type_decoder_param, dropout: float = g.dropout, time_stride: int = 1,
-                 final_shapes: type_final_shapes = None, first_pool: bool = False):
+    def __init__(self, decoder_param: type_decoder_param, shape_before_conv: t.shape, dropout: float = g.dropout,
+                 time_stride: int = 1, shapes_after_upsize: type_shapes_after_upsize = None,
+                 first_upsize: bool = False):
         """
 
         :param decoder_param: {
@@ -215,17 +217,23 @@ class Decoder3D(layers.Layer):
         }
         :param dropout: float:
         :param time_stride: int:
-        :param final_shapes: Optional[List[bshape]]:
+        :param shapes_after_upsize: Optional[List[bshape]]:
             ⚠ batch dim IS IN the shape ⚠
-        :param first_pool: bool:
+        :param first_upsize: bool:
         """
         super(Decoder3D, self).__init__()
         print('Decoder3D decoder_param', decoder_param)
-        print('Decoder3D final_shapes', final_shapes)
-        self.final_shapes = final_shapes
-        self.first_pool = first_pool
+        print('Decoder3D shapes_after_upsize', shapes_after_upsize)
+        self.decoder_param = decoder_param
+        self.shapes_after_upsize = shapes_after_upsize
+        self.first_upsize = first_upsize
+        self.shape_before_conv = shape_before_conv
 
-        self.shape_before_conv: t.shape = Decoder3D.compute_shape_before_conv(self.final_shapes, self.first_pool)
+        # self.shape_before_conv: t.shape = Decoder3D.compute_shape_before_conv(
+        #     last_filter=self.decoder_param['conv'][0][0],
+        #     shapes_after_upsize=self.shapes_after_upsize,
+        #     first_upsize=self.first_upsize)
+        print('Decoder3D shape before conv:', self.shape_before_conv)
 
         self.dense_dec = mlayers.dense.DenseCoder(size_list=decoder_param['dense'],
                                                   dropout=dropout)
@@ -233,13 +241,14 @@ class Decoder3D(layers.Layer):
         self.conv_dec = ConvDecoder3D(filters_list=decoder_param['conv'],
                                       dropout=dropout,
                                       time_stride=time_stride,
-                                      final_shapes=final_shapes,
-                                      first_pool=first_pool)
+                                      shapes_after_upsize=shapes_after_upsize,
+                                      first_pool=first_upsize)
 
     @staticmethod
-    def compute_shape_before_conv(final_shapes: type_final_shapes, first_pool: bool) -> t.shape:
-        ind = 0 if first_pool else 1
-        return (1, *final_shapes[ind][2:-1], final_shapes[0][-1])
+    def compute_shape_before_conv(last_filter: int, shapes_after_upsize: type_shapes_after_upsize,
+                                  first_upsize: bool) -> t.shape:
+        ind = 0 if first_upsize else 1
+        return (1, *shapes_after_upsize[ind][2:-1], last_filter)
 
     def build(self, input_shape):
         print('Decoder3D build : input shape', input_shape)

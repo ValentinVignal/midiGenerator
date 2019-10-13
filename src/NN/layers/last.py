@@ -66,7 +66,7 @@ class Split(layers.Layer):
 
         # output_shape = [(int(x) for x in (*input_shape[:self.axis], size_split, *input_shape[self.axis + 1:])) for size_split in
         #                 size_splits]
-        print('Split output_shape', output_shape)
+        print('Split compute_output_shape: output_shape', output_shape)
         return output_shape
 
 
@@ -112,6 +112,7 @@ class LastInstMono(layers.Layer):
         super(LastInstMono, self).build(input_shape)
 
     def call(self, inputs):
+        print('LastInstMono call: inputs', inputs.shape)
         x = self.flatten(inputs)
         x = self.dense(x)
         x = self.reshape(x)
@@ -159,7 +160,8 @@ class LastMono(layers.Layer):
         super(LastMono, self).build(input_shape)
 
     def call(self, inputs):
-        x = [self.last_inst_mono_list[inst](inputs) for inst in range(self.nb_instruments)]
+        x = self.split(inputs)
+        x = [self.last_inst_mono_list[inst](x[inst]) for inst in range(self.nb_instruments)]
         return x
 
     def compute_output_shape(self, input_shape):
