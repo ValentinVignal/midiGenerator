@@ -190,7 +190,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             return x
 
     model = MyModel(input_shape=midi_shape, model_param=model_param)
-    model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     # ------------------ Losses -----------------
     # Define losses dict
@@ -199,5 +198,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         losses[f'Output_{inst}'] = l.loss_function_mono
 
     model.compile(loss='mae', optimizer=optimizer)#, metrics=[l.acc_mono])
+    model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
