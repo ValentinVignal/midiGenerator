@@ -48,7 +48,7 @@ class DenseBlock(layers.Layer):
 
 class DenseCoder(layers.Layer):
 
-    type_size_list = t.Sequence[int]
+    type_size_list = t.List[int]
 
     def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
         """
@@ -61,7 +61,7 @@ class DenseCoder(layers.Layer):
         self.init_dense_blocks(size_list, dropout=dropout)
         super(DenseCoder, self).__init__()
 
-    def init_dense_blocks(self, size_list: t.Sequence, dropout: float = g.dropout):
+    def init_dense_blocks(self, size_list: t.List, dropout: float = g.dropout):
         for size in size_list:
             self.dense_blocks.append(DenseBlock(size, dropout=dropout))
 

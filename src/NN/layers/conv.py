@@ -138,26 +138,27 @@ def new_shape_conv(input_shape: t.shape, strides: t.strides, filters: int) -> t.
     return tuple(new_shape)
 
 
-def new_shapes_conv(input_shape: t.shape, strides_list: t.Sequence[t.strides], filters_list: t.Sequence[int]
-                    ) -> t.Sequence[t.shape]:
+def new_shapes_conv(input_shape: t.shape, strides_list: t.List[t.strides], filters_list: t.List[int]
+                    ) -> t.List[t.shape]:
     """
     Use to find the output shapes of several convolutional layers
 
     :param input_shape: Tuple[int]:
         ⚠ batch dim is NOT in shape ⚠
-    :param strides_list: Sequence[Tuple[int]]:
-    :param filters_list: Sequence[int]:
+    :param strides_list: List[Tuple[int]]:
+    :param filters_list: List[int]:
 
     :return:
     """
-    print('input shape new shape conv', input_shape)
+    print('conv new_shape_conv : input shape', input_shape, 'strides list', strides_list, 'filters_list', filters_list)
     new_shapes = [input_shape]
     for strides, filters in zip(strides_list, filters_list):
         new_shapes.append(new_shape_conv(new_shapes[-1], strides, filters))
+    print('conv new_shape_conv : new_shapes', new_shapes)
     return new_shapes
 
 
-def reverse_conv_param(original_dim: int, param_list: t.Sequence[t.Sequence[int]]) -> t.Sequence[t.Sequence[int]]:
+def reverse_conv_param(original_dim: int, param_list: t.List[t.List[int]]) -> t.List[t.List[int]]:
     """
 
     ----------
@@ -173,9 +174,9 @@ def reverse_conv_param(original_dim: int, param_list: t.Sequence[t.Sequence[int]
     ----------
 
     :param original_dim: int
-    :param param_list: Sequence[Sequence[int]]: ex [[a, b], [c, d, e]] : the size of the convolutions
+    :param param_list: List[List[int]]: ex [[a, b], [c, d, e]] : the size of the convolutions
 
-    :return: Sequence[Sequence[int]]: ex [[d, c, b], [a, original_dim]]: the size of the transposed convolutions
+    :return: List[List[int]]: ex [[d, c, b], [a, original_dim]]: the size of the transposed convolutions
     """
     # --- (1) ---
     # --- (2) ---

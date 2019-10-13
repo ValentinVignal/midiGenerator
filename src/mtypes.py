@@ -1,4 +1,4 @@
-from typing import TypeVar, Tuple, Dict, Sequence, Union, Optional, Any
+from typing import TypeVar, Tuple, Dict, Sequence, Union, Optional, Any, List
 import typing
 import typeguard
 import tensorflow as tf
@@ -26,7 +26,6 @@ anyshape_ = Optional[anyshape]
 # ---------- Tensorflow ----------
 
 
-
 # ----------------------------------------------------------------------------------------------------
 #                                           Functions
 # ----------------------------------------------------------------------------------------------------
@@ -38,13 +37,13 @@ def check_type(value: Any, expected_type: Any) -> bool:
     except TypeError:
         return False
 
+
 # ----------------------------------------------------------------------------------------------------
 #                                           Cast
 # ----------------------------------------------------------------------------------------------------
 
 
 class Shape:
-
     mtype = shape
     mtype_ = shape_
 
@@ -77,7 +76,6 @@ class Shape:
 
 
 class Bshape:
-
     mtype = bshape
     mtype_ = bshape_
 

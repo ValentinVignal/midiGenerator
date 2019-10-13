@@ -42,7 +42,7 @@ class LstmBlock(layers.Layer):
 
 class LstmRNN(layers.Layer):
 
-    type_size_list = t.Sequence[int]
+    type_size_list = t.List[int]
 
     def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
         self.lstm_blocks = []

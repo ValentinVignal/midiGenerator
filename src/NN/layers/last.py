@@ -15,13 +15,13 @@ class Split(layers.Layer):
 
     type_num_or_size_to_split = t.Union[
         int,
-        t.Sequence[int]
+        t.List[int]
     ]
 
     def __init__(self, num_or_size_to_split: type_num_or_size_to_split, axis: int = -1):
         """
 
-        :param num_or_size_to_split: Union[int, Sequence[int]]:
+        :param num_or_size_to_split: Union[int, List[int]]:
         :param axis: axis to split the tensor : int:
             ⚠ axis=0 correspond to the batch axis ⚠
         """

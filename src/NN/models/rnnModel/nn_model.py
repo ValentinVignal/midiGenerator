@@ -80,15 +80,16 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     class MyModel(tf.keras.Model):
 
-        type_model_param_conv = t.Sequence[t.Sequence[int]]
+        type_model_param_conv = t.List[t.List[int]]
         type_model_param = t.Dict[str, t.Union[
             type_model_param_conv,  # conv
-            t.Sequence[int]  # dense, lstm
+            t.List[int]  # dense, lstm
         ]]
 
         def __init__(self, input_shape: t.shape, model_param: type_model_param, **kwargs):
             super(MyModel, self).__init__(name='MyModel', **kwargs)
             self.model_param_enc = model_param
+            print('MyModel model_param_enc', self.model_param_enc)
             self.model_param_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
             self.final_shapes = MyModel.compute_final_shapes(input_shape=input_shape,
                                                              model_param_conv=self.model_param_enc['conv'])
@@ -98,6 +99,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                                      time_stride=time_stride)
             self.rnn = mlayers.rnn.LstmRNN(
                 model_param['lstm'])  # TODO : Put eval in it and declare nb_instrument blablabla...
+            print('MyModel model_param_dec', self.model_param_dec)
             self.decoder = mlayers.coder3D.Decoder3D(decoder_param=self.model_param_dec,
                                                      dropout=dropout,
                                                      time_stride=time_stride,
@@ -105,12 +107,30 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             self.last_layer = mlayers.last.LastMono(softmax_axis=2)
 
         @staticmethod
-        def compute_final_shapes(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.Sequence[t.bshape]:
-            final_shapes: t.Sequence[t.shape] = mlayers.conv.new_shapes_conv(
-                input_shape=(*input_shape[:-1], nb_instruments),
-                strides_list=[(1, time_stride, 2) for i in range(len(model_param_conv))],
-                filters_list=[l[-1] for l in model_param_conv]
-            )[::-1]
+        def compute_final_shapes(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.List[t.bshape]:
+            """
+
+            :param input_shape:
+            :param model_param_conv:
+            :return:
+            """
+            # Create the fake filters : model_param_conv = [[a, b], [c], [d, e]]
+            fake_model_param_conv = list(model_param_conv).copy()
+            # -> [[nb_instruments, a, b], [b, c], [c, d, e]] -> [a, b, d]       (shape before pooling)
+            fake_model_param_conv[0] = ([nb_instruments] + model_param_conv[0])[-2:]
+            for i in range(1, len(model_param_conv)):
+                fake_model_param_conv[i] = ([fake_model_param_conv[i-1][-1]] + fake_model_param_conv[i])[-2]
+
+            new_shapes: t.List[t.shape] = mlayers.conv.new_shapes_conv(
+                input_shape=(*input_shape[:-1], model_param_conv[0][-1]),
+                strides_list=[(1, time_stride, 2) for i in range(len(model_param_conv) - 1)],
+                filters_list=fake_model_param_conv
+            )[:-1]
+            final_shapes = new_shapes[::-1]
+            """
+            for i in range(1, len(final_shapes)):
+                final_shapes[]
+            """
             final_bshapes = [t.Bshape.cast_from(shape, t.shape) for shape in final_shapes]
             return final_bshapes
 

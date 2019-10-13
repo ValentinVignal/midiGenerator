@@ -9,13 +9,13 @@ layers = tf.keras.layers
 
 
 class ConvEncoder3D(layers.Layer):
-    type_filters_list = t.Sequence[t.Sequence[int]]
+    type_filters_list = t.List[t.List[int]]
 
     def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
                  last_pool: bool = False):
         """
 
-        :param filters_list: Sequence[Sequence[int]]:
+        :param filters_list: List[List[int]]:
         :param dropout: float:
         :param time_stride: int:
         :type last_pool: bool:
@@ -66,8 +66,8 @@ class ConvEncoder3D(layers.Layer):
 
 class Encoder3D(layers.Layer):
     type_encoder_param = t.Dict[str, t.Union[
-        t.Sequence[t.Sequence[int]],  # conv
-        t.Sequence[int]  # dense
+        t.List[t.List[int]],  # conv
+        t.List[int]  # dense
     ]]
 
     def __init__(self, encoder_param: type_encoder_param, dropout: float = g.dropout, time_stride: int = 1,
@@ -131,17 +131,17 @@ class Encoder3D(layers.Layer):
 
 
 class ConvDecoder3D(layers.Layer):
-    type_filters_list = t.Sequence[t.Sequence[int]]
-    type_final_shapes = t.Optional[t.Sequence[t.bshape]]
+    type_filters_list = t.List[t.List[int]]
+    type_final_shapes = t.Optional[t.List[t.bshape]]
 
     def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
                  final_shapes: type_final_shapes = None, first_pool: bool = False):
         """
 
-        :param filters_list: Sequence[Sequence[int]]:
+        :param filters_list: List[List[int]]:
         :param dropout: float:
         :param time_stride: int:
-        :param final_shapes: Optional[Sequence[bshape]]: The shapes after a pool (even the first one if first_pool = True)
+        :param final_shapes: Optional[List[bshape]]: The shapes after a pool (even the first one if first_pool = True)
         :param first_pool: bool:
         """
         self.final_shapes = final_shapes
@@ -200,10 +200,10 @@ class ConvDecoder3D(layers.Layer):
 class Decoder3D(layers.Layer):
 
     type_decoder_param = t.Dict[str, t.Union[
-        t.Sequence[t.Sequence[int]],  # conv
-        t.Sequence[int]  # dense
+        t.List[t.List[int]],  # conv
+        t.List[int]  # dense
     ]]
-    type_final_shapes = t.Optional[t.Sequence[t.bshape]]
+    type_final_shapes = t.Optional[t.List[t.bshape]]
 
     def __init__(self, decoder_param: type_decoder_param, dropout: float = g.dropout, time_stride: int = 1,
                  final_shapes: type_final_shapes = None, first_pool: bool = False):
@@ -215,12 +215,12 @@ class Decoder3D(layers.Layer):
         }
         :param dropout: float:
         :param time_stride: int:
-        :param final_shapes: Optional[Sequence[bshape]]:
+        :param final_shapes: Optional[List[bshape]]:
             ⚠ batch dim IS IN the shape ⚠
         :param first_pool: bool:
         """
         super(Decoder3D, self).__init__()
-        print('decoder param', decoder_param)
+        print('Decoder3D decoder_param', decoder_param)
         print('Decoder3D final_shapes', final_shapes)
         self.final_shapes = final_shapes
         self.first_pool = first_pool
@@ -242,14 +242,14 @@ class Decoder3D(layers.Layer):
         return (1, *final_shapes[ind][2:-1], final_shapes[0][-1])
 
     def build(self, input_shape):
-        print('decoder input shape', input_shape)
+        print('Decoder3D build : input shape', input_shape)
         self.dense_dec.build(input_shape)
         new_shape = self.dense_dec.compute_output_shape(input_shape)
-        print('shape before conv', self.shape_before_conv)
-        print('new_shape before reshape', new_shape)
+        print('Decoder3D build : shape before conv', self.shape_before_conv)
+        print('Decoder3D build : new_shape before reshape', new_shape)
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)
-        print('new shape after reshape', new_shape)
+        print('Decoder3D build : new shape after reshape', new_shape)
         self.conv_dec.build(new_shape)
 
         self._trainable_weights = self.dense_dec.trainable_weights + self.conv_dec.trainable_weights
