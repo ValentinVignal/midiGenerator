@@ -7,6 +7,11 @@ layers = tf.keras.layers
 
 class DenseBlock(layers.Layer):
     def __init__(self, units, dropout=g.dropout):
+        """
+
+        :param units: int
+        :param dropout:
+        """
         self.dense = layers.Dense(units)
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
@@ -14,6 +19,11 @@ class DenseBlock(layers.Layer):
         super(DenseBlock, self).__init__()
 
     def build(self, input_shape):
+        """
+
+        :param input_shape: (?, input_size)
+        :return:
+        """
         self.dense.build(input_shape)
         new_shape = self.dense.compute_output_shape(input_shape)
         self.batch_norm.build(new_shape)
@@ -36,6 +46,11 @@ class DenseBlock(layers.Layer):
 
 class DenseCoder(layers.Layer):
     def __init__(self, size_list, dropout=g.dropout):
+        """
+
+        :param size_list: list<int>, (nb_blocks,)
+        :param dropout: float
+        """
         print('size list in dense', size_list)
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
@@ -46,6 +61,11 @@ class DenseCoder(layers.Layer):
             self.dense_blocks.append(DenseBlock(size, dropout=dropout))
 
     def build(self, input_shape):
+        """
+
+        :param input_shape: (?, previous_size)
+        :return:
+        """
         new_shape = input_shape
         self._trainable_weights = []
         self._non_trainable_weights = []
@@ -71,6 +91,9 @@ class DenseCoder(layers.Layer):
 
 
 class DenseSameShape(layers.Layer):
+    """
+    Return a Dense layer which has the same shape as the inputs
+    """
     def __init__(self, **kwargs):
         super(DenseSameShape, self).__init__()
         self.kwargs = kwargs
@@ -78,6 +101,11 @@ class DenseSameShape(layers.Layer):
         self.already_built = False
 
     def build(self, input_shape):
+        """
+
+        :param input_shape: (?, previous_size)
+        :return:
+        """
         if not self.already_built:
             self.dense = layers.Dense(units=input_shape[-1], **self.kwargs)
             self.already_built = True

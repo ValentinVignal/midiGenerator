@@ -1,4 +1,5 @@
 import tensorflow as tf
+import math
 
 import src.NN.layers.dense as l_dense
 
@@ -6,7 +7,48 @@ K = tf.keras.backend
 layers = tf.keras.layers
 
 
+class Split(layers.Layer):
+    """
+    To split a tensor
+    """
+
+    def __init__(self, num_or_size_to_split, axis=-1):
+        """
+
+        :param axis: axis to split the tensor : int:
+            ⚠ axis=0 correspond to the batch axis ⚠
+        :param num_or_size_to_split: int or list<int>:
+        """
+        super(Split, self).__init__()
+        self.num_or_size_to_split = num_or_size_to_split
+        self.axis = axis
+
+    def build(self, input_shape):
+        super(Split, self).build(input_shape)
+
+    def call(self, inputs):
+        output = list(tf.split(inputs,
+                               num_or_size_splits=self.num_or_size_to_split,
+                               axis=self.axis))
+        return output
+
+    def compute_output_shape(self, input_shape):
+        if isinstance(self.num_or_size_to_split, list):
+            size_splits = self.num_or_size_to_split
+        else:
+            size_splits = [math.floor(input_shape[self.axis] / self.num_or_size_to_split) for i in
+                           range(self.num_or_size_to_split)]
+
+        output_shape = [(*input_shape[:self.axis], size_split, *input_shape[self.axis + 1:]) for size_split in
+                        size_splits]
+        return output_shape
+
+
 class LastInstMono(layers.Layer):
+    """
+    Last layer for a model
+    """
+
     def __init__(self, instrument, softmax_axis):
         super(LastInstMono, self).__init__()
         self.instrument = instrument
