@@ -57,7 +57,7 @@ class MyModel(tf.keras.Model):
 model = MyModel()
 optimizer = tf.keras.optimizers.Adam(lr=0.01)
 model.compile(optimizer=optimizer, loss='mae')
-model.build([(None, 1), (None, 1)])
+model.build([(None, 1), (None, 1)])             # Build has to be after compile
 print('model', model.summary())
 
 # -----------------------
@@ -92,6 +92,7 @@ y_np = y_np[..., np.newaxis]
 print('before', np.concatenate([x_np, y_np], axis=1))
 
 batch_size = 1
+print('output names', model.output_names)
 model.fit(x=[x_np, m_np], y=y_np, epochs=10, batch_size=batch_size)
 y_p = model.predict(x=[x_np, m_np], batch_size=batch_size)
 

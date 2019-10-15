@@ -112,7 +112,7 @@ class LastInstMono(layers.Layer):
         super(LastInstMono, self).build(input_shape)
 
     def call(self, inputs):
-        print('LastInstMono call: inputs', inputs.shape)
+        # print('LastInstMono call: inputs', inputs.shape)
         x = self.flatten(inputs)
         x = self.dense(x)
         x = self.reshape(x)

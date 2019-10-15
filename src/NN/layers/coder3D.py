@@ -187,7 +187,6 @@ class ConvDecoder3D(layers.Layer):
     def call(self, inputs):
         x = inputs
         for index, conv in enumerate(self.conv_blocks):
-            print('ConvDecoder3D call', index, x.shape)
             x = conv(x)
         return x
 

@@ -99,15 +99,15 @@ class ConvTransposedBlock3D(layers.Layer):
         super(ConvTransposedBlock3D, self).build(input_shape)
 
     def call(self, inputs):
-        print('ConvTransposedBlock3D call inputs', inputs.shape)
+        # print('ConvTransposedBlock3D call inputs', inputs.shape)
         x = self.conv_transposed(inputs)
-        print('ConvTransposedBlock3D call x after conv', x.shape, 'and filters', self.filters, 'final shape', self.final_shape)
+        # print('ConvTransposedBlock3D call x after conv', x.shape, 'and filters', self.filters, 'final shape', self.final_shape)
         if self.final_shape is not None:
             if x.shape[3] != self.final_shape[3]:       # Input size check
                 x = x[:, :, :, :-1]
             if x.shape[2] != self.final_shape[2]:       # step_size check
                 x = x[:, :, :-1]
-        print('ConvTransposedBlock3D call x before batch norm', x.shape)
+        # print('ConvTransposedBlock3D call x before batch norm', x.shape)
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
         return self.dropout(x)

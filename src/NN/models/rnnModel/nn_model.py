@@ -1,6 +1,13 @@
 import tensorflow as tf
 import warnings
 import copy
+import numpy as np
+import argparse
+import json
+import sys
+
+if __name__ == '__main__':
+    sys.path.append(sys.path[0] + '\\..\\..\\..\\..')
 
 import src.eval_string as es
 import src.NN.losses as l
@@ -89,9 +96,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
         def __init__(self, input_shape: t.shape, model_param: type_model_param, **kwargs):
             super(MyModel, self).__init__(name='MyModel', **kwargs)
+            self.inputs = [layers.Input(input_shape) for inst in range(nb_instruments)]
             self.model_param_enc = model_param
             print('MyModel model_param_enc', self.model_param_enc)
-            self.model_param_dec, shape_before_conv_dec = MyModel.compute_model_param_dec(input_shape, self.model_param_enc)
+            self.model_param_dec, shape_before_conv_dec = MyModel.compute_model_param_dec(input_shape,
+                                                                                          self.model_param_enc)
             self.shapes_before_pooling = MyModel.compute_shapes_before_pooling(
                 input_shape=input_shape,
                 model_param_conv=self.model_param_enc['conv']
@@ -109,6 +118,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                                      time_stride=time_stride,
                                                      shapes_after_upsize=self.shapes_before_pooling)
             self.last_layer = mlayers.last.LastMono(softmax_axis=2)
+            self.moutput_layer = [layers.Layer(name=f'Output_{inst}') for inst in range(nb_instruments)]
 
         @staticmethod
         def compute_shapes_before_pooling(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.List[
@@ -158,7 +168,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             last_size_conv_enc = 1
             for i, s in enumerate(last_shape_conv_enc[1:]):  # Don't take the time axis (1 step only in decoder)
                 last_size_conv_enc *= s
-            print('MyModel compute_model_param_dec:', 'last_shape_conv_enc', (1, *last_shape_conv_enc[1:]), 'last_size_conv_enc', last_size_conv_enc)
+            print('MyModel compute_model_param_dec:', 'last_shape_conv_enc', (1, *last_shape_conv_enc[1:]),
+                  'last_size_conv_enc', last_size_conv_enc)
 
             # --- Create the dictionnary to return ---
             model_param_dec = dict(
@@ -179,15 +190,24 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             self.decoder.build(new_shape)
             new_shape = self.decoder.compute_output_shape(new_shape)
             self.last_layer.build(new_shape)
+            new_shape = self.last_layer.compute_output_shape(new_shape)
+            for inst in range(nb_instruments):
+                self.moutput_layer[inst].build(new_shape[inst])
             super(MyModel, self).build(input_shape)
 
         def call(self, inputs):
-            x = layers.concatenate(inputs, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
+            """
+            print('MyModel call inputs', inputs)
+            x = [self.inputs[inst](inputs[inst]) for inst in range(nb_instruments)]
+            print('MyModel call x1:', x)
+            """
+            x = tf.concat(inputs, axis=4)  # (batch, nb_steps, step_length, input_size, nb_instruments)
             x = self.encoder(x)
             x = self.rnn(x)
             x = self.decoder(x)
             x = self.last_layer(x)
-            return x
+            output = [self.moutput_layer[inst](x[inst]) for inst in range(nb_instruments)]
+            return output
 
     model = MyModel(input_shape=midi_shape, model_param=model_param)
 
@@ -197,7 +217,77 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = l.loss_function_mono
 
-    model.compile(loss='mae', optimizer=optimizer)#, metrics=[l.acc_mono])
+    model.compile(loss='mae', optimizer=optimizer)  # , metrics=[l.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
+    # model.call([np.zeros((1, *midi_shape), dtype=np.float32) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
+
+
+def create_fake_data(input_shape, size=20):
+    data_x = [np.zeros((size, *input_shape[1:])) for i in range(input_shape[0])]
+    output_shape = (input_shape[0], 1, *input_shape[2:])
+    data_y = [np.ones((size, *output_shape[1:])) for i in range(output_shape[0])]
+
+    return data_x, data_y
+
+
+if __name__ == '__main__':
+    # create a separate main function because original main function is too mainstream
+    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--input-shape', type=str, default='4,3,4,40,1',
+                        help='The input shape : nb_instruments,nb_steps,step_size,input_size,channels')
+    parser.add_argument('--model-param', type=str, default='pc',
+                        help='The name of the json file')
+    parser.add_argument('-e', '--epochs', type=int, default=2,
+                        help='number of epochs to train')
+    parser.add_argument('-b', '--batch', type=int, default=2,
+                        help='The number of the batches')
+    parser.add_argument('--lr', type=float, default=g.lr,
+                        help='learning rate')
+    parser.add_argument('--dropout', type=float, default=g.dropout,
+                        help='Value of the dropout')
+    parser.add_argument('--nb-data', type=int, default=20,
+                        help='Value of the dropout')
+    parser.add_argument('--fit', action='store_true', default=False,
+                        help='To fit the model')
+    parser.add_argument('--fit-generator', action='store_true', default=False,
+                        help='To fit the model with a generator')
+
+    args = parser.parse_args()
+
+    # ----------
+    input_param = dict(nb_instruments=int(args.input_shape.split(',')[0]),
+                       input_size=int(args.input_shape.split(',')[3]))
+    # ----------
+    with open(args.model_param + '.json') as json_file:
+        model_param = json.load(json_file)
+    # ----------
+    nb_steps = int(args.input_shape.split(',')[1])
+    # ----------
+    step_length = int(args.input_shape.split(',')[2])
+    # ----------
+    optimizer = tf.keras.optimizers.Adam(lr=args.lr)
+    # ----------
+    model_options = dict(dropout=args.dropout)
+    # ----------
+    model = create_model(input_param=input_param,
+                         model_param=model_param,
+                         nb_steps=nb_steps,
+                         step_length=step_length,
+                         optimizer=optimizer,
+                         type_loss=None,
+                         model_options=model_options)[0]
+    print(model.summary())
+
+    data_x, data_y = create_fake_data(tuple([int(x) for x in args.input_shape.split(',')]), size=args.nb_data)
+
+    print('hello')
+    # model.call([a[0] for a in data_x])
+    if args.fit:
+        print('coucou')
+        res = model.fit(x=data_x,
+                        y=data_y,
+                        batch_size=args.batch,
+                        epochs=args.epochs)

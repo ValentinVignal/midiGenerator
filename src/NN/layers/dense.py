@@ -107,12 +107,12 @@ class DenseSameShape(layers.Layer):
         self.units = None
 
     def build(self, input_shape):
-        print('DenseSameShape build:  input shape', input_shape)
         """
 
         :param input_shape: (?, previous_size)
         :return:
         """
+        # print('DenseSameShape build:  input shape', input_shape)
         if not self.already_built:
             self.units = input_shape[-1].value
             self.dense = layers.Dense(units=self.units, **self.kwargs)
@@ -124,7 +124,7 @@ class DenseSameShape(layers.Layer):
         super(DenseSameShape, self).build(input_shape)
 
     def call(self, inputs):
-        print('DenseSameShape call: inputs', inputs, 'units', self.units)
+        # print('DenseSameShape call: inputs', inputs, 'units', self.units)
         return self.dense(inputs)
 
     def compute_output_shape(self, input_shape):
