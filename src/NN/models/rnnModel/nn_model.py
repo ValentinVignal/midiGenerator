@@ -96,16 +96,19 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
         def __init__(self, input_shape: t.shape, model_param: type_model_param, **kwargs):
             super(MyModel, self).__init__(name='MyModel', **kwargs)
+
+            # -------------------- Inputs --------------------
             self.inputs = [layers.Input(input_shape) for inst in range(nb_instruments)]
             self.model_param_enc = model_param
-            print('MyModel model_param_enc', self.model_param_enc)
+            # -------------------- Other Attributs --------------------
             self.model_param_dec, shape_before_conv_dec = MyModel.compute_model_param_dec(input_shape,
                                                                                           self.model_param_enc)
             self.shapes_before_pooling = MyModel.compute_shapes_before_pooling(
                 input_shape=input_shape,
                 model_param_conv=self.model_param_enc['conv']
             )
-            print('MyModel shapes_before_pooling', self.shapes_before_pooling)
+
+            # -------------------- Neural Network --------------------
             self.encoder = mlayers.coder3D.Encoder3D(encoder_param=self.model_param_enc,
                                                      dropout=dropout,
                                                      time_stride=time_stride)
@@ -135,9 +138,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             fake_model_param_conv_temp[0].insert(0, nb_instruments)
             for i in range(1, len(model_param_conv)):
                 fake_model_param_conv_temp[i].insert(0, fake_model_param_conv_temp[i - 1][-1])
-            print('MyModel compute_final_shapes : fake_model_param_conv_temp', fake_model_param_conv_temp)
             fake_model_param_conv: t.List[int] = [l[-2] for l in fake_model_param_conv_temp]
-            print('MyModel compute_final_shapes : fake_model_param_conv', fake_model_param_conv)
 
             new_shapes: t.List[t.shape] = mlayers.conv.new_shapes_conv(
                 input_shape=(1, *input_shape[1:-1], fake_model_param_conv[0]),
@@ -162,14 +163,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                                                 strides_list=[(1, time_stride, 2) for i in
                                                                               range(nb_pool)],
                                                                 filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
-            print('MyModel compute_model_param_dec: last shapes conv enc', last_shapes_conv_enc)
             last_shape_conv_enc = last_shapes_conv_enc[-1]
             # 2. compute the last size
             last_size_conv_enc = 1
             for i, s in enumerate(last_shape_conv_enc[1:]):  # Don't take the time axis (1 step only in decoder)
                 last_size_conv_enc *= s
-            print('MyModel compute_model_param_dec:', 'last_shape_conv_enc', (1, *last_shape_conv_enc[1:]),
-                  'last_size_conv_enc', last_size_conv_enc)
 
             # --- Create the dictionnary to return ---
             model_param_dec = dict(
@@ -179,12 +177,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             return model_param_dec, (1, *last_shape_conv_enc[1:])
 
         def build(self, input_shape):
-            print('input shape', input_shape)
             new_shape = (*input_shape[0][:-1], input_shape[0][-1] * len(input_shape))
-            print('new shape 1', new_shape)
             self.encoder.build(new_shape)
             new_shape = self.encoder.compute_output_shape(new_shape)
-            print('new shape 2', new_shape)
             self.rnn.build(new_shape)
             new_shape = self.rnn.compute_output_shape(new_shape)
             self.decoder.build(new_shape)
@@ -284,10 +279,8 @@ if __name__ == '__main__':
 
     data_x, data_y = create_fake_data(tuple([int(x) for x in args.input_shape.split(',')]), size=args.nb_data)
 
-    print('before arg fit')
     # model.call([a[0] for a in data_x])
     if args.fit:
-        print('in arg fit')
         res = model.fit(x=data_x,
                         y=data_y,
                         batch_size=args.batch,

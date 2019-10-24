@@ -14,6 +14,7 @@ import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers as mlayers
 import src.mtypes as t
+from src.NN.models.Model import Model
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -86,7 +87,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # --------------------------------------------------
     # --------------------------------------------------
 
-    class MyModel(tf.keras.Model):
+    class MyModel(Model):
 
         type_model_param_conv = t.List[t.List[int]]
         type_model_param = t.Dict[str, t.Union[
@@ -244,8 +245,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     model.compile(loss=[tf.keras.losses.binary_crossentropy for inst in range(nb_instruments)],
                   optimizer=optimizer)  # , metrics=[l.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
-    model.call()
-    # model.call([np.zeros((1, *midi_shape), dtype=np.float32) for inst in range(nb_instruments)])
+    #model.call()
+    #model.call([np.zeros((1, *midi_shape), dtype=np.float32) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
 
