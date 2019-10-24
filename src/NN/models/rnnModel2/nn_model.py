@@ -122,19 +122,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                                      shapes_after_upsize=self.shapes_before_pooling)
             self.last_layer = mlayers.last.LastMono(softmax_axis=2)
 
-            # --------------------------------------------------
-
-            """
-            self.flatten = layers.Flatten()
-            units = 1
-            for s in (input_shape[1:]):
-                units *= s
-            self.denses = [layers.Dense(units=units, activation='sigmoid') for inst in range(nb_instruments)]
-            print('MyModel input_shape', input_shape)
-            self.o_s = (1, *input_shape[1:])
-            self.reshapes = [layers.Reshape(self.o_s) for inst in range(nb_instruments)]
-            """
-
         @staticmethod
         def compute_shapes_before_pooling(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.List[
             t.bshape]:
@@ -150,9 +137,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             fake_model_param_conv_temp[0].insert(0, nb_instruments)
             for i in range(1, len(model_param_conv)):
                 fake_model_param_conv_temp[i].insert(0, fake_model_param_conv_temp[i - 1][-1])
-            print('MyModel compute_final_shapes : fake_model_param_conv_temp', fake_model_param_conv_temp)
             fake_model_param_conv: t.List[int] = [l[-2] for l in fake_model_param_conv_temp]
-            print('MyModel compute_final_shapes : fake_model_param_conv', fake_model_param_conv)
 
             new_shapes: t.List[t.shape] = mlayers.conv.new_shapes_conv(
                 input_shape=(1, *input_shape[1:-1], fake_model_param_conv[0]),
@@ -177,14 +162,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                                                 strides_list=[(1, time_stride, 2) for i in
                                                                               range(nb_pool)],
                                                                 filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
-            print('MyModel compute_model_param_dec: last shapes conv enc', last_shapes_conv_enc)
             last_shape_conv_enc = last_shapes_conv_enc[-1]
             # 2. compute the last size
             last_size_conv_enc = 1
             for i, s in enumerate(last_shape_conv_enc[1:]):  # Don't take the time axis (1 step only in decoder)
                 last_size_conv_enc *= s
-            print('MyModel compute_model_param_dec:', 'last_shape_conv_enc', (1, *last_shape_conv_enc[1:]),
-                  'last_size_conv_enc', last_size_conv_enc)
 
             # --- Create the dictionnary to return ---
             model_param_dec = dict(
@@ -202,15 +184,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             self.decoder.build(new_shape)
             new_shape = self.decoder.compute_output_shape(new_shape)
             self.last_layer.build(new_shape)
-            """
-            self.flatten.build(new_shape)
-            new_shape = self.flatten.compute_output_shape(new_shape)
-            for inst in range(nb_instruments):
-                self.denses[inst].build(new_shape)
-                n_s = self.denses[inst].compute_output_shape(new_shape)
-                self.reshapes[inst].build(n_s)
-
-            """
+            self.set_weights_variables(self.encoder, self.rnn, self.decoder, self.last_layer)
             super(MyModel, self).build(input_shape)
 
         def call(self, inputs):
@@ -224,14 +198,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             x = self.rnn(x)
             x = self.decoder(x)
             output = self.last_layer(x)
-            """
-            x = self.flatten(x)
-            outputs = []
-            for inst in range(nb_instruments):
-                o = self.denses[inst](x)
-                o = self.reshapes[inst](o)
-                outputs.append(o)
-            """
             return output
 
     model = MyModel(input_shape=midi_shape, model_param=model_param)
@@ -245,8 +211,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     model.compile(loss=[tf.keras.losses.binary_crossentropy for inst in range(nb_instruments)],
                   optimizer=optimizer)  # , metrics=[l.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
-    #model.call()
-    #model.call([np.zeros((1, *midi_shape), dtype=np.float32) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
 

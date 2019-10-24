@@ -39,7 +39,7 @@ class MyNN:
         self.model_options = None
 
         # Spare GPU
-        tf.logging.set_verbosity(tf.logging.ERROR)
+        tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
         self.allow_growth()
 
         self.tensorboard = TensorBoard(log_dir='tensorboard\\{0}'.format(time()))

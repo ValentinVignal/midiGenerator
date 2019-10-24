@@ -14,6 +14,23 @@ class KerasModel(tf.keras.Model):
     def build(self, input_shape, *args, **kwargs):
         super(KerasModel, self).build(input_shape, *args, **kwargs)
 
+    def reset_weights_variables(self):
+        self._trainable_weights = []
+        self._non_trainable_weights = []
+        self._trainable_variables = []
+        self._non_trainable_variables = []
+
+    def add_weights_variables(self, *args):
+        for l in args:
+            self._trainable_weights += l.trainable_weights
+            self._non_trainable_weights += l.non_trainable_weights
+            self._trainable_variables += l.trainable_variables
+            self._non_trainable_variables += l.non_trainable_variables
+
+    def set_weights_variables(self, *args):
+        self.reset_weights_variables()
+        self.add_weights_variables(*args)
+
     def fit(self, *args, **kwargs):
         self.already_fit = True
         return super(KerasModel, self).fit(*args, **kwargs)

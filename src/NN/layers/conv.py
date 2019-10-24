@@ -1,6 +1,7 @@
 import tensorflow as tf
 import src.global_variables as g
 import math
+from .layers import KerasLayer
 
 import src.mtypes as t
 
@@ -8,7 +9,7 @@ K = tf.keras.backend
 layers = tf.keras.layers
 
 
-class ConvBlock3D(layers.Layer):
+class ConvBlock3D(KerasLayer):
     def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout):
         """
 
@@ -32,9 +33,7 @@ class ConvBlock3D(layers.Layer):
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
         self.dropout.build(new_shape)
-        self._trainable_weights = self.conv.trainable_weights + self.batch_norm.trainable_weights
-        self._non_trainable_weights = self.batch_norm.non_trainable_weights
-        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        self.set_weights_variables(self.conv, self.batch_norm)
         super(ConvBlock3D, self).build(input_shape)
 
     def call(self, inputs):
@@ -47,7 +46,7 @@ class ConvBlock3D(layers.Layer):
         return self.conv.compute_output_shape(input_shape)
 
 
-class ConvTransposedBlock3D(layers.Layer):
+class ConvTransposedBlock3D(KerasLayer):
     def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout,
                  final_shape: t.anyshape_ = None):
         """
@@ -86,7 +85,6 @@ class ConvTransposedBlock3D(layers.Layer):
             return (None, *final_shape)
 
     def build(self, input_shape):
-        print('conv ConvTransposed3Block input_shape', input_shape)
         self.conv_transposed.build(input_shape)
         if self.final_shape is None:
             new_shape = self.conv_transposed.compute_output_shape(input_shape)
@@ -95,21 +93,16 @@ class ConvTransposedBlock3D(layers.Layer):
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
         self.dropout.build(new_shape)
-        self._trainable_weights = self.conv_transposed.trainable_weights + self.batch_norm.trainable_weights
-        self._non_trainable_weights = self.batch_norm.non_trainable_weights
-        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        self.set_weights_variables(self.conv_transposed, self.batch_norm)
         super(ConvTransposedBlock3D, self).build(input_shape)
 
     def call(self, inputs):
-        print('ConvTransposedBlock3D call inputs', inputs.shape)
         x = self.conv_transposed(inputs)
-        # print('ConvTransposedBlock3D call x after conv', x.shape, 'and filters', self.filters, 'final shape', self.final_shape)
         if self.final_shape is not None:
             if x.shape[3] != self.final_shape[3]:       # Input size check
                 x = x[:, :, :, :-1]
             if x.shape[2] != self.final_shape[2]:       # step_size check
                 x = x[:, :, :-1]
-        # print('ConvTransposedBlock3D call x before batch norm', x.shape)
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
         return self.dropout(x)
@@ -152,11 +145,9 @@ def new_shapes_conv(input_shape: t.shape, strides_list: t.List[t.strides], filte
 
     :return:
     """
-    print('conv new_shape_conv : input shape', input_shape, 'strides list', strides_list, 'filters_list', filters_list)
     new_shapes = [input_shape]
     for strides, filters in zip(strides_list, filters_list):
         new_shapes.append(new_shape_conv(new_shapes[-1], strides, filters))
-    print('conv new_shape_conv : new_shapes', new_shapes)
     return new_shapes
 
 
@@ -195,5 +186,4 @@ def reverse_conv_param(original_dim: int, param_list: t.List[t.List[int]]) -> t.
     for sublist_size in reversed_param_list_dims:
         reversed_param_list.append(reversed_param_list_temp[offset: offset + sublist_size])
         offset += sublist_size
-    print('reversed_param list', reversed_param_list)
     return reversed_param_list

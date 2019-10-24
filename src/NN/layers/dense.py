@@ -2,12 +2,13 @@ import tensorflow as tf
 
 import src.global_variables as g
 import src.mtypes as t
+from .layers import KerasLayer
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
-class DenseBlock(layers.Layer):
+class DenseBlock(KerasLayer):
     def __init__(self, units: int, dropout: float = g.dropout):
         """
 
@@ -31,9 +32,7 @@ class DenseBlock(layers.Layer):
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
         self.dropout.build(new_shape)
-        self._trainable_weights = self.dense.trainable_weights + self.batch_norm.trainable_weights
-        self._non_trainable_weights = self.batch_norm.non_trainable_weights
-        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        self.set_weights_variables(self.dense, self.batch_norm)
         super(DenseBlock, self).build(input_shape)
 
     def call(self, inputs):
@@ -46,7 +45,7 @@ class DenseBlock(layers.Layer):
         return self.dense.compute_output_shape(input_shape)
 
 
-class DenseCoder(layers.Layer):
+class DenseCoder(KerasLayer):
 
     type_size_list = t.List[int]
 
@@ -57,7 +56,6 @@ class DenseCoder(layers.Layer):
         :param dropout: float
         """
         super(DenseCoder, self).__init__()
-        print('size list in dense', size_list)
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
 
@@ -72,14 +70,11 @@ class DenseCoder(layers.Layer):
         :return:
         """
         new_shape = input_shape
-        self._trainable_weights = []
-        self._non_trainable_weights = []
+        self.reset_weights_variables()
         for dense in self.dense_blocks:
             dense.build(new_shape)
             new_shape = dense.compute_output_shape(new_shape)
-            self._trainable_weights += dense.trainable_weights
-            self._non_trainable_weights += dense.non_trainable_weights
-            # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+            self.add_weights_variables(dense)
         super(DenseCoder, self).build(input_shape)
 
     def call(self, inputs):
@@ -95,7 +90,7 @@ class DenseCoder(layers.Layer):
         return new_shape
 
 
-class DenseSameShape(layers.Layer):
+class DenseSameShape(KerasLayer):
     """
     Return a Dense layer which has the same shape as the inputs
     """
@@ -118,9 +113,7 @@ class DenseSameShape(layers.Layer):
             self.dense = layers.Dense(units=self.units, **self.kwargs)
             self.already_built = True
         self.dense.build(input_shape)
-        self._trainable_weights = self.dense.trainable_weights
-        self._non_trainable_weights = self.dense.non_trainable_weights
-        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        self.set_weights_variables(self.dense)
         super(DenseSameShape, self).build(input_shape)
 
     def call(self, inputs):

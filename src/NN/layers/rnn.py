@@ -2,12 +2,13 @@ import tensorflow as tf
 
 import src.global_variables as g
 import src.mtypes as t
+from .layers import KerasLayer
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
-class LstmBlock(layers.Layer):
+class LstmBlock(KerasLayer):
     def __init__(self, size: int, dropout: float = g.dropout, return_sequence: bool = False):
         super(LstmBlock, self).__init__()
         self.lstm = layers.LSTM(size,
@@ -25,9 +26,7 @@ class LstmBlock(layers.Layer):
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
         self.dropout.build(new_shape)
-        self._trainable_weights = self.lstm.trainable_weights + self.batch_norm.trainable_weights
-        self._non_trainable_weights = self.lstm.non_trainable_weights + self.batch_norm.non_trainable_weights
-        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        self.set_weights_variables(self.lstm, self.batch_norm)
         super(LstmBlock, self).build(input_shape)
 
     def call(self, inputs):
@@ -40,7 +39,7 @@ class LstmBlock(layers.Layer):
         return self.lstm.compute_output_shape(input_shape)
 
 
-class LstmRNN(layers.Layer):
+class LstmRNN(KerasLayer):
 
     type_size_list = t.List[int]
 
@@ -57,14 +56,11 @@ class LstmRNN(layers.Layer):
 
     def build(self, input_shape):
         new_shape = input_shape
-        self._trainable_weights = []
-        self._non_trainable_weights = []
+        self.reset_weights_variables()
         for lstm in self.lstm_blocks:
             lstm.build(new_shape)
             new_shape = lstm.compute_output_shape(new_shape)
-            self._trainable_weights += lstm.trainable_weights
-            self._non_trainable_weights += lstm.non_trainable_weights
-            # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+            self.add_weights_variables(lstm)
         super(LstmRNN, self).build(input_shape)
 
     def call(self, inputs):

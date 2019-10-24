@@ -3,12 +3,13 @@ import math
 
 import src.NN.layers.dense as l_dense
 import src.mtypes as t
+from.layers import KerasLayer
 
 K = tf.keras.backend
 layers = tf.keras.layers
 
 
-class Split(layers.Layer):
+class Split(KerasLayer):
     """
     To split a tensor
     """
@@ -44,11 +45,6 @@ class Split(layers.Layer):
         else:
             size_splits = [math.floor(int(input_shape[self.axis]) / self.num_or_size_to_split) for i in
                            range(self.num_or_size_to_split)]
-        print('Split size_splits', size_splits)
-        # print('Split', (*input_shape[:self.axis], 1, *input_shape[self.axis + 1:]))
-        print('Split input_shape', input_shape)
-        print('Split axis', self.axis)
-
         if self.axis > 0:
             normalized_axis = self.axis
         else:
@@ -64,13 +60,10 @@ class Split(layers.Layer):
                     shape.append(input_shape[ax].value)
             output_shape.append(tuple(shape))
 
-        # output_shape = [(int(x) for x in (*input_shape[:self.axis], size_split, *input_shape[self.axis + 1:])) for size_split in
-        #                 size_splits]
-        print('Split compute_output_shape: output_shape', output_shape)
         return output_shape
 
 
-class LastInstMono(layers.Layer):
+class LastInstMono(KerasLayer):
     """
     Last layer for a model
     """
@@ -91,13 +84,9 @@ class LastInstMono(layers.Layer):
         self.softmax = layers.Softmax(axis=softmax_axis)
 
     def build(self, input_shape):
-        print('LastInstMono input_shape', input_shape)
         self.flatten.build(input_shape)
         new_shape = self.flatten.compute_output_shape(input_shape)
-        print('LastInstMono new shape after flatten', new_shape)
         self.dense.build(new_shape)
-        print('LastInstMono new shape after dense ', new_shape)
-        print('LastInstMono input shape in last Inst mono ', input_shape)
         new_shape = self.dense.compute_output_shape(new_shape)
         if not self.already_built:
             self.reshape = layers.Reshape(input_shape[1:])  # Don't take the batch shape
@@ -106,9 +95,7 @@ class LastInstMono(layers.Layer):
         new_shape = self.reshape.compute_output_shape(new_shape)
         self.softmax.build(new_shape)
 
-        self._trainable_weights = self.dense.trainable_weights
-        self._non_trainable_weights = self.dense.non_trainable_weights
-        # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+        self.set_weights_variables(self.dense)
         super(LastInstMono, self).build(input_shape)
 
     def call(self, inputs):
@@ -123,7 +110,7 @@ class LastInstMono(layers.Layer):
         return input_shape
 
 
-class LastMono(layers.Layer):
+class LastMono(KerasLayer):
     def __init__(self, softmax_axis: int, names: t.Optional[str] = None):
         """
 
@@ -149,13 +136,10 @@ class LastMono(layers.Layer):
             self.already_build = True
         self.split.build(input_shape)
         new_shapes = self.split.compute_output_shape(input_shape)
-        self._trainable_weights = []
-        self._non_trainable_weights = []
+        self.reset_weights_variables()
         for inst in range(self.nb_instruments):
             self.last_inst_mono_list[inst].build(new_shapes[inst])
-            self._trainable_weights += self.last_inst_mono_list[inst].trainable_weights
-            self._non_trainable_weights += self.last_inst_mono_list[inst].non_trainable_weights
-            # TODO Verify there is no need to consider non_trainable_variable and trainable_variable
+            self.add_weights_variables(self.last_inst_mono_list[inst])
         super(LastMono, self).build(input_shape)
 
     def call(self, inputs):
