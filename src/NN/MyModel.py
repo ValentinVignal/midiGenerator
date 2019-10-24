@@ -443,12 +443,15 @@ class MyModel:
             'work_on': self.work_on
         })
 
+        # TODO: Uncomment and make it work when there is a accuracy
+        """
         if self.mono:
             summary.save_train_history_mono(self.train_history, len(self.instruments), path_to_save)
         else:
             summary.save_train_history(self.train_history, len(self.instruments), path_to_save)
+        """
 
-        print(colored('Model saved in {0}'.format(path_to_save), 'green'))
+        print(colored(f'Model saved in {path_to_save}', 'green'))
         return path_to_save
 
     # --------------------------------------------------

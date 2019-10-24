@@ -329,7 +329,6 @@ if __name__ == '__main__':
     generator = MS(x=data_x, y=data_y, batch_size=args.batch)
 
     print('before arg fit')
-    # model.call([a[0] for a in data_x])
     if args.fit:
         print('in arg fit', model.outputs)
         res = model.fit(x=data_x,
@@ -340,3 +339,4 @@ if __name__ == '__main__':
         print('in arg fit', model.outputs)
         res = model.fit_generator(generator=generator,
                                   epochs=args.epochs)
+    print('model output names', model.output_names)

@@ -145,7 +145,7 @@ class LastMono(layers.Layer):
             self.split = Split(num_or_size_to_split=self.nb_instruments, axis=-1)
             for inst in range(self.nb_instruments):
                 self.last_inst_mono_list.append(
-                    LastInstMono(softmax_axis=self.sofmax_axis, name=f'Output_{inst}'))
+                    LastInstMono(softmax_axis=self.sofmax_axis))
             self.already_build = True
         self.split.build(input_shape)
         new_shapes = self.split.compute_output_shape(input_shape)

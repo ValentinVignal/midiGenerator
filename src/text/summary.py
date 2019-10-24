@@ -119,14 +119,14 @@ def save_train_history(train_history, nb_instruments, pathlib):
     isVal = 'val_loss' in train_history
 
     loss = train_history['loss']
-    losses = [train_history['Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
-    accs_act = [train_history['Output_{0}_acc_act'.format(i)] for i in range(nb_instruments)]
-    mae_dur = [train_history['Output_{0}_mae_dur'.format(i)] for i in range(nb_instruments)]
+    losses = [train_history[f'output_{i+1}_loss'] for i in range(nb_instruments)]
+    accs_act = [train_history[f'output_{i+1}_acc_act'] for i in range(nb_instruments)]
+    mae_dur = [train_history[f'output_{i+1}_mae_dur'] for i in range(nb_instruments)]
     if isVal:
         val_loss = train_history['val_loss']
-        val_losses = [train_history['val_Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
-        val_accs_act = [train_history['val_Output_{0}_acc_act'.format(i)] for i in range(nb_instruments)]
-        val_mae_dur = [train_history['val_Output_{0}_mae_dur'.format(i)] for i in range(nb_instruments)]
+        val_losses = [train_history['val_output_{0}_loss'.format(i+1)] for i in range(nb_instruments)]
+        val_accs_act = [train_history['val_output_{0}_acc_act'.format(i+1)] for i in range(nb_instruments)]
+        val_mae_dur = [train_history['val_output_{0}_mae_dur'.format(i+1)] for i in range(nb_instruments)]
 
     epochs = range(1, len(loss) + 1)
 
@@ -138,9 +138,9 @@ def save_train_history(train_history, nb_instruments, pathlib):
     if isVal:
         plt.plot(epochs, val_loss, label='val_Loss', color=colors[0], linestyle='--')
     for i in range(nb_instruments):
-        plt.plot(epochs, losses[i], label='Output_{0}_loss'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, losses[i], label='output_{0}_loss'.format(i+1), color=colors[i+1], linestyle='-')
         if isVal:
-                plt.plot(epochs, val_losses[i], label='val_Output_{0}_loss'.format(i), color=colors[i+1], linestyle='--')
+                plt.plot(epochs, val_losses[i], label='val_output_{0}_loss'.format(i+1), color=colors[i+1], linestyle='--')
 
     title = f'Variation of the Loss through the epochs\nLoss : {loss[-1]}'
     if isVal:
@@ -155,9 +155,9 @@ def save_train_history(train_history, nb_instruments, pathlib):
     # ----- Save accuracies -----
     plt.figure()
     for i in range(nb_instruments):
-        plt.plot(epochs, accs_act[i], label='Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, accs_act[i], label=f'output_{i+1}_acc_act', color=colors[i+1], linestyle='-')
         if isVal:
-            plt.plot(epochs, val_accs_act[i], label='val_Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='--')
+            plt.plot(epochs, val_accs_act[i], label=f'val_output_{i+1}_acc_act', color=colors[i+1], linestyle='--')
 
     plt.title('Variation of the accuracy through the epochs\n')
     plt.xlabel('Epochs')
@@ -169,9 +169,9 @@ def save_train_history(train_history, nb_instruments, pathlib):
     # ----- Save durations -----
     plt.figure()
     for i in range(nb_instruments):
-        plt.plot(epochs, mae_dur[i], label='Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, mae_dur[i], label=f'output_{i+1}_acc_act', color=colors[i+1], linestyle='-')
         if isVal:
-            plt.plot(epochs, val_mae_dur[i], label='val_Output_{0}_acc_act'.format(i), color=colors[i+1], linestyle='--')
+            plt.plot(epochs, val_mae_dur[i], label=f'val_output_{i+1}_acc_act', color=colors[i+1], linestyle='--')
 
     plt.title('Variation of the accuracy mae through the epochs\n')
     plt.xlabel('Epochs')
@@ -210,12 +210,12 @@ def save_train_history_mono(train_history, nb_instruments, pathlib):
     validation_in_train = 'val_loss' in train_history
 
     loss = train_history['loss']
-    losses = [train_history['Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
-    accs = [train_history['Output_{0}_acc_mono'.format(i)] for i in range(nb_instruments)]
+    losses = [train_history['output_{0}_loss'.format(i+1)] for i in range(nb_instruments)]
+    accs = [train_history['output_{0}_acc_mono'.format(i+1)] for i in range(nb_instruments)]
     if validation_in_train:
         val_loss = train_history['val_loss']
-        val_losses = [train_history['val_Output_{0}_loss'.format(i)] for i in range(nb_instruments)]
-        val_accs = [train_history['val_Output_{0}_acc_mono'.format(i)] for i in range(nb_instruments)]
+        val_losses = [train_history['val_output_{0}_loss'.format(i+1)] for i in range(nb_instruments)]
+        val_accs = [train_history['val_output_{0}_acc_mono'.format(i+1)] for i in range(nb_instruments)]
 
     epochs = range(1, len(loss) + 1)
 
@@ -227,9 +227,9 @@ def save_train_history_mono(train_history, nb_instruments, pathlib):
     if validation_in_train:
         plt.plot(epochs, val_loss, label='val_Loss', color=colors[0], linestyle='--')
     for i in range(nb_instruments):
-        plt.plot(epochs, losses[i], label='Output_{0}_loss'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, losses[i], label='output_{0}_loss'.format(i+1), color=colors[i+1], linestyle='-')
         if validation_in_train:
-            plt.plot(epochs, val_losses[i], label='val_Output_{0}_loss'.format(i), color=colors[i+1], linestyle='--')
+            plt.plot(epochs, val_losses[i], label='val_output_{0}_loss'.format(i+1), color=colors[i+1], linestyle='--')
 
     title = f'Variation of the Loss through the epochs\nLoss : {loss[-1]}'
     if validation_in_train:
@@ -244,9 +244,9 @@ def save_train_history_mono(train_history, nb_instruments, pathlib):
     # ----- Save accuracies -----
     plt.figure()
     for i in range(nb_instruments):
-        plt.plot(epochs, accs[i], label='Output_{0}_acc_mono'.format(i), color=colors[i+1], linestyle='-')
+        plt.plot(epochs, accs[i], label=f'output_{0}_acc_mono', color=colors[i+1], linestyle='-')
         if validation_in_train:
-            plt.plot(epochs, val_accs[i], label='val_Output_{0}_acc_mono'.format(i), color=colors[i+1], linestyle='--')
+            plt.plot(epochs, val_accs[i], label=f'val_output_{0}_acc_mono', color=colors[i+1], linestyle='--')
 
     plt.title('Variation of the accuracy through the epochs\n')
     plt.xlabel('Epochs')
