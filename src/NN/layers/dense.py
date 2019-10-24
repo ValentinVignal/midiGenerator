@@ -14,11 +14,11 @@ class DenseBlock(layers.Layer):
         :param units: int
         :param dropout:
         """
+        super(DenseBlock, self).__init__()
         self.dense = layers.Dense(units)
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
         self.dropout = layers.Dropout(dropout)
-        super(DenseBlock, self).__init__()
 
     def build(self, input_shape):
         """
@@ -56,10 +56,10 @@ class DenseCoder(layers.Layer):
         :param size_list: list<int>, (nb_blocks,)
         :param dropout: float
         """
+        super(DenseCoder, self).__init__()
         print('size list in dense', size_list)
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
-        super(DenseCoder, self).__init__()
 
     def init_dense_blocks(self, size_list: t.List, dropout: float = g.dropout):
         for size in size_list:

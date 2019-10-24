@@ -20,10 +20,10 @@ class ConvEncoder3D(layers.Layer):
         :param time_stride: int:
         :type last_pool: bool:
         """
-        super(ConvEncoder3D, self).__init__()
         self.last_pool = last_pool
         self.conv_blocks = []
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride)
+        super(ConvEncoder3D, self).__init__()
 
     def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1):
         for index_list, size_list in enumerate(filters_list):
@@ -144,12 +144,12 @@ class ConvDecoder3D(layers.Layer):
         :param shapes_after_upsize: Optional[List[bshape]]: The shapes after a pool (even the first one if first_pool = True)
         :param first_pool: bool:
         """
+        super(ConvDecoder3D, self).__init__()
         self.shapes_after_upsize = shapes_after_upsize
         self.first_pool = first_pool
 
         self.conv_blocks = []
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride, final_shapes=shapes_after_upsize)
-        super(ConvDecoder3D, self).__init__()
 
     def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
                          final_shapes: type_shapes_after_upsize = None, first_pool: bool = False):

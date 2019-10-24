@@ -95,30 +95,44 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         ]]
 
         def __init__(self, input_shape: t.shape, model_param: type_model_param, **kwargs):
+            """
+
+            :param input_shape:
+            :param model_param:
+            :param kwargs:
+            """
             super(MyModel, self).__init__(name='MyModel', **kwargs)
-            self.inputs = [layers.Input(input_shape) for inst in range(nb_instruments)]
             self.model_param_enc = model_param
-            print('MyModel model_param_enc', self.model_param_enc)
             self.model_param_dec, shape_before_conv_dec = MyModel.compute_model_param_dec(input_shape,
                                                                                           self.model_param_enc)
             self.shapes_before_pooling = MyModel.compute_shapes_before_pooling(
                 input_shape=input_shape,
                 model_param_conv=self.model_param_enc['conv']
             )
-            print('MyModel shapes_before_pooling', self.shapes_before_pooling)
             self.encoder = mlayers.coder3D.Encoder3D(encoder_param=self.model_param_enc,
                                                      dropout=dropout,
                                                      time_stride=time_stride)
             self.rnn = mlayers.rnn.LstmRNN(
                 model_param['lstm'])  # TODO : Put eval in it and declare nb_instrument blablabla...
-            print('MyModel model_param_dec', self.model_param_dec)
             self.decoder = mlayers.coder3D.Decoder3D(decoder_param=self.model_param_dec,
                                                      shape_before_conv=shape_before_conv_dec,
                                                      dropout=dropout,
                                                      time_stride=time_stride,
                                                      shapes_after_upsize=self.shapes_before_pooling)
             self.last_layer = mlayers.last.LastMono(softmax_axis=2)
-            self.moutput_layer = [layers.Layer(name=f'Output_{inst}') for inst in range(nb_instruments)]
+
+            # --------------------------------------------------
+
+            """
+            self.flatten = layers.Flatten()
+            units = 1
+            for s in (input_shape[1:]):
+                units *= s
+            self.denses = [layers.Dense(units=units, activation='sigmoid') for inst in range(nb_instruments)]
+            print('MyModel input_shape', input_shape)
+            self.o_s = (1, *input_shape[1:])
+            self.reshapes = [layers.Reshape(self.o_s) for inst in range(nb_instruments)]
+            """
 
         @staticmethod
         def compute_shapes_before_pooling(input_shape: t.shape, model_param_conv: type_model_param_conv) -> t.List[
@@ -179,20 +193,23 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             return model_param_dec, (1, *last_shape_conv_enc[1:])
 
         def build(self, input_shape):
-            print('input shape', input_shape)
             new_shape = (*input_shape[0][:-1], input_shape[0][-1] * len(input_shape))
-            print('new shape 1', new_shape)
             self.encoder.build(new_shape)
             new_shape = self.encoder.compute_output_shape(new_shape)
-            print('new shape 2', new_shape)
             self.rnn.build(new_shape)
             new_shape = self.rnn.compute_output_shape(new_shape)
             self.decoder.build(new_shape)
             new_shape = self.decoder.compute_output_shape(new_shape)
             self.last_layer.build(new_shape)
-            new_shape = self.last_layer.compute_output_shape(new_shape)
+            """
+            self.flatten.build(new_shape)
+            new_shape = self.flatten.compute_output_shape(new_shape)
             for inst in range(nb_instruments):
-                self.moutput_layer[inst].build(new_shape[inst])
+                self.denses[inst].build(new_shape)
+                n_s = self.denses[inst].compute_output_shape(new_shape)
+                self.reshapes[inst].build(n_s)
+
+            """
             super(MyModel, self).build(input_shape)
 
         def call(self, inputs):
@@ -205,9 +222,15 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             x = self.encoder(x)
             x = self.rnn(x)
             x = self.decoder(x)
-            x = self.last_layer(x)
-            output = [self.moutput_layer[inst](x[inst]) for inst in range(nb_instruments)]
-            model.ouputs = output
+            output = self.last_layer(x)
+            """
+            x = self.flatten(x)
+            outputs = []
+            for inst in range(nb_instruments):
+                o = self.denses[inst](x)
+                o = self.reshapes[inst](o)
+                outputs.append(o)
+            """
             return output
 
     model = MyModel(input_shape=midi_shape, model_param=model_param)
@@ -218,8 +241,10 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = l.loss_function_mono
 
-    model.compile(loss=[tf.keras.losses.binary_crossentropy for inst in range(nb_instruments)], optimizer=optimizer)  # , metrics=[l.acc_mono])
+    model.compile(loss=[tf.keras.losses.binary_crossentropy for inst in range(nb_instruments)],
+                  optimizer=optimizer)  # , metrics=[l.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
+    model.call()
     # model.call([np.zeros((1, *midi_shape), dtype=np.float32) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
@@ -231,6 +256,22 @@ def create_fake_data(input_shape, size=20):
     data_y = [np.ones((size, *output_shape[1:])) for i in range(output_shape[0])]
 
     return data_x, data_y
+
+
+class MS(tf.keras.utils.Sequence):
+    def __init__(self, x, y, batch_size=4):
+        self.x = x
+        self.y = y
+        self.nb_instruments = len(x)
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(len(self.x[0]) / self.batch_size)
+
+    def __getitem__(self, item):
+        x = [self.x[inst][item * self.batch_size: (item + 1) * self.batch_size] for inst in range(self.nb_instruments)]
+        y = [self.y[inst][item * self.batch_size: (item + 1) * self.batch_size] for inst in range(self.nb_instruments)]
+        return x, y
 
 
 if __name__ == '__main__':
@@ -284,11 +325,17 @@ if __name__ == '__main__':
 
     data_x, data_y = create_fake_data(tuple([int(x) for x in args.input_shape.split(',')]), size=args.nb_data)
 
+    generator = MS(x=data_x, y=data_y, batch_size=args.batch)
+
     print('before arg fit')
     # model.call([a[0] for a in data_x])
     if args.fit:
-        print('in arg fit')
+        print('in arg fit', model.outputs)
         res = model.fit(x=data_x,
                         y=data_y,
                         batch_size=args.batch,
                         epochs=args.epochs)
+    if args.fit_generator:
+        print('in arg fit', model.outputs)
+        res = model.fit_generator(generator=generator,
+                                  epochs=args.epochs)

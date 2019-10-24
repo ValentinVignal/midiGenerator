@@ -9,6 +9,7 @@ layers = tf.keras.layers
 
 class LstmBlock(layers.Layer):
     def __init__(self, size: int, dropout: float = g.dropout, return_sequence: bool = False):
+        super(LstmBlock, self).__init__()
         self.lstm = layers.LSTM(size,
                                 return_sequences=return_sequence,
                                 unit_forget_bias=True,
@@ -17,7 +18,6 @@ class LstmBlock(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
         self.dropout = layers.Dropout(dropout)
-        super(LstmBlock, self).__init__()
 
     def build(self, input_shape):
         self.lstm.build(input_shape)
@@ -45,10 +45,10 @@ class LstmRNN(layers.Layer):
     type_size_list = t.List[int]
 
     def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
+        super(LstmRNN, self).__init__()
         self.lstm_blocks = []
         self.size_list = size_list
         self.init_lstm_blocks(size_list, dropout)
-        super(LstmRNN, self).__init__()
 
     def init_lstm_blocks(self, size_list, dropout=g.dropout):
         for index, size in enumerate(size_list):

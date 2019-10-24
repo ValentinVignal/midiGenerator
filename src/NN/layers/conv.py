@@ -16,6 +16,7 @@ class ConvBlock3D(layers.Layer):
         :param strides: tuple<int>: (3,):
         :param dropout: float:
         """
+        super(ConvBlock3D, self).__init__()
         self.strides = strides
         self.conv = layers.Conv3D(filters=filters,
                                   kernel_size=(1, 5, 5),
@@ -24,7 +25,6 @@ class ConvBlock3D(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
         self.dropout = layers.Dropout(dropout)
-        super(ConvBlock3D, self).__init__()
 
     def build(self, input_shape: t.bshape):
         self.conv.build(input_shape)
@@ -58,6 +58,8 @@ class ConvTransposedBlock3D(layers.Layer):
         :param final_shape: Optional[Tuple[int]]
             ⚠ Batch dim in the axis0 : (?, a, b, c, d) ⚠
         """
+        super(ConvTransposedBlock3D, self).__init__()
+
         self.filters = filters
 
         self.conv_transposed = layers.Conv3DTranspose(filters=filters,
@@ -67,9 +69,9 @@ class ConvTransposedBlock3D(layers.Layer):
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
         self.dropout = layers.Dropout(dropout)
-        super(ConvTransposedBlock3D, self).__init__()
 
         self.final_shape: t.bshape_ = ConvTransposedBlock3D.check_final_shape(final_shape)
+
 
     @staticmethod
     def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:

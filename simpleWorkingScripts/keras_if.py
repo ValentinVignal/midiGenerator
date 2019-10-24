@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from termcolor import cprint
 
 K = tf.keras.backend
 layers = tf.keras.layers
@@ -7,6 +8,7 @@ layers = tf.keras.layers
 # mask = 1 -> f(x) = 3x + 2
 # mask = 0 -> f(x) = -2x + 3
 
+cprint('test', 'blue')
 
 inputs = layers.Input(shape=(1,))
 masks = layers.Input((1,))
@@ -17,9 +19,9 @@ d1 = layers.Dense(1)
 
 class ChooseLayer(layers.Layer):
     def __init__(self):
+        super(ChooseLayer, self).__init__()
         self.d0 = layers.Dense(units=1, bias_initializer='zeros', kernel_initializer='zeros')
         self.d1 = layers.Dense(units=1, bias_initializer='ones', kernel_initializer='ones')
-        super(ChooseLayer, self).__init__()
 
     def build(self, input_shape):
         print('shape', input_shape)
@@ -47,11 +49,14 @@ def choose(i, m):
 class MyModel(tf.keras.Model):
     def __init__(self, **kwargs):
         super(MyModel, self).__init__(**kwargs)
-        self.l = ChooseLayer()
+        self.l1 = ChooseLayer()
+        self.l2 = ChooseLayer()
 
     def call(self, inputs):
-        output = self.l(inputs)
-        return output
+        outputs = []
+        outputs.append(self.l1(inputs))
+        outputs.append(self.l2(inputs))
+        return outputs
 
 
 model = MyModel()
@@ -92,11 +97,12 @@ y_np = y_np[..., np.newaxis]
 print('before', np.concatenate([x_np, y_np], axis=1))
 
 batch_size = 1
-print('output names', model.output_names)
-model.fit(x=[x_np, m_np], y=y_np, epochs=10, batch_size=batch_size)
+model.fit(x=[x_np, m_np], y=[y_np, 2*y_np], epochs=10, batch_size=batch_size)
 y_p = model.predict(x=[x_np, m_np], batch_size=batch_size)
+print('model out put', model.outputs)
 
-print('after', np.concatenate([x_np, y_np, y_p], axis=1))
+print('after', np.concatenate([x_np, y_np, *y_p], axis=1))
 print('model', model.summary())
 
 
+cprint('test', 'blue')
