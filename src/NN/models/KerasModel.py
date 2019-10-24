@@ -3,26 +3,26 @@ import warnings
 import numpy as np
 
 
-class Model(tf.keras.Model):
+class KerasModel(tf.keras.Model):
     """
     Wrapper of the class tf.keras.Model
     """
     def __init__(self, *args, **kwargs):
-        super(Model, self).__init__(*args, **kwargs)
+        super(KerasModel, self).__init__(*args, **kwargs)
         self.already_fit = False
 
     def build(self, input_shape, *args, **kwargs):
-        super(Model, self).build(input_shape, *args, **kwargs)
+        super(KerasModel, self).build(input_shape, *args, **kwargs)
 
     def fit(self, *args, **kwargs):
         self.already_fit = True
-        super(Model, self).fit(*args, **kwargs)
+        return super(KerasModel, self).fit(*args, **kwargs)
 
     def fit_generator(self, generator, *args, **kwargs):
         if not self.already_fit:
             x, y = generator[0]
             self.fit(x=x, y=y, verbose=0)
-        super(Model, self).fit_generator(generator=generator, *args, **kwargs)
+        return super(KerasModel, self).fit_generator(generator=generator, *args, **kwargs)
 
     def print_summary(self):
         """
@@ -36,7 +36,7 @@ class Model(tf.keras.Model):
 
     def summary(self, *args, **kwargs):
         try:
-            return super(Model, self).summary(*args, **kwargs)
+            return super(KerasModel, self).summary(*args, **kwargs)
         except ValueError:
             warnings.warn(f'The model {self.name} has not yet been built, impossible to print the summary')
             return None

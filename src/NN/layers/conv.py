@@ -72,7 +72,6 @@ class ConvTransposedBlock3D(layers.Layer):
 
         self.final_shape: t.bshape_ = ConvTransposedBlock3D.check_final_shape(final_shape)
 
-
     @staticmethod
     def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:
         """
@@ -87,6 +86,7 @@ class ConvTransposedBlock3D(layers.Layer):
             return (None, *final_shape)
 
     def build(self, input_shape):
+        print('conv ConvTransposed3Block input_shape', input_shape)
         self.conv_transposed.build(input_shape)
         if self.final_shape is None:
             new_shape = self.conv_transposed.compute_output_shape(input_shape)
@@ -101,7 +101,7 @@ class ConvTransposedBlock3D(layers.Layer):
         super(ConvTransposedBlock3D, self).build(input_shape)
 
     def call(self, inputs):
-        # print('ConvTransposedBlock3D call inputs', inputs.shape)
+        print('ConvTransposedBlock3D call inputs', inputs.shape)
         x = self.conv_transposed(inputs)
         # print('ConvTransposedBlock3D call x after conv', x.shape, 'and filters', self.filters, 'final shape', self.final_shape)
         if self.final_shape is not None:

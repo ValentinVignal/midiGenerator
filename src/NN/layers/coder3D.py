@@ -134,6 +134,8 @@ class ConvDecoder3D(layers.Layer):
     type_filters_list = t.List[t.List[int]]
     type_shapes_after_upsize = t.Optional[t.List[t.bshape]]
 
+    nb_instance = 0
+
     def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
                  shapes_after_upsize: type_shapes_after_upsize = None, first_pool: bool = False):
         """

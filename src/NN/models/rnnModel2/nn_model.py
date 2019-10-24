@@ -14,7 +14,7 @@ import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers as mlayers
 import src.mtypes as t
-from src.NN.models.Model import Model
+from src.NN.models.KerasModel import KerasModel
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -87,7 +87,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # --------------------------------------------------
     # --------------------------------------------------
 
-    class MyModel(Model):
+    class MyModel(KerasModel):
 
         type_model_param_conv = t.List[t.List[int]]
         type_model_param = t.Dict[str, t.Union[

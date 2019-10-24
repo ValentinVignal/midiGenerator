@@ -75,12 +75,12 @@ class LastInstMono(layers.Layer):
     Last layer for a model
     """
 
-    def __init__(self, softmax_axis: int):
+    def __init__(self, softmax_axis: int, **kwargs):
         """
 
         :param softmax_axis: int:
         """
-        super(LastInstMono, self).__init__()
+        super(LastInstMono, self).__init__(**kwargs)
         self.softmax_axis = softmax_axis
 
         self.already_built = False
@@ -144,12 +144,11 @@ class LastMono(layers.Layer):
             self.nb_instruments = int(input_shape[-1])
             self.split = Split(num_or_size_to_split=self.nb_instruments, axis=-1)
             for inst in range(self.nb_instruments):
-                self.last_inst_mono_list.append(LastInstMono(softmax_axis=self.sofmax_axis))
+                self.last_inst_mono_list.append(
+                    LastInstMono(softmax_axis=self.sofmax_axis, name=f'Output_{inst}'))
             self.already_build = True
         self.split.build(input_shape)
-        print('LastMono input_shape', input_shape)
         new_shapes = self.split.compute_output_shape(input_shape)
-        print('LastMono new_shape after split', new_shapes)
         self._trainable_weights = []
         self._non_trainable_weights = []
         for inst in range(self.nb_instruments):

@@ -42,7 +42,7 @@ class MyNN:
         tf.logging.set_verbosity(tf.logging.ERROR)
         self.allow_growth()
 
-        self.tensorboard = TensorBoard(log_dir='tensorboard/{0}'.format(time()))
+        self.tensorboard = TensorBoard(log_dir='tensorboard\\{0}'.format(time()))
 
     def new_model(self, model_id, input_param, opt_param, type_loss=None, step_length=1, model_options={}):
         """
@@ -175,11 +175,12 @@ class MyNN:
         """
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
-        self.model.save_weights(str(path / 'm_weights.h5'))
-        self.model.save(str(path / 'm.h5'))
-
         string_loss = dill.dumps(self.losses)
         string_decay = dill.dumps(self.decay)
+        with open(str(path / 'weights.p'), 'wb') as dump_file:
+            pickle.dump({
+                'weights': self.model.get_weights()
+                }, dump_file)
 
         with open(str(path / 'MyNN.p'), 'wb') as dump_file:
             pickle.dump({
@@ -251,7 +252,9 @@ class MyNN:
         :return:
         """
         path = Path(path)
-        self.model.load_weights(str(path / 'm_weights.h5'))
+        with open((path / 'weights.p'), 'rb') as dump_file:
+            d = pickle.load(dump_file)
+            self.model.set_weights(d['weights'])
 
     def generate(self, input):
         """
