@@ -18,7 +18,7 @@ import src.NN.data_generator as dg
 K = tf.keras.backend
 
 
-class MyNN:
+class KerasNeuralNetwork:
     """
 
     """
@@ -85,7 +85,7 @@ class MyNN:
             model_param = json.load(json_file)
 
         self.opt_param = opt_param
-        optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
+        optimizer, self.decay = KerasNeuralNetwork.create_optimizer(**self.opt_param)
 
         self.model, self.losses, self.loss_lambdas = nn_model.create_model(
             input_param=input_param,
@@ -126,7 +126,7 @@ class MyNN:
 
         # ----- Decay -----
         step_decay = dill.loads(
-            MyNN.decay_func(lr_init=opt_param['lr'], drop=opt_param['drop'], epochs_drop=opt_param['epochs_drop']))
+            KerasNeuralNetwork.decay_func(lr_init=opt_param['lr'], drop=opt_param['drop'], epochs_drop=opt_param['epochs_drop']))
         # lrate = tf.keras.callbacks.LearningRateScheduler(step_decay)
         # callback_list = [lrate]
 
@@ -216,7 +216,7 @@ class MyNN:
             self.type_loss = d['type_loss']
             self.step_length = d['step_length']
 
-        optimizer, self.decay = MyNN.create_optimizer(**self.opt_param)
+        optimizer, self.decay = KerasNeuralNetwork.create_optimizer(**self.opt_param)
         metrics = [nn_losses.acc_act, nn_losses.mae_dur]
         self.model = tf.keras.models.load_model(str(path / 'm.h5'),
                                                 custom_objects={'losses': self.losses,

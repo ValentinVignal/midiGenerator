@@ -7,7 +7,7 @@ from termcolor import colored, cprint
 import math
 import random
 
-from src.NN.MyNN import MyNN
+from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 from src.NN.data_generator import MySequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
@@ -51,7 +51,7 @@ class MyModel:
 
         # ----- Neural Network -----
         self.input_param = None  # The parameters for the neural network
-        self.my_nn = None  # Our neural network
+        self.keras_nn = None  # Our neural network
         self.train_history = None
 
         # ------ save_midi_path -----
@@ -202,13 +202,13 @@ class MyModel:
 
         opt_param = {'lr': g.lr, 'name': 'adam'} if opt_param is None else opt_param
 
-        self.my_nn = MyNN()
-        self.my_nn.new_model(model_id=self.model_id,
-                             step_length=step_length,
-                             input_param=self.input_param,
-                             opt_param=opt_param,
-                             type_loss=type_loss,
-                             model_options=model_options)
+        self.keras_nn = KerasNeuralNetwork()
+        self.keras_nn.new_model(model_id=self.model_id,
+                                step_length=step_length,
+                                input_param=self.input_param,
+                                opt_param=opt_param,
+                                type_loss=type_loss,
+                                model_options=model_options)
         if print_model:
             self.print_model()
 
@@ -229,8 +229,8 @@ class MyModel:
         path_to_load = Path('saved_models',
                             '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs,
                                                                      indice, work_on_letter))
-        self.my_nn = MyNN()
-        self.my_nn.load(str(path_to_load / 'MyNN'))
+        self.keras_nn = KerasNeuralNetwork()
+        self.keras_nn.load(str(path_to_load / 'MyNN'))
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
             self.input_param = d['nn']['input_param']
@@ -262,11 +262,11 @@ class MyModel:
             self.work_on = d['work_on']
             self.data_transformed_pathlib = d['data_transformed_pathlib']
 
-        self.my_nn = MyNN()
-        self.my_nn.recreate((path_to_load / 'MyNN').as_posix())
+        self.keras_nn = KerasNeuralNetwork()
+        self.keras_nn.recreate((path_to_load / 'MyNN').as_posix())
 
         if with_weigths:
-            self.my_nn.load_weights((path_to_load / 'MyNN').as_posix())
+            self.keras_nn.load_weights((path_to_load / 'MyNN').as_posix())
             self.total_epochs = int(total_epochs)
             self.get_full_name(indice)
         if print_model:
@@ -289,14 +289,14 @@ class MyModel:
         path_to_load = Path('saved_models',
                             '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs,
                                                                      indice, work_on_letter))
-        self.my_nn.load_weights(str(path_to_load / 'MyNN.h5'))
+        self.keras_nn.load_weights(str(path_to_load / 'MyNN.h5'))
         self.print_model()
         print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
 
     # --------------------------------------------------
 
     def print_model(self):
-        print(self.my_nn.model.summary())
+        print(self.keras_nn.model.summary())
 
     # --------------------------------------------------
     #                Train the model
@@ -338,8 +338,8 @@ class MyModel:
 
         # Actual train
         print(colored('Training...', 'blue'))
-        self.train_history = self.my_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks,
-                                                  verbose=verbose, validation=validation)
+        self.train_history = self.keras_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks,
+                                                     verbose=verbose, validation=validation)
 
         # Update parameters
         self.total_epochs += epochs
@@ -363,9 +363,9 @@ class MyModel:
                 batch_size=self.batch,
                 work_on=self.work_on
             )
-        evaluation = self.my_nn.evaluate(generator=self.my_sequence)
+        evaluation = self.keras_nn.evaluate(generator=self.my_sequence)
 
-        metrics_names = self.my_nn.model.metrics_names
+        metrics_names = self.keras_nn.model.metrics_names
         text = ''
         for i in range(len(metrics_names)):
             text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
@@ -383,9 +383,9 @@ class MyModel:
     def test_on_batch(self, i=0, batch_size=4):
         self.my_sequence.change_batch_size(batch_size=batch_size)
         x, y = self.my_sequence[i]
-        evaluation = self.my_nn.model.test_on_batch(x=x, y=y, sample_weight=None)
+        evaluation = self.keras_nn.model.test_on_batch(x=x, y=y, sample_weight=None)
 
-        metrics_names = self.my_nn.model.metrics_names
+        metrics_names = self.keras_nn.model.metrics_names
         text = ''
         for i in range(len(metrics_names)):
             text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
@@ -394,7 +394,7 @@ class MyModel:
     def predict_on_batch(self, i, batch_size=4):
         self.my_sequence.change_batch_size(batch_size=batch_size)
         x, y = self.my_sequence[i]
-        evaluation = self.my_nn.model.predict_on_batch(x=x)
+        evaluation = self.keras_nn.model.predict_on_batch(x=x)
 
         return evaluation
 
@@ -418,7 +418,7 @@ class MyModel:
         path_to_save = self.saved_model_pathlib if path is None else Path(path)
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
         self.saved_model_pathlib.mkdir(parents=True, exist_ok=True)
-        self.my_nn.save(str(path_to_save / 'MyNN'))
+        self.keras_nn.save(str(path_to_save / 'MyNN'))
         with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
             pickle.dump({
                 'name': self.name,
@@ -461,7 +461,7 @@ class MyModel:
         Print the weights
         :return:
         """
-        for layer in self.my_nn.model.layers:
+        for layer in self.keras_nn.model.layers:
             lstm_weights = layer.get_weights()  # list of numpy arrays
             print('Lstm weights:', lstm_weights)
 
@@ -548,7 +548,7 @@ class MyModel:
             for l in range(length):
                 samples = generated[:, :, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
                 # expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.my_nn.generate(input=list(samples))  # (nb_instruments, 1, length, 88, 2)
+                preds = self.keras_nn.generate(input=list(samples))  # (nb_instruments, 1, length, 88, 2)
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, step_size, input_size, 2)
                 preds = preds[:, :, np.newaxis]  # (nb_instruments, batch=1, nb_steps=1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
@@ -665,7 +665,7 @@ class MyModel:
                                     axis=1)  # (nb_instruments, 2, nb_steps, step_size, input_size, 2)
 
             # Generation
-            preds = self.my_nn.generate(input=list(sample))
+            preds = self.keras_nn.generate(input=list(sample))
 
             # Reshape
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, 2, length, 88, 2)

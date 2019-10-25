@@ -215,7 +215,7 @@ def main():
                                        verbose=args.verbose_generation)
         K.clear_session()
         del my_model.my_sequence
-        del my_model.my_nn
+        del my_model.keras_nn
         del my_model
 
     loss_history.update_best_summary()
