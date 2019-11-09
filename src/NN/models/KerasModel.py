@@ -15,30 +15,66 @@ class KerasModel(tf.keras.Model):
         super(KerasModel, self).build(input_shape, *args, **kwargs)
 
     def reset_weights_variables(self):
-        self._trainable_weights = []
-        self._non_trainable_weights = []
-        self._trainable_variables = []
-        self._non_trainable_variables = []
+        """
+        Used to reset the weights of a sublayers in a model
+
+        Since Tensorflow 2.0 it works without this function
+
+        :return:
+        """
+        # self._trainable_weights = []
+        # self._non_trainable_weights = []
+        # self._trainable_variables = []
+        # self._non_trainable_variables = []
+        pass
 
     def add_weights_variables(self, *args):
-        for l in args:
-            self._trainable_weights += l.trainable_weights
-            self._non_trainable_weights += l.non_trainable_weights
-            self._trainable_variables += l.trainable_variables
-            self._non_trainable_variables += l.non_trainable_variables
+        """
+        Used to add the weights of a sublayers in a model
+
+        Since Tensorflow 2.0 it works without this function
+
+        :param args:
+        :return:
+        """
+        # for l in args:
+        #     self._trainable_weights += l.trainable_weights
+        #     self._non_trainable_weights += l.non_trainable_weights
+        #     self._trainable_variables += l.trainable_variables
+        #     self._non_trainable_variables += l.non_trainable_variables
+        pass
 
     def set_weights_variables(self, *args):
-        self.reset_weights_variables()
-        self.add_weights_variables(*args)
+        """
+        Used to set the weights of a sublayers in a model
+
+        Since Tensorflow 2.0 it works without this function
+
+        :param args:
+        :return:
+        """
+        # self.reset_weights_variables()
+        # self.add_weights_variables(*args)
+        pass
 
     def fit(self, *args, **kwargs):
         self.already_fit = True
         return super(KerasModel, self).fit(*args, **kwargs)
 
     def fit_generator(self, generator, *args, **kwargs):
-        if not self.already_fit:
-            x, y = generator[0]
-            self.fit(x=x, y=y, verbose=0)
+        """
+        Before TF2, it was necessary to fit the model before fit_generator
+        But now it works
+
+        :param generator:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        # if not self.already_fit:
+        #     x, y = generator[0]
+        #     self.fit(x=x, y=y, verbose=0)
+
         return super(KerasModel, self).fit_generator(generator=generator, *args, **kwargs)
 
     def print_summary(self):

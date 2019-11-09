@@ -4,6 +4,7 @@ import math
 import src.NN.layers.dense as l_dense
 import src.mtypes as t
 from.layers import KerasLayer
+from . import shapes as shapes
 
 K = tf.keras.backend
 layers = tf.keras.layers
@@ -57,7 +58,7 @@ class Split(KerasLayer):
                 if ax == normalized_axis:
                     shape.append(size_split)
                 else:
-                    shape.append(input_shape[ax].value)
+                    shape.append(shapes.get_shape(input_shape, ax))
             output_shape.append(tuple(shape))
 
         return output_shape

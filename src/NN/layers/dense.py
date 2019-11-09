@@ -3,6 +3,7 @@ import tensorflow as tf
 import src.global_variables as g
 import src.mtypes as t
 from .layers import KerasLayer
+from . import shapes as shapes
 
 K = tf.keras.backend
 layers = tf.keras.layers
@@ -109,7 +110,7 @@ class DenseSameShape(KerasLayer):
         """
         # print('DenseSameShape build:  input shape', input_shape)
         if not self.already_built:
-            self.units = input_shape[-1].value
+            self.units = shapes.get_shape(input_shape, -1)
             self.dense = layers.Dense(units=self.units, **self.kwargs)
             self.already_built = True
         self.dense.build(input_shape)
