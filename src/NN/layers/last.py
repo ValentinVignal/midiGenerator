@@ -112,13 +112,13 @@ class LastInstMono(KerasLayer):
 
 
 class LastMono(KerasLayer):
-    def __init__(self, softmax_axis: int, names: t.Optional[str] = None):
+    def __init__(self, softmax_axis: int, names: t.Optional[str] = None, **kwargs):
         """
 
         :param softmax_axis:
         :param names:
         """
-        super(LastMono, self).__init__()
+        super(LastMono, self).__init__(**kwargs)
         self.sofmax_axis = softmax_axis
         self.names = names
 

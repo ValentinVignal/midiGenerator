@@ -51,9 +51,7 @@ class ConvEncoder3D(KerasLayer):
     def call(self, inputs):
         x = inputs
         for conv in self.conv_blocks:
-            print("ConvEncoder call : x", x.shape)
             x = conv(x)
-            print("ConvEncoder call : x2", x)
         return x
 
     def compute_output_shape(self, input_shape):
