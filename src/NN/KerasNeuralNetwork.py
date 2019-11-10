@@ -314,10 +314,10 @@ class KerasNeuralNetwork:
 
         :return:
         """
-        config = tf.ConfigProto()
+        config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
-        sess = tf.Session(config=config)
-        tf.keras.backend.set_session(sess)
+        sess = tf.compat.v1.Session(config=config)
+        tf.compat.v1.keras.backend.set_session(sess)
 
     @staticmethod
     def choose_gpu(gpu):

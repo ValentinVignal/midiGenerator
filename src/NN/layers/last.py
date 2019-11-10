@@ -90,7 +90,8 @@ class LastInstMono(KerasLayer):
         self.dense.build(new_shape)
         new_shape = self.dense.compute_output_shape(new_shape)
         if not self.already_built:
-            self.reshape = layers.Reshape(input_shape[1:])  # Don't take the batch shape
+            self.reshape = layers.Reshape(input_shape[2:])  # Don't take the batch shape and the nb_step shape
+            # TODO: Take care of the nb_steps = 1 for the output
             self.already_built = True
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)
