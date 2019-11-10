@@ -3,4 +3,7 @@ import src.NN.layers.conv as conv
 import src.NN.layers.dense as dense
 import src.NN.layers.last as last
 import src.NN.layers.rnn as rnn
+import src.NN.layers.vae as vae
+import src.NN.layers.shapes as shapes
+
 from .layers import KerasLayer
