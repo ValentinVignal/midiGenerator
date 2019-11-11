@@ -106,29 +106,22 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         time_stride=time_stride
     )(input_midi) for input_midi in inputs_midi]  # List(nb_instruments)[(batch, nb_steps, size)]
 
-    inputs_non_nan = [mlayers.vae.NaNToZeros()(x) for x in
-                      inputs_encoded]  # List(nb_instruments)[(batch, nb_steps, size)]
+    latent_size = 20
+    means = [mlayers.dense.DenseForMean(units=latent_size)(x) for x in inputs_encoded]
+    stds = [mlayers.dense.DenseForSTD(units=latent_size)(x) for x in inputs_encoded]
 
-    input_by_step = mlayers.shapes.SwitchListAxis(inputs_non_nan)       # List(nb_steps)[(batch, nb_instruments, size)]
+    means_by_step = mlayers.shapes.SwitchListAxis(axis=0)(means)  # List(nb_steps)[(batch, nb_instruments, size)]
+    stds_by_step = mlayers.shapes.SwitchListAxis(axis=0)(stds)  # List(nb_steps)[(batch, nb_instruments, size)]
 
-    poes = [mlayers.vae.ProductOfExpert(axis=0)(x) for x in input_by_step]
+    poes = [mlayers.vae.ProductOfExpert(axis=0)(list(x)) for x in
+            zip(means_by_step, stds_by_step)]  # List(nb_steps)[List(2)[(batch, size)]]
 
+    poes = [layers.concatenate(x, axis=-1) for x in poes]   # List(nb_steps)[(batch, 2*size)]
 
+    poe = mlayers.shapes.Stack(axis=0)(poes)        # (batch, nb_steps, size)
 
-
-
-
-
-
-
-
-    x = 0
-
-    x = mlayers.coder3D.Encoder3D(encoder_param=model_param,
-                                  dropout=dropout,
-                                  time_stride=time_stride)(inputs_encoded)
     x = mlayers.rnn.LstmRNN(
-        model_param['lstm'])(x)  # TODO : Put eval in it and declare nb_instrument blablabla...
+        model_param['lstm'])(poe)  # TODO : Put eval in it and declare nb_instrument blablabla...
     x = mlayers.coder3D.Decoder3D(decoder_param=model_param_dec,
                                   shape_before_conv=shape_before_conv_dec,
                                   dropout=dropout,
@@ -153,8 +146,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
 def create_fake_data(input_shape, size=20):
     data_x = [np.zeros((size, *input_shape[1:])) for i in range(input_shape[0])]
-    output_shape = (input_shape[0], 1, *input_shape[2:])
+    output_shape = (input_shape[0], *input_shape[2:])
     data_y = [np.ones((size, *output_shape[1:])) for i in range(output_shape[0])]
+    print('data y', np.asarray(data_y).shape)
 
     return data_x, data_y
 

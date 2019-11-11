@@ -27,13 +27,14 @@ class SwitchListAxis(KerasLayer):
 
         :param axis: Batch axis is not included
         """
-        self.axis = 0
+        super(SwitchListAxis, self).__init__()
+        self.axis =axis
         self.perms = None
 
     def build(self, input_shape):
         self.verify_shapes(input_shape)
         self.get_perms(input_shape)
-        super(SwitchListAxis, self).build()
+        super(SwitchListAxis, self).build(input_shape)
 
     def get_perms(self, input_shape):
         """
@@ -72,5 +73,27 @@ class SwitchListAxis(KerasLayer):
         outputs = tf.transpose(inputs, perm=self.perms)     # Tensor
         outputs = tf.unstack(outputs)       # List[tensor]
         return outputs
+
+
+class Stack(KerasLayer):
+    def __init__(self, axis=0):
+        """
+
+        :param axis: No batch in axis
+        """
+        super(Stack, self).__init__()
+        self.axis = axis
+        self.axis_with_batch = axis + 1 if axis >= 0 else axis
+
+    def build(self, input_shape):
+        super(Stack, self).build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        length = len(input_shape)
+        input_shape = input_shape[0]
+        return (*input_shape[:self.axis_with_batch], length, *input_shape[self.axis_with_batch:])
+
+    def call(self, inputs):
+        return tf.stack(inputs, axis=self.axis_with_batch)
 
 

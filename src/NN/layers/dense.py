@@ -125,4 +125,81 @@ class DenseSameShape(KerasLayer):
         return self.dense.compute_output_shape(input_shape)
 
 
+class NDense(KerasLayer):
+    """
+    Return a list of N tensor from Denses layers
+    """
+    def __init__(self, units, n=2,**kwargs):
+        super(NDense, self).__init__(**kwargs)
 
+        self.units, self.n = self.verify_attributs(units, n)
+        self.denses = [layers.Dense(self.units[u]) for u in units]
+
+    @staticmethod
+    def verify_attributs(units, n=2):
+        """
+
+        :param units:
+        :param n:
+        :return:
+        """
+        if isinstance(units, list):
+            n = len(units)
+            return units, n
+        elif isinstance(units, int):
+            units = [units for i in range(n)]
+            return units, n
+
+    def build(self, input_shape):
+        for dense in self.denses:
+            dense.build(input_shape)
+        super(NDense, self).build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        return [dense.compute_output_shape(input_shape) for dense in self.denses]
+
+    def call(self, inputs):
+        return [dense(inputs) for dense in self.denses]
+
+
+class DenseForMean(KerasLayer):
+    """
+       Used to compute the mean of something using a Dense Layer
+    """
+    def __init__(self, units):
+        super(DenseForMean, self).__init__()
+        self.units = units
+        self.dense = layers.Dense(units)
+
+    def build(self, input_shape):
+        self.dense.build(input_shape)
+        super(DenseForMean, self).build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        return self.compute_output_shape(input_shape)
+
+    def call(self, inputs):
+        return self.dense(inputs)
+
+
+class DenseForSTD(KerasLayer):
+    """
+       Used to compute the mean of something using a Dense Layer
+    """
+
+    def __init__(self, units):
+        super(DenseForSTD, self).__init__()
+        self.units = units
+        self.dense = layers.Dense(units)
+
+    def build(self, input_shape):
+        self.dense.build(input_shape)
+        super(DenseForSTD, self).build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+        return self.compute_output_shape(input_shape)
+
+    def call(self, inputs):
+        x = self.dense(inputs)
+        x = tf.keras.activations.softplus(x)
+        return x
