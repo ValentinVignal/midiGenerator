@@ -51,7 +51,7 @@ class SwitchListAxis(KerasLayer):
     @staticmethod
     def verify_shapes(input_shape):
         for i in range(1, len(input_shape)):
-            if input_shape[i - 1] != input_shape[i]:
+            if not is_equal_tuple(input_shape[i - 1], input_shape[i], warn=False):
                 warnings.warn(
                     f"All the shapes should be have the same dimension: shape {i - 1}: {input_shape[i - 1]} != {i}: {input_shape[i]}"
                 )
@@ -95,5 +95,26 @@ class Stack(KerasLayer):
 
     def call(self, inputs):
         return tf.stack(inputs, axis=self.axis_with_batch)
+
+
+def is_equal_tuple(t1, t2, warn=False):
+    """
+
+    :param t1:
+    :param t2:
+    :param warn:
+    :return:
+    """
+    if len(t1) != len(t2):
+        if warn:
+            warnings.warn(f'Tuples don t have same length : len({t1}) = {len(t1)} != len({t2}) = {len(t2)}')
+        return False
+    else:
+        for v1, v2 in zip(t1, t2):
+            if v1 != v2:
+                if warn:
+                    warnings.warn(f'Tuples are not equal : {t1} != {t2}')
+                return False
+        return True
 
 

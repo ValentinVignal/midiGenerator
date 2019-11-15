@@ -213,6 +213,7 @@ class MyModel:
             self.print_model()
 
     def load_model(self, id, keep_name=True):
+        # TODO: only create and load weights
         """
 
         :param id: id of the model to load
@@ -241,6 +242,7 @@ class MyModel:
         print('Model', colored(id, 'white', 'on_blue'), 'loaded')
 
     def recreate_model(self, id, with_weigths=True, print_model=True):
+        # TODO: only create and load weights
         """
         create a new model witht the same options as the saved model and then load the weights (if with_weights==True)
         :param id:
@@ -273,6 +275,7 @@ class MyModel:
             self.print_model()
 
     def load_weights(self, id, keep_name=True):
+        # TODO: only create and load weights
         """
 
         :param id: id of the model to load
@@ -371,15 +374,6 @@ class MyModel:
             text += metrics_names[i] + ' ' + colored(evaluation[i], 'magenta') + ' -- '
         print(text)
 
-    def test_function(self, learning_phase=0):
-        """
-        cprint('Test function', 'blue')
-        outputs = self.my_nn.test_function(generator=self.my_sequence,
-                                           learning_phase=learning_phase)
-        print(outputs)
-        """
-        raise NotImplementedError()
-
     def test_on_batch(self, i=0, batch_size=4):
         self.my_sequence.change_batch_size(batch_size=batch_size)
         x, y = self.my_sequence[i]
@@ -410,6 +404,7 @@ class MyModel:
     # --------------------------------------------------
 
     def save_model(self, path=None):
+        # TODO: Only save weights and information
         """
 
         :param path: path were to save the model, if Nonem it will be at self.saved_model_path
@@ -548,9 +543,8 @@ class MyModel:
             for l in range(length):
                 samples = generated[:, :, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
                 # expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.keras_nn.generate(input=list(samples))  # (nb_instruments, 1, length, 88, 2)
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, step_size, input_size, 2)
-                preds = preds[:, :, np.newaxis]  # (nb_instruments, batch=1, nb_steps=1, step_size, input_size, 2)
+                preds = self.keras_nn.generate(input=list(samples))  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
+                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis]
                 next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
@@ -668,17 +662,16 @@ class MyModel:
             preds = self.keras_nn.generate(input=list(sample))
 
             # Reshape
-            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 2, length, 88, 2)
-            # pianoroll.see_compare_generation_step(sample, preds, np.array(ms_output))
-            preds_truth = np.array(ms_output)[:, :, np.newaxis]  # (nb_instruments, 1, 1, step_size, input_size, 2)
+            preds = np.asarray(preds).astype('float64')  # (nb_instruments, batch=2, nb_steps=1, length, 88, 2)
+            preds_truth = np.array(ms_output)  # (nb_instruments, 1, 1, step_size, input_size, 2)
             # if only one instrument
-            if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
-                preds = preds[np.newaxis]
-            if len(preds_truth.shape) == 4:  # Only one instrument : output of nn not a list
-                preds_truth = preds_truth[np.newaxis]
+            if len(preds.shape) == 5:  # Only one instrument : output of nn not a list
+                preds = np.expand_dims(preds, axis=0)
+            if len(preds_truth.shape) == 5:  # Only one instrument : output of nn not a list
+                preds_truth = np.expand_dims(preds_truth)
             preds = midi_create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
-            preds_helped = preds[:, 1][:, np.newaxis, np.newaxis]  # (nb_instruments, 1, 1, length, 88, 2)
-            preds = preds[:, 0][:, np.newaxis, np.newaxis]
+            preds_helped = preds[:, [1]]  # (nb_instruments, 1, 1, length, 88, 2)
+            preds = preds[:, [0]]
 
             # Concatenation
             generated = np.concatenate((generated, preds), axis=2)  # (nb_instruments, 1, nb_steps, length, 88, 2)
