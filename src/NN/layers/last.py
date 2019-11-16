@@ -3,7 +3,7 @@ import math
 
 import src.NN.layers.dense as l_dense
 import src.mtypes as t
-from.layers import KerasLayer
+from.KerasLayer import KerasLayer
 from . import shapes as shapes
 
 K = tf.keras.backend

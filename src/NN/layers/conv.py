@@ -1,7 +1,7 @@
 import tensorflow as tf
 import src.global_variables as g
 import math
-from .layers import KerasLayer
+from .KerasLayer import KerasLayer
 
 import src.mtypes as t
 

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import warnings
 
-from .layers import KerasLayer
+from .KerasLayer import KerasLayer
 
 
 def get_shape(t, ax):

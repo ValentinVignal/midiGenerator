@@ -1,5 +1,5 @@
 import tensorflow as tf
-from .layers import KerasLayer
+from .KerasLayer import KerasLayer
 import warnings
 
 layers = tf.keras.layers

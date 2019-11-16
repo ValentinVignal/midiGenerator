@@ -6,4 +6,4 @@ import src.NN.layers.rnn as rnn
 import src.NN.layers.vae as vae
 import src.NN.layers.shapes as shapes
 
-from .layers import KerasLayer
+from .KerasLayer import KerasLayer

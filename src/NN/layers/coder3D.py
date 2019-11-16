@@ -3,7 +3,7 @@ import tensorflow as tf
 import src.NN.layers as mlayers
 import src.global_variables as g
 import src.mtypes as t
-from .layers import KerasLayer
+from .KerasLayer import KerasLayer
 
 K = tf.keras.backend
 layers = tf.keras.layers
