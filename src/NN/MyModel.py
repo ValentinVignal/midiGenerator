@@ -8,7 +8,8 @@ import math
 import random
 
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
-from src.NN.sequences.RawSequence import RawSequence
+from src.NN.sequences.AllInstSequence import AllInstSequence
+from src.NN.sequences.MissingInstSequence import MissingInstSequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
 import src.text.summary as summary
@@ -330,7 +331,7 @@ class MyModel:
             flag_new_sequence = True
 
         if flag_new_sequence:
-            self.my_sequence = RawSequence(
+            self.my_sequence = MissingInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
@@ -360,7 +361,7 @@ class MyModel:
             self.batch = 4
         cprint('Evaluation', 'blue')
         if self.my_sequence is None:
-            self.my_sequence = RawSequence(
+            self.my_sequence = AllInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
@@ -510,7 +511,7 @@ class MyModel:
         if self.my_sequence is None:
             need_new_sequence = True
         if need_new_sequence:
-            self.my_sequence = RawSequence(
+            self.my_sequence = AllInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=nb_steps,
                 batch_size=1,
@@ -633,7 +634,7 @@ class MyModel:
             raise Exception('Some data need to be loaded before comparing the generation')
         nb_steps = int(self.model_id.split(',')[2])
         if self.my_sequence is None:
-            self.my_sequence = RawSequence(
+            self.my_sequence = AllInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=nb_steps,
                 batch_size=1,

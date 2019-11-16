@@ -84,10 +84,10 @@ class KerasSequence(tf.keras.utils.Sequence):
         x = np.reshape(x, (self.batch_size, self.nb_steps, self.step_size, nb_instruments, input_size, channels))
         # x = (batch, nb_steps, step_size, nb_instruments, input_size, channels)
         y = np.expand_dims(y, axis=1)
-        # x = (batch, nb_steps=1, step_size, nb_instruments, input_size, channels)
+        # y = (batch, nb_steps=1, step_size, nb_instruments, input_size, channels)
 
         x = np.transpose(x, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps, step_size, input_size, 2)
-        y = np.transpose(y, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, step_size, input_size, 2)
+        y = np.transpose(y, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
 
         if self.noise is not None and self.noise > 0:
             # Creation of the noise

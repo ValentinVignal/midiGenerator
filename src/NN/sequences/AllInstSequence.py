@@ -6,25 +6,25 @@ import src.image.pianoroll as pianoroll
 from src.NN.sequences.KerasSequence import KerasSequence
 
 
-class RawSequence(KerasSequence):
+class AllInstSequence(KerasSequence):
     def __init__(self, *args, **kwargs):
-        super(RawSequence, self).__init__(*args, **kwargs)
+        super(AllInstSequence, self).__init__(*args, **kwargs)
 
     def __len__(self):
-        return super(RawSequence, self).__len__()
+        return super(AllInstSequence, self).__len__()
 
     def __getitem__(self, item):
-        x, y = super(RawSequence, self).__getitem__(item)
+        x, y = super(AllInstSequence, self).__getitem__(item)
         return list(x), list(y)
 
 
 # ------------------------------------------------------------
 
 
-class SeeRawSequence:
+class SeeAllInstSequence:
 
     def __init__(self, path, nb_steps, work_on):
-        self.my_sequence = RawSequence(path=path, nb_steps=nb_steps, batch_size=1, work_on=work_on)
+        self.my_sequence = AllInstSequence(path=path, nb_steps=nb_steps, batch_size=1, work_on=work_on)
         # my_sequence[i] -> tuple [0] = x, [1] = y
         #                   -> [ list ] (nb_instruments)
         #                       -> np array (batch, nb_steps, step_size, input_size, 2)

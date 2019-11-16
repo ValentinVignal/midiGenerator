@@ -1,5 +1,5 @@
 import tensorflow as tf
-from sequences.RawSequence import RawSequence
+from sequences.AllInstSequence import AllInstSequence
 import numpy as np
 
 
@@ -51,7 +51,7 @@ class WrappedInTrainingModel(tf.keras.Model):
         return super(WrappedInTrainingModel, self).evaluate_generator(generator=generator, **kwargs)
 
 
-class WrapInTrainingMySequence(RawSequence):
+class WrapInTrainingMySequence(AllInstSequence):
     def __init__(self, **kwargs):
         self.in_training = None
         super(WrapInTrainingMySequence, self).__init__(**kwargs)
