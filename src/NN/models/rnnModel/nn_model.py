@@ -1,6 +1,4 @@
 import tensorflow as tf
-import warnings
-import copy
 import numpy as np
 import argparse
 import json
@@ -12,9 +10,8 @@ if __name__ == '__main__':
 import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers as mlayers
-import src.mtypes as t
 from src.NN.models.KerasModel import KerasModel
-from src.NN import shapes
+from shapes import shapes
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda

@@ -141,8 +141,8 @@ def main():
 
         i += 1
         # ---------- Save it ----------
-        if i % g.nb_file_per_npy == 0:  # Save 1 npy file with 100 songs in it
-            np.save(str(npy_path / '{0}.npy'.format(int(i / g.nb_file_per_npy) - 1)), {
+        if i % g.nb_files_per_npy == 0:  # Save 1 npy file with 100 songs in it
+            np.save(str(npy_path / '{0}.npy'.format(int(i / g.nb_files_per_npy) - 1)), {
                 'list': matrix_of_all_midis,
                 'shapes': all_shapes_npy
             })
@@ -152,7 +152,7 @@ def main():
 
     # ---------- If we didn't save at the end ----------
     if len(all_shapes_npy) > 0:  # If some songs are missing
-        np.save(str(npy_path / '{0}.npy'.format(int(i / g.nb_file_per_npy))), {
+        np.save(str(npy_path / '{0}.npy'.format(int(i / g.nb_files_per_npy))), {
             'list': matrix_of_all_midis,
             'shapes': all_shapes_npy
         })
@@ -178,7 +178,8 @@ def main():
             'all_shapes': all_shapes,
             'input_size': all_shapes[0][0][2],  # The number of notes
             'notes_range': args.notes_range,
-            'mono': args.mono
+            'mono': args.mono,
+            'nb_files_per_npy': g.nb_files_per_npy
         }, dump_file)
 
     summary.summarize_compute_data(data_transformed_path,

@@ -13,7 +13,7 @@ import numpy as np
 
 import src.NN.losses as nn_losses
 import src.global_variables as g
-import src.NN.data_generator as dg
+import src.NN.sequences.TrainValSequence as tv_sequences
 
 K = tf.keras.backend
 
@@ -126,7 +126,8 @@ class KerasNeuralNetwork:
 
         # ----- Decay -----
         step_decay = dill.loads(
-            KerasNeuralNetwork.decay_func(lr_init=opt_param['lr'], drop=opt_param['drop'], epochs_drop=opt_param['epochs_drop']))
+            KerasNeuralNetwork.decay_func(lr_init=opt_param['lr'], drop=opt_param['drop'],
+                                          epochs_drop=opt_param['epochs_drop']))
         # lrate = tf.keras.callbacks.LearningRateScheduler(step_decay)
         # callback_list = [lrate]
 
@@ -153,11 +154,12 @@ class KerasNeuralNetwork:
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
 
         if validation > 0:
-            generator_train, generator_valid = dg.get_train_valid_mysequence(generator, validation_split=validation)
+            generator_train, generator_valid = tv_sequences.get_train_valid_mysequence(generator,
+                                                                                       validation_split=validation)
 
             a = self.model.fit_generator(epochs=epochs, generator=generator_train, validation_data=generator_valid,
                                          shuffle=True, verbose=verbose, callbacks=callback_list)
-        else:       # So it won't print a lot of lines for nothing
+        else:  # So it won't print a lot of lines for nothing
             a = self.model.fit_generator(epochs=epochs, generator=generator,
                                          shuffle=True, verbose=verbose, callbacks=callback_list)
 
@@ -180,7 +182,7 @@ class KerasNeuralNetwork:
         with open(str(path / 'weights.p'), 'wb') as dump_file:
             pickle.dump({
                 'weights': self.model.get_weights()
-                }, dump_file)
+            }, dump_file)
 
         with open(str(path / 'MyNN.p'), 'wb') as dump_file:
             pickle.dump({
@@ -275,11 +277,12 @@ class KerasNeuralNetwork:
             batch = len(generator[0][1][0])
             nb_instruments = len(generator[0][1])
             print('batch', batch, 'instruments', nb_instruments, 'shape', generator[0][0][0].shape)
-            ins = generator[0][0] + generator[0][1] + [np.ones((3, 1)), np.ones((1,))] + [learning_phase] # + [np.ones((batch, )) for isnt in range(nb_instruments)] + [learning_phase]
+            ins = generator[0][0] + generator[0][1] + [np.ones((3, 1)), np.ones((1,))] + [
+                learning_phase]  # + [np.ones((batch, )) for isnt in range(nb_instruments)] + [learning_phase]
             print('ins', len(ins))
             outputs = self.model.test_function(ins)
             for i in range(1, len(generator)):
-                ins = generator[i][0] + generator[i][1] + [np.ones((batch, )) for inst in range(nb_instruments)] + [
+                ins = generator[i][0] + generator[i][1] + [np.ones((batch,)) for inst in range(nb_instruments)] + [
                     learning_phase]
                 _outputs = self.model.test_function(ins)
                 for j in range(len(outputs)):

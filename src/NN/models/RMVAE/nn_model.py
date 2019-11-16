@@ -11,7 +11,8 @@ import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers as mlayers
 from src.NN.models.KerasModel import KerasModel
-from src.NN import shapes
+import src.NN.shapes.convolution as s_conv
+import src.NN.shapes.time as s_time
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -69,25 +70,25 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'nb_steps': nb_steps
     }
 
-    time_stride = shapes.time_stride(step_length)
+    time_stride = s_time.time_stride(step_length)
 
     midi_shape = (nb_steps, step_length, input_size, 1)  # (batch, step_length, nb_step, input_size, 2)
 
     # ----- For the decoder -----
 
-    model_param_dec, shape_before_conv_dec = shapes.compute_model_param_dec(
+    model_param_dec, shape_before_conv_dec = s_conv.compute_model_param_dec(
         input_shape=(*midi_shape[:-1], nb_instruments),
         model_param_enc=model_param,
         strides=[(1, time_stride, 2) for i in range(len(model_param['conv']) - 1)]
     )
 
-    shapes_before_pooling = shapes.compute_shapes_before_pooling(
+    shapes_before_pooling = s_conv.compute_shapes_before_pooling(
         input_shape=midi_shape,
         model_param_conv=model_param['conv'],
         strides=(1, time_stride, 2)
     )
     # Put time to 1 :
-    shapes_before_pooling = shapes.time_step_to_x(l=shapes_before_pooling, axis=1, x=1)
+    shapes_before_pooling = s_time.time_step_to_x(l=shapes_before_pooling, axis=1, x=1)
 
     # --------- End Variables ----------
 
