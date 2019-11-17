@@ -177,12 +177,20 @@ def choose_loss(type_loss):
 
 
 def loss_function_mono(y_true, y_pred):
-    y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-    y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+    """
 
-    loss = tf.keras.losses.categorical_crossentropy(y_true_a, y_pred_a)
+    :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
+    :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
+    :return:
+    """
+    y_true_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_true)
+    y_pred_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_pred)
+    y_true_a_no_nan = tf.where(tf.math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
+    y_pred_a_no_nan = tf.where(tf.math.is_nan(y_pred_a), tf.zeros_like(y_pred_a), y_pred_a)
 
-    return tf.reduce_mean(loss, axis=None)
+    loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
+    loss = tf.where(tf.math.is_nan(loss), tf.zeros_like(loss), loss)
+    return loss
 
 # ---------- LSTM ----------
 
@@ -220,8 +228,8 @@ def mae_dur(y_true, y_pred):
 
 
 def acc_mono(y_true, y_pred):
-    y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-    y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+    y_true_a = Lambda(lambda x: x[:, :, :, :, 0])(y_true)
+    y_pred_a = Lambda(lambda x: x[:, :, :, :, 0])(y_pred)
 
     acc = tf.keras.metrics.categorical_accuracy(y_true_a, y_pred_a)
 

@@ -35,10 +35,10 @@ class MissingInstSequence(KerasSequence):
             # All the instruments
             pass
         else:
-            # Combinaison
+            # Combinations
             nan_axis = np.random.choice(
                 a=self.nb_instruments,
-                size=np.random.randint(1, self.nb_instruments-1),
+                size=np.random.randint(1, self.nb_instruments-2),
                 replace=False)
             x[nan_axis] = np.nan
             y[nan_axis] = np.nan

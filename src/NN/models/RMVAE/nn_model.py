@@ -128,7 +128,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                   dropout=dropout,
                                   time_stride=time_stride,
                                   shapes_after_upsize=shapes_before_pooling)(x)
-    outputs = mlayers.last.LastMono(softmax_axis=2, name='Output')(x)
+    outputs = mlayers.last.LastMono(softmax_axis=2)(x)      # List(nb_instruments)[(batch, nb_steps=1, step_size, input_size, 1)]
+    outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi, outputs=outputs)
 
@@ -138,8 +139,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = l.loss_function_mono
 
-    model.compile(loss=[tf.keras.losses.binary_crossentropy for inst in range(nb_instruments)],
-                  optimizer=optimizer)  # , metrics=[l.acc_mono])
+    model.compile(loss=losses,
+                  optimizer=optimizer
+                  )  # , metrics=[l.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)

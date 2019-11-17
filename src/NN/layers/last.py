@@ -20,14 +20,14 @@ class Split(KerasLayer):
         t.List[int]
     ]
 
-    def __init__(self, num_or_size_to_split: type_num_or_size_to_split, axis: int = -1):
+    def __init__(self, num_or_size_to_split: type_num_or_size_to_split, axis: int = -1, *args, **kwargs):
         """
 
         :param num_or_size_to_split: Union[int, List[int]]:
         :param axis: axis to split the tensor : int:
             ⚠ axis=0 correspond to the batch axis ⚠
         """
-        super(Split, self).__init__()
+        super(Split, self).__init__(*args, **kwargs)
         self.num_or_size_to_split = num_or_size_to_split
         self.axis = axis
 
@@ -120,7 +120,7 @@ class LastMono(KerasLayer):
         """
         super(LastMono, self).__init__(**kwargs)
         self.sofmax_axis = softmax_axis
-        self.names = names
+        self.names = 'last_mono' if names is None else names
 
         self.split = None
         self.last_inst_mono_list = []
