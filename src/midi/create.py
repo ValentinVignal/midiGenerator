@@ -190,7 +190,7 @@ def save_midi(output_notes_list, instruments, path):
         s.partName = instruments[i]
         midi_stream.insert(0, s)
     midi_stream.write('midi', fp=path)
-    print(colored(path + ' saved', 'green'))
+    print(colored(str(path) + ' saved', 'green'))
 
 
 def print_informations(nb_steps, matrix, notes_list, verbose):

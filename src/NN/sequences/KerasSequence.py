@@ -34,6 +34,7 @@ class KerasSequence(tf.keras.utils.Sequence):
             self.nb_files = d['nb_files']  # nb available files in the dataset
             self.all_shapes = d['all_shapes']  # [nb_files, nb_song_in_file], (length, nb_instrument, input_size, 2)
             self.nb_files_per_npy = d['nb_files_per_npy']
+            self.nb_instruments = d['nb_instruments']
 
         self.i_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded

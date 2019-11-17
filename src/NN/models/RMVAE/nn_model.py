@@ -20,7 +20,7 @@ K = tf.keras.backend
 
 """
 
-LSTM with encoder convolutional layers and the deconder use transposed convolutional layer
+
 
 """
 

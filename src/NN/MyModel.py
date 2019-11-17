@@ -10,6 +10,7 @@ import random
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 from src.NN.sequences.AllInstSequence import AllInstSequence
 from src.NN.sequences.MissingInstSequence import MissingInstSequence
+from src.NN.sequences.KerasSequence import KerasSequence
 import src.midi.create as midi_create
 import src.image.pianoroll as pianoroll
 import src.text.summary as summary
@@ -98,6 +99,22 @@ class MyModel:
         my_model = cls()
         my_model.recreate_model(id=id, with_weigths=with_weights)
         return my_model
+
+    # --------------------------------------------------
+    #                   Properties
+    # --------------------------------------------------
+
+    @property
+    def nb_steps(self):
+        """
+
+        :return:
+        """
+        return int(self.model_id.split(',')[2])
+
+    @property
+    def step_length(self):
+        return g.work_on2nb(self.work_on)
 
     # --------------------------------------------------
     #                   Names function
@@ -544,7 +561,8 @@ class MyModel:
             for l in range(length):
                 samples = generated[:, :, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
                 # expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.keras_nn.generate(input=list(samples))  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
+                preds = self.keras_nn.generate(
+                    input=list(samples))  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis]
@@ -598,31 +616,119 @@ class MyModel:
 
         cprint('Done Generating', 'green')
 
-    def get_seed(self, nb_steps, step_length, number=1):
+    def fill_instruments(self, max_length=None, no_duration=False, verbose=1):
         """
 
-        :param nb_steps:
-        :param step_length:
-        :param number:
+        :param max_length:
+        :param no_duration:
+        :param verbose:
         :return:
         """
-        seeds = []
-        with open(self.data_transformed_pathlib / 'infos_dataset.p', 'rb') as dump_file:
-            d = pickle.load(dump_file)
-            all_shapes = d['all_shapes']
-        for i in range(number):
-            array_list = np.load(str(self.data_transformed_pathlib / 'npy' / '{0}.npy'.format(
-                np.random.randint(0, len(all_shapes))
-            )), allow_pickle=True).item()['list']
-            array = array_list[np.random.randint(0, len(array_list))]  # The song
-            start = np.random.randint(0, (math.floor(array.shape[0] / step_length) - nb_steps)) * step_length
-            seed = array[
-                   start: start + nb_steps * step_length]  # (nb_steps * step_length, nb_intruments, input_size, 2)
-            seed = np.reshape(seed, (nb_steps, step_length, seed.shape[1], seed.shape[2],
-                                     seed.shape[3]))  # (nb_steps, step_length, nb_instruments, input_size, 2)
-            seed = np.transpose(seed, (2, 0, 1, 3, 4))  # (nb_instruments, nb_steps, step_lenght, input_size, 2)
-            seeds.append(seed)
-        return seeds
+        # ----- Parameters -----
+        max_length = 300 / g.work_on2nb(self.work_on) if max_length is None else max_length
+
+        # ----- Variables -----
+        if self.data_transformed_pathlib is None:
+            raise Exception('Some data need to be loaded before comparing the generation')
+        sequence = KerasSequence(
+            path=self.data_transformed_pathlib,
+            nb_steps=self.nb_steps,
+            batch_size=1,
+            work_on=self.work_on
+        )  # Return array instead of list (for instruments)
+        max_length = int(min(max_length, len(sequence)))
+        nb_instruments = sequence.nb_instruments
+        # ----- Seeds -----
+        truth = sequence[0][0]
+        filled_list = [np.copy(truth) for inst in range(nb_instruments)]
+        for inst in range(nb_instruments):
+            filled_list[inst][inst] = np.nan
+
+        # ----- Generation -----
+        bar = progressbar.ProgressBar(maxval=max_length,
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        bar.start()  # To see it working
+        for l in range(max_length):
+            s_input, s_output = sequence[l]
+            to_fill_list = [np.copy(s_input) for inst in range(nb_instruments)]
+            for inst in range(nb_instruments):
+                to_fill_list[inst][inst] = np.nan
+            nn_input = np.concatenate(
+                (*to_fill_list,),
+                axis=1
+            )  # (nb_instruments, batch=nb_instruments, nb_steps, step_size, input_size, channels)
+            preds = self.keras_nn.generate(input=list(nn_input))
+
+            preds = np.asarray(preds).astype(
+                'float64')  # (nb_instruments, bath=nb_instruments, nb_steps=1, step_size, input_size, channels)
+            if len(preds.shape) == 5:  # Only one instrument : output of nn not a list
+                preds = np.expand_dims(preds, axis=0)
+            if len(s_output.shape) == 5:  # Only one instrument : output of nn not a list
+                s_output = np.expand_dims(s_output)
+            truth = np.concatenate((truth, s_output), axis=2)
+            for inst in range(nb_instruments):
+                p = np.copy(s_output)
+                p[inst] = np.take(preds, axis=1, indices=[inst])[inst]
+                filled_list[inst] = np.concatenate(
+                    (filled_list[inst], p),
+                    axis=2)  # (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)
+            bar.update(l + 1)
+        bar.finish()
+
+        # -------------------- Compute notes list --------------------
+        # ----- Reshape -----
+        truth = np.reshape(truth, (truth.shape[0], truth.shape[2] * truth.shape[3],
+                                   *truth.shape[
+                                    4:]))  # (nb_instruments, nb_steps * step_size, input_size, channels)
+        truth = np.transpose(truth, axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
+        for inst in range(nb_instruments):
+            s = filled_list[inst].shape
+            filled_list[inst] = np.reshape(filled_list[inst], (
+                s[0], s[2] * s[3], *s[4:]))  # (nb_instruments, nb_steps * step_size, input_size, channels)
+            filled_list[inst] = np.transpose(filled_list[inst],
+                                             axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
+        # ----- Notes -----
+        output_notes_truth = midi_create.matrix_to_midi(truth,
+                                                        instruments=self.instruments,
+                                                        notes_range=self.notes_range, no_duration=no_duration,
+                                                        mono=self.mono)
+        output_notes_inst = [
+            midi_create.matrix_to_midi(filled_list[inst], instruments=self.instruments,
+                                       notes_range=self.notes_range,
+                                       no_duration=no_duration, mono=self.mono)
+            for inst in range(nb_instruments)
+        ]
+
+        # ---------- find the name for the midi_file ----------
+        self.get_new_save_midis_path()
+        self.save_midis_pathlib.mkdir(parents=True, exist_ok=True)
+
+        # -------------------- Save Results --------------------
+        # Truth
+        midi_create.print_informations(nb_steps=self.nb_steps * self.step_length,
+                                       matrix=truth, notes_list=output_notes_truth, verbose=verbose)
+        # TODO: Accuracy
+        midi_create.save_midi(output_notes_list=output_notes_truth, instruments=self.instruments,
+                              path=self.save_midis_pathlib / 'truth.mid')
+        pianoroll.save_pianoroll(array=truth,
+                                 path=self.save_midis_pathlib / 'truth.jpg',
+                                 seed_length=self.nb_steps * self.step_length,
+                                 instruments=self.instruments,
+                                 mono=self.mono)
+        # Missing instruments
+        for inst in range(nb_instruments):
+            midi_create.print_informations(nb_steps=self.nb_steps * self.step_length,
+                                           matrix=filled_list[inst], notes_list=output_notes_inst[inst],
+                                           verbose=verbose)
+            # TODO: Accuracy
+            midi_create.save_midi(output_notes_list=output_notes_inst[inst], instruments=self.instruments,
+                                  path=self.save_midis_pathlib / f'missing_{inst}.mid')
+            pianoroll.save_pianoroll(array=filled_list[inst],
+                                     path=self.save_midis_pathlib / f'missing_{inst}.jpg',
+                                     seed_length=self.nb_steps * self.step_length,
+                                     instruments=self.instruments,
+                                     mono=self.mono)
 
     def compare_generation(self, max_length=None, no_duration=False, verbose=1):
         """
@@ -734,8 +840,8 @@ class MyModel:
             argmax_truth = np.argmax(generated_midi_final_truth, axis=1)
             accuracies = [(np.count_nonzero(
                 argmax[i, nb_steps * step_length:] == argmax_truth[i,
-                                                         nb_steps * step_length:]) / argmax[i,
-                                                                                     nb_steps * step_length:].size)
+                                                      nb_steps * step_length:]) / argmax[i,
+                                                                                  nb_steps * step_length:].size)
                           for i in range(len(self.instruments))]
         else:
             accuracies = [((np.count_nonzero(
@@ -770,8 +876,8 @@ class MyModel:
             argmax_truth = np.argmax(generated_midi_final_truth, axis=1)
             accuracies_helped = [(np.count_nonzero(
                 argmax_helped[i, nb_steps * step_length:] == argmax_truth[i,
-                                                                nb_steps * step_length:]) / argmax_helped[i,
-                                                                                            nb_steps * step_length:].size)
+                                                             nb_steps * step_length:]) / argmax_helped[i,
+                                                                                         nb_steps * step_length:].size)
                                  for i in range(len(self.instruments))]
         else:
             accuracies_helped = [(np.count_nonzero(

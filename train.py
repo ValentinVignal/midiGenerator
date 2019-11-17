@@ -64,6 +64,8 @@ def main():
                         help='Compare generation after training')
     parser.add_argument('--generate', default=False, action='store_true',
                         help='Generation after training')
+    parser.add_argument('--fill-instruments', default=False, action='store_true',
+                        help='Fill the missing instrument')
     parser.add_argument('--no-duration', action='store_true', default=False,
                         help='Generate only shortest notes possible')
     parser.add_argument('--check-batch', type=int, default=-1,
@@ -87,7 +89,7 @@ def main():
     if args.pc:
         # args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)
-        args.epochs = 2
+        args.epochs = 1
         args.batch = 4
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
@@ -143,6 +145,10 @@ def main():
     # -------------------- Generate --------------------
     if args.generate:
         my_model.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
+
+    # -------------------- Generate --------------------
+    if args.fill_instruments:
+        my_model.fill_instruments(no_duration=args.no_duration, verbose=1)
 
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
