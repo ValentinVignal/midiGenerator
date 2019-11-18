@@ -119,3 +119,16 @@ def is_equal_tuple(t1, t2, warn=False):
         return True
 
 
+class Unstack(KerasLayer):
+
+    def __init__(self, axis=0):
+        super(Unstack, self).__init__()
+        self.axis = axis
+        self.axis_with_batch = axis + 1 if axis >= 0 else axis
+
+    def compute_output_shape(self, input_shape):
+        return [(*input_shape[:self.axis_with_batch], *input_shape[self.axis_with_batch+1:])]
+
+    def call(self, inputs):
+        return tf.unstack(inputs, axis=self.axis_with_batch)
+

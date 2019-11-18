@@ -361,6 +361,7 @@ class MyModel:
         print(colored('Training...', 'blue'))
         self.train_history = self.keras_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks,
                                                      verbose=verbose, validation=validation)
+        print('(end train) --> weigths', [np.any(np.isnan(x)) for x in self.keras_nn.model.get_weights()])
 
         # Update parameters
         self.total_epochs += epochs
@@ -662,6 +663,7 @@ class MyModel:
 
             preds = np.asarray(preds).astype(
                 'float64')  # (nb_instruments, bath=nb_instruments, nb_steps=1, step_size, input_size, channels)
+            print('nan in pred', np.any(np.isnan(preds)))
             if len(preds.shape) == 5:  # Only one instrument : output of nn not a list
                 preds = np.expand_dims(preds, axis=0)
             if len(s_output.shape) == 5:  # Only one instrument : output of nn not a list

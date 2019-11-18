@@ -178,6 +178,7 @@ def choose_loss(type_loss):
 
 def loss_function_mono(y_true, y_pred):
     """
+    y_pred has np nan where we shouldn't compute the loss
 
     :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
     :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
@@ -186,7 +187,7 @@ def loss_function_mono(y_true, y_pred):
     y_true_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_true)
     y_pred_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_pred)
     y_true_a_no_nan = tf.where(tf.math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
-    y_pred_a_no_nan = tf.where(tf.math.is_nan(y_pred_a), tf.zeros_like(y_pred_a), y_pred_a)
+    y_pred_a_no_nan = tf.where(tf.math.is_nan(y_true_a), tf.zeros_like(y_pred_a), y_pred_a)     # To apply loss only on non nan value in true Tensor
 
     loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
     loss = tf.where(tf.math.is_nan(loss), tf.zeros_like(loss), loss)

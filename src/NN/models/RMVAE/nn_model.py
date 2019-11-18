@@ -73,6 +73,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     time_stride = s_time.time_stride(step_length)
 
     midi_shape = (nb_steps, step_length, input_size, 1)  # (batch, step_length, nb_step, input_size, 2)
+    mask_shape = (nb_instruments, nb_steps)
 
     # ----- For the decoder -----
 
@@ -99,6 +100,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     inputs_midi = []
     for instrument in range(nb_instruments):
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, input_size, 2)]
+    input_mask = tf.keras.Input(mask_shape)     # (batch, nb_instruments, nb_steps)
 
     # ---------- All together ----------
     inputs_encoded = [mlayers.coder3D.Encoder3D(
@@ -111,18 +113,23 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     means = [mlayers.dense.DenseForMean(units=latent_size)(x) for x in inputs_encoded]
     stds = [mlayers.dense.DenseForSTD(units=latent_size)(x) for x in inputs_encoded]
 
+    masks_by_step = mlayers.shapes.Unstack(axis=1)(input_mask)
     means_by_step = mlayers.shapes.SwitchListAxis(axis=0)(means)  # List(nb_steps)[(batch, nb_instruments, size)]
     stds_by_step = mlayers.shapes.SwitchListAxis(axis=0)(stds)  # List(nb_steps)[(batch, nb_instruments, size)]
 
-    poes = [mlayers.vae.ProductOfExpert(axis=0)(list(x)) for x in
-            zip(means_by_step, stds_by_step)]  # List(nb_steps)[List(2)[(batch, size)]]
+    poes = [mlayers.vae.ProductOfExpertMask(axis=0)(list(x)) for x in
+            zip(means_by_step, stds_by_step, masks_by_step)]  # List(nb_steps)[List(2)[(batch, size)]]
 
+    """
     poes = [layers.concatenate(x, axis=-1) for x in poes]   # List(nb_steps)[(batch, 2*size)]
 
     poe = mlayers.shapes.Stack(axis=0)(poes)        # (batch, nb_steps, size)
+    """
+    samples = [mlayers.vae.SampleGaussian()(x) for x in poes]
+    sample = mlayers.shapes.Stack(axis=0)(samples)
 
     x = mlayers.rnn.LstmRNN(
-        model_param['lstm'])(poe)  # TODO : Put eval in it and declare nb_instrument blablabla...
+        model_param['lstm'])(sample)  # TODO : Put eval in it and declare nb_instrument blablabla...
     x = mlayers.coder3D.Decoder3D(decoder_param=model_param_dec,
                                   shape_before_conv=shape_before_conv_dec,
                                   dropout=dropout,
@@ -131,7 +138,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     outputs = mlayers.last.LastMono(softmax_axis=2)(x)      # List(nb_instruments)[(batch, nb_steps=1, step_size, input_size, 1)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
-    model = KerasModel(inputs=inputs_midi, outputs=outputs)
+    model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)
 
     # ------------------ Losses -----------------
     # Define losses dict
