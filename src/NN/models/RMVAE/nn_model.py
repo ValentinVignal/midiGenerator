@@ -109,7 +109,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         time_stride=time_stride
     )(input_midi) for input_midi in inputs_midi]  # List(nb_instruments)[(batch, nb_steps, size)]
 
-    latent_size = 20
+    latent_size = model_param['dense'][-1]
     means = [mlayers.dense.DenseForMean(units=latent_size)(x) for x in inputs_encoded]
     stds = [mlayers.dense.DenseForSTD(units=latent_size)(x) for x in inputs_encoded]
 
@@ -120,16 +120,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     poes = [mlayers.vae.ProductOfExpertMask(axis=0)(list(x)) for x in
             zip(means_by_step, stds_by_step, masks_by_step)]  # List(nb_steps)[List(2)[(batch, size)]]
 
-    """
-    poes = [layers.concatenate(x, axis=-1) for x in poes]   # List(nb_steps)[(batch, 2*size)]
-
-    poe = mlayers.shapes.Stack(axis=0)(poes)        # (batch, nb_steps, size)
-    """
     samples = [mlayers.vae.SampleGaussian()(x) for x in poes]
-    sample = mlayers.shapes.Stack(axis=0)(samples)
+    samples = mlayers.shapes.Stack(axis=0)(samples)
 
     x = mlayers.rnn.LstmRNN(
-        model_param['lstm'])(sample)  # TODO : Put eval in it and declare nb_instrument blablabla...
+        model_param['lstm'])(samples)  # TODO : Put eval in it and declare nb_instrument blablabla...
     x = mlayers.coder3D.Decoder3D(decoder_param=model_param_dec,
                                   shape_before_conv=shape_before_conv_dec,
                                   dropout=dropout,
