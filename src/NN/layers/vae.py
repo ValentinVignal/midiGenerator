@@ -53,7 +53,7 @@ class ProductOfExpert(KerasLayer):
         mean = tf.where(math.is_nan(mean), tf.zeros_like(mean), mean)
         product_mean = math.reduce_sum(mean * T, axis=self.axis_with_batch) / (
                     math.reduce_sum(T, axis=self.axis_with_batch) + self.eps)
-        product_std = math.sqrt(1 / math.reduce_sum(T, axis=self.axis_with_batch))
+        product_std = math.sqrt(1 / (math.reduce_sum(T, axis=self.axis_with_batch) + self.eps))
         return [product_mean, product_std]
 
 

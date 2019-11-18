@@ -642,7 +642,7 @@ class MyModel:
         truth = sequence[0][0]
         filled_list = [np.copy(truth) for inst in range(nb_instruments)]
         for inst in range(nb_instruments):
-            filled_list[inst][inst] = np.nan
+            filled_list[inst][inst] = 0
 
         # ----- Generation -----
         bar = progressbar.ProgressBar(maxval=max_length,
@@ -655,7 +655,7 @@ class MyModel:
             for inst in range(nb_instruments):
                 to_fill_list[inst][inst] = np.nan
             nn_input = np.concatenate(
-                (*to_fill_list,),
+                tuple(to_fill_list),
                 axis=1
             )  # (nb_instruments, batch=nb_instruments, nb_steps, step_size, input_size, channels)
             preds = self.keras_nn.generate(input=list(nn_input))

@@ -94,7 +94,8 @@ class Stack(KerasLayer):
         return (*input_shape[:self.axis_with_batch], length, *input_shape[self.axis_with_batch:])
 
     def call(self, inputs):
-        return tf.stack(inputs, axis=self.axis_with_batch)
+        x = tf.stack(inputs, axis=self.axis_with_batch)
+        return x
 
 
 def is_equal_tuple(t1, t2, warn=False):

@@ -67,7 +67,6 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False):
     :param instruments:
     :return:
     """
-    print('array', array.shape)
     # Colors
     colors_rgb = return_colors(len(instruments))
     if mono:
@@ -75,7 +74,6 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False):
     else:
         activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape
-    print('there is nan', np.any(np.isnan(activations)))
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
     all = np.zeros((input_size, nb_steps, 3))  # RGB
