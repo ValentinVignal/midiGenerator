@@ -135,7 +135,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                                   dropout=dropout,
                                   time_stride=time_stride,
                                   shapes_after_upsize=shapes_before_pooling)(x)
-    outputs = mlayers.last.LastMono(softmax_axis=2)(x)      # List(nb_instruments)[(batch, nb_steps=1, step_size, input_size, 1)]
+    outputs = mlayers.last.LastMono(softmax_axis=-2)(x)      # List(nb_instruments)[(batch, nb_steps=1, step_size, input_size, 1)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)

@@ -361,7 +361,6 @@ class MyModel:
         print(colored('Training...', 'blue'))
         self.train_history = self.keras_nn.train_seq(epochs=epochs, generator=self.my_sequence, callbacks=callbacks,
                                                      verbose=verbose, validation=validation)
-        print('(end train) --> weigths', [np.any(np.isnan(x)) for x in self.keras_nn.model.get_weights()])
 
         # Update parameters
         self.total_epochs += epochs
@@ -642,8 +641,10 @@ class MyModel:
         # ----- Seeds -----
         truth = sequence[0][0]
         filled_list = [np.copy(truth) for inst in range(nb_instruments)]
+        mask = np.ones((nb_instruments, nb_instruments, self.nb_steps))
         for inst in range(nb_instruments):
             filled_list[inst][inst] = 0
+            mask[inst, inst] = 0
 
         # ----- Generation -----
         bar = progressbar.ProgressBar(maxval=max_length,
@@ -654,16 +655,15 @@ class MyModel:
             s_input, s_output = sequence[l]
             to_fill_list = [np.copy(s_input) for inst in range(nb_instruments)]
             for inst in range(nb_instruments):
-                to_fill_list[inst][inst] = np.nan
+                to_fill_list[inst][inst] = 0
             nn_input = np.concatenate(
                 tuple(to_fill_list),
                 axis=1
             )  # (nb_instruments, batch=nb_instruments, nb_steps, step_size, input_size, channels)
-            preds = self.keras_nn.generate(input=list(nn_input))
+            preds = self.keras_nn.generate(input=list(nn_input) + [mask])
 
             preds = np.asarray(preds).astype(
                 'float64')  # (nb_instruments, bath=nb_instruments, nb_steps=1, step_size, input_size, channels)
-            print('nan in pred', np.any(np.isnan(preds)))
             if len(preds.shape) == 5:  # Only one instrument : output of nn not a list
                 preds = np.expand_dims(preds, axis=0)
             if len(s_output.shape) == 5:  # Only one instrument : output of nn not a list
