@@ -134,10 +134,18 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)
 
     # ------------------ Losses -----------------
-    # Define losses dict
+    # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = l.loss_function_mono
+
+    # Define kld
+    kl_loss = l.kld(*poe)
+    model.add_loss(kl_loss)
+
+    # ------------------ Metrics -----------------
+
+    # ------------------------------ Compile ------------------------------
 
     model.compile(loss=losses,
                   optimizer=optimizer

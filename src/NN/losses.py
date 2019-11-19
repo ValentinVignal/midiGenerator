@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 K = tf.keras.backend
+math = tf.math
 
 Lambda = tf.keras.layers.Lambda
 
@@ -186,11 +187,11 @@ def loss_function_mono(y_true, y_pred):
     """
     y_true_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_true)
     y_pred_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_pred)
-    y_true_a_no_nan = tf.where(tf.math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
-    y_pred_a_no_nan = tf.where(tf.math.is_nan(y_true_a), tf.zeros_like(y_pred_a), y_pred_a)     # To apply loss only on non nan value in true Tensor
+    y_true_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
+    y_pred_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_pred_a), y_pred_a)     # To apply loss only on non nan value in true Tensor
 
     loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
-    loss = tf.where(tf.math.is_nan(loss), tf.zeros_like(loss), loss)
+    loss = tf.where(math.is_nan(loss), tf.zeros_like(loss), loss)
     return loss
 
 # ---------- LSTM ----------
@@ -205,6 +206,21 @@ def custom_losslstm():
 
 def choose_losslstm(type_loss_lstm):
     return custom_losslstm
+
+
+# --------- KL Divergence ----------
+
+def kld(mean, std):
+    """
+
+    :param mean:
+    :param std:
+    :return:
+    """
+    return - 0.5 * tf.reduce_mean(
+        2 * math.log(std) - math.square(mean) - math.square(std) + 1
+    )
+
 
 
 # --------- Metrics ----------
