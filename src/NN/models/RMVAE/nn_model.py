@@ -148,8 +148,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # ------------------------------ Compile ------------------------------
 
     model.compile(loss=losses,
-                  optimizer=optimizer
-                  )  # , metrics=[l.acc_mono])
+                  optimizer=optimizer,
+                  metrics=[l.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
