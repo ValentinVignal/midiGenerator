@@ -64,7 +64,7 @@ class ProductOfExpertMask(KerasLayer):
     def __init__(self, axis=0, eps=1e-8):
         """
 
-        :param axis: (not batch in it)
+        :param axis: (not batch in it) : Axis of the modalities
         """
         super(ProductOfExpertMask, self).__init__()
 
@@ -79,10 +79,10 @@ class ProductOfExpertMask(KerasLayer):
         """
 
         :param input_shape: List(2)[
-                            (batch, modalities, size)
-                        ] + List[1](batch, modalities)
+                            (batch, modalities, nb_steps?, size)
+                        ] + List[1](batch, modalities, nb_steps?)
         :return: List(2)[
-                    (batch, size)
+                    (batch, nb_steps?, size)
                 ]
         """
         input_shape = input_shape[0]
@@ -91,11 +91,11 @@ class ProductOfExpertMask(KerasLayer):
     def call(self, inputs):
         """
 
-        :param inputs: List(2)[(batch, modalities, size)] + List(1)[(batch, modalities)]
+        :param inputs: List(2)[(batch, modalities, nb_steps?, size)] + List(1)[(batch, modalities, nb_steps?)]
             ([means, std])
         :return:
         """
-        mask = tf.expand_dims(inputs[2], axis=2)        # (batch, modalities, 1)
+        mask = tf.expand_dims(inputs[2], axis=-1)        # (batch, modalities, nb_step?, 1)
         var = inputs[1] ** 2 + self.eps
         T = 1 / var
         # T = tf.where(math.is_nan(T), tf.zeros_like(T), T)
@@ -138,9 +138,7 @@ class SampleGaussian(KerasLayer):
     """
     def call(self, inputs):
         z_mean, z_std = inputs
-        batch = tf.shape(z_mean)[0]
-        dim = tf.shape(z_mean)[1]
-        epsilon = tf.random.normal(shape=(batch, dim))
+        epsilon = tf.random.normal(shape=tf.shape(z_mean))
         sample = z_mean + tf.exp(z_std) * epsilon
         return sample
 
