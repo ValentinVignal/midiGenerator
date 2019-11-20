@@ -13,16 +13,11 @@ import src.NN.layers as mlayers
 from src.NN.models.KerasModel import KerasModel
 import src.NN.shapes.convolution as s_conv
 import src.NN.shapes.time as s_time
+from src.eval_string import eval_object
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
 K = tf.keras.backend
-
-"""
-
-
-
-"""
 
 
 def create_model(input_param, model_param, nb_steps, step_length, optimizer, type_loss=g.type_loss,
@@ -69,6 +64,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'input_size': input_size,
         'nb_steps': nb_steps
     }
+
+    model_param = eval_object(model_param, env=env)
 
     time_stride = s_time.time_stride(step_length)
 
@@ -118,6 +115,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     stds = mlayers.shapes.Stack(axis=0)(stds)  # (batch, nb_instruments, nb_steps, size)
 
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
+    kld = mlayers.vae.KLD()(poe)
     samples = mlayers.vae.SampleGaussian()(poe)  # (batch, nb_steps, size)
 
     x = mlayers.rnn.LstmRNN(
@@ -140,8 +138,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         losses[f'Output_{inst}'] = l.loss_function_mono
 
     # Define kld
-    kl_loss = l.kld(*poe)
-    model.add_loss(kl_loss)
+    model.add_loss(kld)
 
     # ------------------ Metrics -----------------
 

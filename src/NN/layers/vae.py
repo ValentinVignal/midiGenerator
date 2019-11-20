@@ -146,5 +146,19 @@ class SampleGaussian(KerasLayer):
         return input_shape[0]
 
 
+class KLD(KerasLayer):
+    """
+
+    """
+    def call(self, inputs):
+        mean, std = inputs
+        return - 0.5 * tf.reduce_mean(
+            2 * math.log(std) - math.square(mean) - math.square(std) + 1
+        )
+
+    def compute_output_shape(self, input_shape):
+        return 1,
+
+
 
 
