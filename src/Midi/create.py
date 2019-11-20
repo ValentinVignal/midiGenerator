@@ -3,7 +3,7 @@ import numpy as np
 import music21
 from termcolor import colored, cprint
 
-import src.Midi.instruments as midi_inst
+from . import instruments as midi_inst
 
 
 def normalize_activation(arr, threshold=0.5, mono=False):

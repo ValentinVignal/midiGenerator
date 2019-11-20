@@ -6,7 +6,7 @@ from termcolor import colored, cprint
 import math
 import os
 
-import src.Midi.instruments as midi_inst
+from . import instruments as midi_inst
 
 
 def no_silence(matrix):
