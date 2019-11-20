@@ -1,4 +1,3 @@
-import importlib.util
 import os
 import tensorflow as tf
 from tensorflow.python.keras.callbacks import TensorBoard
@@ -14,6 +13,8 @@ import numpy as np
 import src.NN.losses as nn_losses
 import src.global_variables as g
 import src.NN.sequences.TrainValSequence as tv_sequences
+
+from . import models
 
 K = tf.keras.backend
 
@@ -65,15 +66,7 @@ class KerasNeuralNetwork:
         model_name, model_param_s, nb_steps = model_id.split(g.split_model_id)
         nb_steps = int(nb_steps)
 
-        # Load .py file with the model in it
-        path = os.path.join('src',
-                            'NN',
-                            'models',
-                            model_name,
-                            'nn_model.py')
-        spec = importlib.util.spec_from_file_location('nn_model', path)
-        nn_model = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(nn_model)
+        nn_model = models.from_name[model_name]
 
         # Load model param .json file
         json_path = os.path.join('src',
