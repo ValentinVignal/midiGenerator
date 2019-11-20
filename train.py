@@ -2,7 +2,7 @@ import argparse
 import os
 from termcolor import cprint
 
-from src.NN.MyModel import MyModel
+from MidiGenerator.MidiGenerator import MidiGenerator
 import src.global_variables as g
 
 
@@ -98,7 +98,7 @@ def main():
         data_transformed_path += 'Mono'
 
     # -------------------- Create model --------------------
-    my_model = MyModel(name=args.name)
+    midi_generator = MidiGenerator(name=args.name)
     # Choose GPU
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -106,7 +106,7 @@ def main():
         pass
 
     if args.model_id != '':
-        my_model.load_data(data_transformed_path=data_transformed_path)
+        midi_generator.load_data(data_transformed_path=data_transformed_path)
         opt_param = {
             'lr': args.lr,
             'name': args.optimizer,
@@ -121,42 +121,42 @@ def main():
             'bn_momentum': args.bn_momentum,
             'lambdas_loss': args.lambdas_loss
         }
-        my_model.new_nn_model(model_id=args.model_id,
+        midi_generator.new_nn_model(model_id=args.model_id,
                               opt_param=opt_param,
                               work_on=args.work_on,
                               type_loss=args.type_loss,
                               model_options=model_options)
     elif args.load != '':
-        my_model.recreate_model(args.load)
+        midi_generator.recreate_model(args.load)
 
     # -------------------- Train --------------------
-    my_model.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation)
+    midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation)
 
     # -------------------- Test --------------------
     if args.evaluate:
-        my_model.evaluate()
+        midi_generator.evaluate()
 
     # -------------------- Test overfit --------------------
     if args.compare_generation:
-        my_model.compare_generation(max_length=None,
+        midi_generator.compare_generation(max_length=None,
                                     no_duration=args.no_duration,
                                     verbose=1)
 
     # -------------------- Generate --------------------
     if args.generate:
-        my_model.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
+        midi_generator.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
 
     # -------------------- Generate --------------------
     if args.fill_instruments:
-        my_model.fill_instruments(no_duration=args.no_duration, verbose=1)
+        midi_generator.fill_instruments(no_duration=args.no_duration, verbose=1)
 
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
-        for i in range(len(my_model.my_sequence)):
-            my_model.compare_test_predict_on_batch(i)
+        for i in range(len(midi_generator.my_sequence)):
+            midi_generator.compare_test_predict_on_batch(i)
 
     # -------------------- Save the model --------------------
-    my_model.save_model()
+    midi_generator.save_model()
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 

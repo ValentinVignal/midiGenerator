@@ -2,7 +2,7 @@ import argparse
 import os
 from termcolor import cprint
 
-from src.NN.MyModel import MyModel
+from MidiGenerator.MidiGenerator import MidiGenerator
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
     if args.length is not None:
         args.length = int(args.length)
 
-    my_model = MyModel.from_model(id=args.load)  # Load the model
+    my_model = MidiGenerator.from_model(id=args.load)  # Load the model
     my_model.compare_generation(max_length=args.length,
                                 no_duration=args.no_duration,
                                 verbose=args.verbose)

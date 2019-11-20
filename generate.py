@@ -2,7 +2,7 @@ import argparse
 import os
 from termcolor import cprint
 
-from src.NN.MyModel import MyModel
+from MidiGenerator.MidiGenerator import MidiGenerator
 
 
 def main():
@@ -44,7 +44,7 @@ def main():
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    my_model = MyModel.with_model(id=args.load)  # Load the model
+    my_model = MidiGenerator.with_model(id=args.load)  # Load the model
     my_model.generate_fom_data(length=args.length,
                                nb_seeds=args.seed,
                                save_images=args.images,

@@ -17,7 +17,7 @@ import src.text.summary as summary
 import src.global_variables as g
 
 
-class MyModel:
+class MidiGenerator:
     """
 
     """

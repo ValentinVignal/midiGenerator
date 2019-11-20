@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 K = tf.keras.backend
 
-from src.NN.MyModel import MyModel
+from MidiGenerator.MidiGenerator import MidiGenerator
 from src.NN.callbacks import LossHistory
 import src.global_variables as g
 
@@ -158,7 +158,7 @@ def main():
                                             })
 
     for index, params in enumerate(all_params):
-        my_model = MyModel(name=args.name)
+        my_model = MidiGenerator(name=args.name)
         my_model.load_data(data_transformed_path=data_transformed_path)
         cprint('Test {0}/{1}'.format(index + 1, len(all_params)), 'yellow', 'on_blue')
         print('lr :', colored(params['lr'], 'magenta'),
