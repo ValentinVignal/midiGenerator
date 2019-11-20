@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.NN.sequences.KerasSequence import KerasSequence
+from src.NN.Sequences.KerasSequence import KerasSequence
 
 
 class MissingInstSequence(KerasSequence):

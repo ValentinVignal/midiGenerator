@@ -3,7 +3,7 @@ from termcolor import colored, cprint
 import numpy as np
 import progressbar
 
-import src.NN.sequences as sequences
+from src.NN import Sequences
 import src.Midi as midi
 import src.image.pianoroll as pianoroll
 import src.global_variables as g
@@ -41,7 +41,7 @@ class MGPredict:
         if self.my_sequence is None:
             need_new_sequence = True
         if need_new_sequence:
-            self.my_sequence = sequences.AllInstSequence(
+            self.my_sequence = Sequences.AllInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=nb_steps,
                 batch_size=1,
@@ -143,7 +143,7 @@ class MGPredict:
         # ----- Variables -----
         if self.data_transformed_pathlib is None:
             raise Exception('Some data need to be loaded before comparing the generation')
-        sequence = sequences.KerasSequence(
+        sequence = Sequences.KerasSequence(
             path=self.data_transformed_pathlib,
             nb_steps=self.nb_steps,
             batch_size=1,
@@ -255,7 +255,7 @@ class MGPredict:
             raise Exception('Some data need to be loaded before comparing the generation')
         nb_steps = int(self.model_id.split(',')[2])
         if self.my_sequence is None:
-            self.my_sequence = sequences.AllInstSequence(
+            self.my_sequence = Sequences.AllInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=nb_steps,
                 batch_size=1,

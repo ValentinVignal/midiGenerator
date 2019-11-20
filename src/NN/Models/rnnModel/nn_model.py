@@ -10,7 +10,7 @@ if __name__ == '__main__':
 import src.NN.losses as l
 import src.global_variables as g
 import src.NN.layers as mlayers
-from src.NN.models.KerasModel import KerasModel
+from src.NN.Models.KerasModel import KerasModel
 from shapes import shapes
 
 layers = tf.keras.layers

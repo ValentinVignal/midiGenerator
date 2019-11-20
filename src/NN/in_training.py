@@ -1,5 +1,5 @@
 import tensorflow as tf
-from sequences.AllInstSequence import AllInstSequence
+from Sequences.AllInstSequence import AllInstSequence
 import numpy as np
 
 

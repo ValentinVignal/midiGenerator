@@ -11,7 +11,7 @@ import src.NN.losses as mlosses
 import src.NN.metrics as mmetrics
 import src.global_variables as g
 import src.NN.layers as mlayers
-from src.NN.models.KerasModel import KerasModel
+from src.NN.Models.KerasModel import KerasModel
 import src.NN.shapes.convolution as s_conv
 import src.NN.shapes.time as s_time
 from src.eval_string import eval_object

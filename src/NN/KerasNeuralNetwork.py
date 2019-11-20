@@ -12,9 +12,8 @@ import numpy as np
 
 import src.NN.losses as nn_losses
 import src.global_variables as g
-import src.NN.sequences.TrainValSequence as tv_sequences
-
-from . import models
+from src.NN import Sequences
+from . import Models
 
 K = tf.keras.backend
 
@@ -66,12 +65,12 @@ class KerasNeuralNetwork:
         model_name, model_param_s, nb_steps = model_id.split(g.split_model_id)
         nb_steps = int(nb_steps)
 
-        nn_model = models.from_name[model_name]
+        nn_model = Models.from_name[model_name]
 
         # Load model param .json file
         json_path = os.path.join('src',
                                  'NN',
-                                 'models',
+                                 'Models',
                                  model_name,
                                  '{0}.json'.format(model_param_s))
         with open(json_path) as json_file:
@@ -147,8 +146,8 @@ class KerasNeuralNetwork:
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
 
         if validation > 0:
-            generator_train, generator_valid = tv_sequences.get_train_valid_sequence(generator,
-                                                                                     validation_split=validation)
+            generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
+                                                                                                   validation_split=validation)
 
             a = self.model.fit_generator(epochs=epochs, generator=generator_train, validation_data=generator_valid,
                                          shuffle=True, verbose=verbose, callbacks=callback_list)

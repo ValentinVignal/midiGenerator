@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import src.image.pianoroll as pianoroll
-from src.NN.sequences.KerasSequence import KerasSequence
+from src.NN.Sequences.KerasSequence import KerasSequence
 
 
 class AllInstSequence(KerasSequence):

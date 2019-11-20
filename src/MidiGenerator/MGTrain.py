@@ -1,6 +1,6 @@
 from termcolor import colored, cprint
 
-import src.NN.sequences as sequences
+from src.NN import Sequences
 import src.global_variables as g
 import src.image.pianoroll as pianoroll
 
@@ -32,7 +32,7 @@ class MGTrain:
             flag_new_sequence = True
 
         if flag_new_sequence:
-            self.my_sequence = sequences.MissingInstSequence(
+            self.my_sequence = Sequences.MissingInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
@@ -62,7 +62,7 @@ class MGTrain:
             self.batch = 4
         cprint('Evaluation', 'blue')
         if self.my_sequence is None:
-            self.my_sequence = sequences.AllInstSequence(
+            self.my_sequence = Sequences.AllInstSequence(
                 path=str(self.data_transformed_pathlib),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
