@@ -1,9 +1,9 @@
-import src.NN.layers.coder3D as coder3D
-import src.NN.layers.conv as conv
-import src.NN.layers.dense as dense
-import src.NN.layers.last as last
-import src.NN.layers.rnn as rnn
-import src.NN.layers.vae as vae
-import src.NN.layers.shapes as shapes
+from . import coder3D
+from . import conv
+from . import dense
+from . import last
+from . import rnn
+from . import vae
+from . import shapes
 
 from .KerasLayer import KerasLayer

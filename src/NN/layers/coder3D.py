@@ -1,6 +1,7 @@
 import tensorflow as tf
 
-import src.NN.layers as mlayers
+from . import conv as conv
+from . import dense as dense
 import src.global_variables as g
 import src.mtypes as t
 from .KerasLayer import KerasLayer
@@ -35,7 +36,7 @@ class ConvEncoder3D(KerasLayer):
                         strides = (1, 1, 1)
                 else:
                     strides = (1, 1, 1)
-                self.conv_blocks.append(mlayers.conv.ConvBlock3D(filters=size,
+                self.conv_blocks.append(conv.ConvBlock3D(filters=size,
                                                                  strides=strides,
                                                                  dropout=dropout))
 
@@ -90,7 +91,7 @@ class Encoder3D(KerasLayer):
             self.flatten = layers.TimeDistributed(layers.Flatten())
         else:
             self.flatten = layers.Flatten
-        self.dense_enc = mlayers.dense.DenseCoder(size_list=encoder_param['dense'],
+        self.dense_enc = dense.DenseCoder(size_list=encoder_param['dense'],
                                                   dropout=dropout)
         super(Encoder3D, self).__init__()
 
@@ -162,7 +163,7 @@ class ConvDecoder3D(KerasLayer):
                 else:
                     strides = (1, 1, 1)
                     final_shape = None
-                self.conv_blocks.append(mlayers.conv.ConvTransposedBlock3D(filters=size,
+                self.conv_blocks.append(conv.ConvTransposedBlock3D(filters=size,
                                                                            strides=strides,
                                                                            dropout=dropout,
                                                                            final_shape=final_shape))
@@ -218,7 +219,7 @@ class Decoder3D(KerasLayer):
         self.first_upsize = first_upsize
         self.shape_before_conv = shape_before_conv
 
-        self.dense_dec = mlayers.dense.DenseCoder(size_list=decoder_param['dense'],
+        self.dense_dec = dense.DenseCoder(size_list=decoder_param['dense'],
                                                   dropout=dropout)
         self.reshape = layers.Reshape(self.shape_before_conv)
         self.conv_dec = ConvDecoder3D(filters_list=decoder_param['conv'],

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import math
 
-import src.NN.layers.dense as l_dense
+from . import dense as l_dense
 import src.mtypes as t
 from.KerasLayer import KerasLayer
 from . import shapes as shapes

@@ -2,7 +2,7 @@ import argparse
 import os
 from termcolor import cprint
 
-from MidiGenerator.MidiGenerator import MidiGenerator
+from src.MidiGenerator import MidiGenerator
 import src.global_variables as g
 
 
