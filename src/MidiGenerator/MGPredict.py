@@ -4,7 +4,7 @@ import numpy as np
 import progressbar
 
 from src.NN.sequences.AllInstSequence import AllInstSequence
-import src.midi.create as midi_create
+import src.Midi as midi
 import src.image.pianoroll as pianoroll
 import src.global_variables as g
 import src.text.summary as summary
@@ -18,7 +18,7 @@ class MGPredict:
     def generate_fom_data(self, nb_seeds=10, new_data_path=None, length=None, new_save_path=None, save_images=False,
                           no_duration=False, verbose=1):
         """
-        Generate midi file from the seed and the trained model
+        Generate Midi file from the seed and the trained model
         :param nb_seeds: number of seeds for the generation
         :param new_data_path: The path of the seed
         :param length: Length of th generation
@@ -55,7 +55,7 @@ class MGPredict:
         step_length = g.work_on2nb(self.work_on)
         # -- Length --
         length = length if length is not None else 200
-        # -- For save midi path --
+        # -- For save Midi path --
         if type(new_save_path) is str or (
                 type(new_save_path) is bool and new_save_path) or (
                 new_save_path is None and self.save_midis_pathlib is None):
@@ -80,7 +80,7 @@ class MGPredict:
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis]
-                next_array = midi_create.normalize_activation(preds)  # Normalize the activation part
+                next_array = midi.create.normalize_activation(preds)  # Normalize the activation part
                 generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, nb_steps, length, 88, 2)
 
                 bar.update(l + 1)
@@ -91,7 +91,7 @@ class MGPredict:
                 generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
             generated_midi_final = np.transpose(generated_midi_final,
                                                 (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
-            output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
+            output_notes_list = midi.create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
                                                            notes_range=self.notes_range, no_duration=no_duration,
                                                            mono=self.mono)
 
@@ -104,11 +104,11 @@ class MGPredict:
             path_to_save = str(self.save_midis_pathlib / m_str)
             path_to_save_img = str(self.save_midis_pathlib / 'lstm_out_({0}).jpg'.format(i))
 
-            midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
+            midi.create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
                                            notes_list=output_notes_list, verbose=verbose)
 
-            # Saving the midi file
-            midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+            # Saving the Midi file
+            midi.create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
                                   path=path_to_save, )
             if save_images:
                 pianoroll.save_pianoroll(array=generated_midi_final,
@@ -205,12 +205,12 @@ class MGPredict:
             filled_list[inst] = np.transpose(filled_list[inst],
                                              axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
         # ----- Notes -----
-        output_notes_truth = midi_create.matrix_to_midi(truth,
+        output_notes_truth = midi.create.matrix_to_midi(truth,
                                                         instruments=self.instruments,
                                                         notes_range=self.notes_range, no_duration=no_duration,
                                                         mono=self.mono)
         output_notes_inst = [
-            midi_create.matrix_to_midi(filled_list[inst], instruments=self.instruments,
+            midi.create.matrix_to_midi(filled_list[inst], instruments=self.instruments,
                                        notes_range=self.notes_range,
                                        no_duration=no_duration, mono=self.mono)
             for inst in range(nb_instruments)
@@ -222,10 +222,10 @@ class MGPredict:
 
         # -------------------- Save Results --------------------
         # Truth
-        midi_create.print_informations(nb_steps=self.nb_steps * self.step_length,
+        midi.create.print_informations(nb_steps=self.nb_steps * self.step_length,
                                        matrix=truth, notes_list=output_notes_truth, verbose=verbose)
         # TODO: Accuracy
-        midi_create.save_midi(output_notes_list=output_notes_truth, instruments=self.instruments,
+        midi.create.save_midi(output_notes_list=output_notes_truth, instruments=self.instruments,
                               path=self.save_midis_pathlib / 'truth.mid')
         pianoroll.save_pianoroll(array=truth,
                                  path=self.save_midis_pathlib / 'truth.jpg',
@@ -234,11 +234,11 @@ class MGPredict:
                                  mono=self.mono)
         # Missing instruments
         for inst in range(nb_instruments):
-            midi_create.print_informations(nb_steps=self.nb_steps * self.step_length,
+            midi.create.print_informations(nb_steps=self.nb_steps * self.step_length,
                                            matrix=filled_list[inst], notes_list=output_notes_inst[inst],
                                            verbose=verbose)
             # TODO: Accuracy
-            midi_create.save_midi(output_notes_list=output_notes_inst[inst], instruments=self.instruments,
+            midi.create.save_midi(output_notes_list=output_notes_inst[inst], instruments=self.instruments,
                                   path=self.save_midis_pathlib / f'missing_{inst}.mid')
             pianoroll.save_pianoroll(array=filled_list[inst],
                                      path=self.save_midis_pathlib / f'missing_{inst}.jpg',
@@ -292,7 +292,7 @@ class MGPredict:
                 preds = np.expand_dims(preds, axis=0)
             if len(preds_truth.shape) == 5:  # Only one instrument : output of nn not a list
                 preds_truth = np.expand_dims(preds_truth)
-            preds = midi_create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
+            preds = midi.create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
             preds_helped = preds[:, [1]]  # (nb_instruments, 1, 1, length, 88, 2)
             preds = preds[:, [0]]
 
@@ -311,7 +311,7 @@ class MGPredict:
             generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
         generated_midi_final = np.transpose(generated_midi_final,
                                             (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
-        output_notes_list = midi_create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
+        output_notes_list = midi.create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
                                                        notes_range=self.notes_range, no_duration=no_duration,
                                                        mono=self.mono)
         # Helped
@@ -320,7 +320,7 @@ class MGPredict:
             generated_helped.shape[4], generated_helped.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
         generated_midi_final_helped = np.transpose(generated_midi_final_helped,
                                                    (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
-        output_notes_list_helped = midi_create.matrix_to_midi(generated_midi_final_helped, instruments=self.instruments,
+        output_notes_list_helped = midi.create.matrix_to_midi(generated_midi_final_helped, instruments=self.instruments,
                                                               notes_range=self.notes_range, no_duration=no_duration,
                                                               mono=self.mono)
         # Truth
@@ -329,7 +329,7 @@ class MGPredict:
             generated_truth.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
         generated_midi_final_truth = np.transpose(generated_midi_final_truth,
                                                   (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
-        output_notes_list_truth = midi_create.matrix_to_midi(generated_midi_final_truth,
+        output_notes_list_truth = midi.create.matrix_to_midi(generated_midi_final_truth,
                                                              instruments=self.instruments,
                                                              notes_range=self.notes_range, no_duration=no_duration,
                                                              mono=self.mono)
@@ -348,7 +348,7 @@ class MGPredict:
         # -- Generated --
         path_to_save = str(self.save_midis_pathlib / 'generated.mid')
         path_to_save_img = str(self.save_midis_pathlib / 'generated.jpg')
-        midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
+        midi.create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
                                        notes_list=output_notes_list, verbose=verbose)
         # Print the accuracy
         if self.mono:
@@ -372,8 +372,8 @@ class MGPredict:
         print('Accuracy of the generation :', colored(accuracies, 'magenta'), ', overall :',
               colored(accuracy, 'magenta'))
 
-        # Saving the midi file
-        midi_create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
+        # Saving the Midi file
+        midi.create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
                               path=path_to_save, )
         pianoroll.save_pianoroll(array=generated_midi_final,
                                  path=path_to_save_img,
@@ -384,7 +384,7 @@ class MGPredict:
         # -- Helped --
         path_to_save = str(self.save_midis_pathlib / 'generated_helped.mid')
         path_to_save_img = str(self.save_midis_pathlib / 'generated_helped.jpg')
-        midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_helped,
+        midi.create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_helped,
                                        notes_list=output_notes_list_helped, verbose=verbose)
         # Print the accuracy
         if self.mono:
@@ -409,8 +409,8 @@ class MGPredict:
         print('Accuracy of the generation helped :', colored(accuracies_helped, 'magenta'), ', overall :',
               colored(accuracy_helped, 'magenta'))
 
-        # Saving the midi file
-        midi_create.save_midi(output_notes_list=output_notes_list_helped, instruments=self.instruments,
+        # Saving the Midi file
+        midi.create.save_midi(output_notes_list=output_notes_list_helped, instruments=self.instruments,
                               path=path_to_save, )
         pianoroll.save_pianoroll(array=generated_midi_final_helped,
                                  path=path_to_save_img,
@@ -421,11 +421,11 @@ class MGPredict:
         # -- Truth --
         path_to_save = str(self.save_midis_pathlib / 'generated_truth.mid')
         path_to_save_img = str(self.save_midis_pathlib / 'generated_truth.jpg')
-        midi_create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_truth,
+        midi.create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final_truth,
                                        notes_list=output_notes_list_truth, verbose=verbose)
 
-        # Saving the midi file
-        midi_create.save_midi(output_notes_list=output_notes_list_truth, instruments=self.instruments,
+        # Saving the Midi file
+        midi.create.save_midi(output_notes_list=output_notes_list_truth, instruments=self.instruments,
                               path=path_to_save, )
         pianoroll.save_pianoroll(array=generated_midi_final_truth,
                                  path=path_to_save_img,

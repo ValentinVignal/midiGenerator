@@ -180,7 +180,7 @@ class MS(tf.keras.utils.Sequence):
 
 if __name__ == '__main__':
     # create a separate main function because original main function is too mainstream
-    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--input-shape', type=str, default='4,3,4,40,1',
                         help='The input shape : nb_instruments,nb_steps,step_size,input_size,channels')

@@ -7,10 +7,9 @@ import progressbar
 import shutil
 from termcolor import colored, cprint
 
-import src.midi.open as midi_open
+import src.Midi as midi
 import src.global_variables as g
 import src.text.summary as summary
-import src.midi.instruments as midi_inst
 
 
 def check_args(args):
@@ -45,7 +44,7 @@ def check_args(args):
     args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
                                 args.instruments.split(',')))
     if args.bach:
-        args.instruments = midi_inst.bach_instruments
+        args.instruments = midi.inst.bach_instruments
 
     return args, Path(data_path), Path(data_transformed_path)
 
@@ -55,7 +54,7 @@ def main():
         Entry point
     """
 
-    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('data', type=str, default='lmd_matched_small',
                         help='The name of the data')
@@ -82,7 +81,7 @@ def main():
     dataset_p = data_transformed_path / 'dataset.p'  # Pickle file with the information of the data set kept
     infos_dataset_p = Path(
         data_transformed_path) / 'infos_dataset.p'  # pickle file with the information of the dataset (smaller file)
-    all_midi_paths_dataset = midi_open.all_midi_files(data_path.as_posix(), False)
+    all_midi_paths_dataset = midi.open.all_midi_files(data_path.as_posix(), False)
 
     # --------------------------------------------------
     #               Compute dataset
@@ -105,7 +104,7 @@ def main():
     matrix_of_all_midis = []
     all_midi_paths = []
 
-    # All midi have to be in same shape.
+    # All Midi have to be in same shape.
     bar = progressbar.ProgressBar(maxval=len(all_midi_paths_dataset),
                                   widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                            progressbar.ETA()])
@@ -116,12 +115,12 @@ def main():
         bar.update(index)
         # ---------- Get the matrix ----------
         if args.bach:
-            matrix_of_single_midi = midi_open.midi_to_matrix_bach(single_midi_path,
+            matrix_of_single_midi = midi.open.midi_to_matrix_bach(single_midi_path,
                                                                   length=args.length,
                                                                   notes_range=args.notes_range
                                                                   )  # (nb_instruments, 88, nb_steps, 2)
         else:
-            matrix_of_single_midi = midi_open.midi_to_matrix(single_midi_path, args.instruments,
+            matrix_of_single_midi = midi.open.midi_to_matrix(single_midi_path, args.instruments,
                                                              length=args.length,
                                                              notes_range=args.notes_range
                                                              )  # (nb_instruments, 88, nb_steps, 2)
@@ -129,7 +128,7 @@ def main():
             continue
 
         if args.mono:
-            matrix_of_single_midi = midi_open.to_mono_matrix(matrix_of_single_midi)
+            matrix_of_single_midi = midi.open.to_mono_matrix(matrix_of_single_midi)
         matrix_of_single_midi = np.transpose(matrix_of_single_midi,
                                              (2, 0, 1, 3))  # (length, nb_instruments, 88, 2)
 
@@ -161,7 +160,7 @@ def main():
     # ---------- Save the path of all the midis ----------
     with open(dataset_p, 'wb') as dump_file:
         pickle.dump({
-            'midi': all_midi_paths
+            'Midi': all_midi_paths
         }, dump_file)
     bar.finish()
     # Now all_midi_paths is defined and we don't need all_midi_paths_dataset anymore

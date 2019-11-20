@@ -27,6 +27,7 @@ similar_music21_instruments = [
 
 bach_instruments = ['Flute', 'Ocarina', 'Tuba', 'Contrabass']
 
+
 def string2instrument(name):
     """
 

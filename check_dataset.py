@@ -4,10 +4,10 @@ from pathlib import Path
 import shutil
 from termcolor import colored
 
-import src.midi.open as midi_open
-import src.midi.create as midi_create
-import src.midi.common as midi_common
-import src.midi.instruments as midi_inst
+import src.Midi.open as midi_open
+import src.Midi.create as midi_create
+import src.Midi.common as midi_common
+import src.Midi.instruments as midi_inst
 import src.image.pianoroll as p
 
 
@@ -16,7 +16,7 @@ def main():
         Entry point
     """
 
-    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('data', type=str, default='lmd_matched_mini',
                         help='The name of the data')

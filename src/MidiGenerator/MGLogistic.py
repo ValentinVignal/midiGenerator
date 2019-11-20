@@ -56,7 +56,7 @@ class MGLogistic:
 
     def get_new_save_midis_path(self, path=None):
         """
-        set up a new save midi path
+        set up a new save Midi path
         :param path:
         :return:
         """
@@ -69,5 +69,5 @@ class MGLogistic:
             self.save_midis_pathlib = Path('generated_midis', m_str)
         else:
             self.save_midis_pathlib = Path(path)
-        print('new save path for midi files :', colored(str(self.save_midis_pathlib), 'cyan'))
+        print('new save path for Midi files :', colored(str(self.save_midis_pathlib), 'cyan'))
 

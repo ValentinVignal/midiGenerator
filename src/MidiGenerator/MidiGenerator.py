@@ -49,7 +49,7 @@ class MidiGenerator(MGPredict, MGData, MGTrain, MGModel, MGLogistic):
         self.train_history = None
 
         # ------ save_midi_path -----
-        self.save_midis_pathlib = None  # Where to save the generated midi files
+        self.save_midis_pathlib = None  # Where to save the generated Midi files
 
         if data is not None:
             self.load_data(data)

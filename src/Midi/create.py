@@ -3,7 +3,7 @@ import numpy as np
 import music21
 from termcolor import colored, cprint
 
-import src.midi.instruments as midi_inst
+import src.Midi.instruments as midi_inst
 
 
 def normalize_activation(arr, threshold=0.5, mono=False):
@@ -179,17 +179,17 @@ def save_midi(output_notes_list, instruments, path):
     :param path: The .mid file path
     :return:
     """
-    print('Converting to midi ...')
+    print('Converting to Midi ...')
     midi_stream = music21.stream.Stream()
     for i in range(len(instruments)):
         s = music21.stream.Stream()
         for n in output_notes_list[i]:
             s.insert(n.offset, n)
-        # p.insert(0, midi.instrument.Instrument(instrumentName=instruments[i]))
+        # p.insert(0, Midi.instrument.Instrument(instrumentName=instruments[i]))
         s.insert(0, midi_inst.string2instrument(instruments[i])())
         s.partName = instruments[i]
         midi_stream.insert(0, s)
-    midi_stream.write('midi', fp=path)
+    midi_stream.write('Midi', fp=path)
     print(colored(str(path) + ' saved', 'green'))
 
 

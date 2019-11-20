@@ -11,7 +11,7 @@ def main():
         Entry point
     """
 
-    parser = argparse.ArgumentParser(description='Program to train a model over a midi dataset',
+    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
                         help='The name of the data')

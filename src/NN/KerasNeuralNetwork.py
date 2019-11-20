@@ -262,7 +262,7 @@ class KerasNeuralNetwork:
     def test_function(self, inputs=None, truth=None, generator=None, learning_phase=0):
         self.model._make_test_function()
         if generator is not None:
-            # All midi have to be in same shape.
+            # All Midi have to be in same shape.
             bar = progressbar.ProgressBar(maxval=len(generator),
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                    progressbar.ETA()])

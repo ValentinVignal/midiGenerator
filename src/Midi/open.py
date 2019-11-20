@@ -6,7 +6,7 @@ from termcolor import colored, cprint
 import math
 import os
 
-import src.midi.instruments as midi_inst
+import src.Midi.instruments as midi_inst
 
 
 def no_silence(matrix):
@@ -121,8 +121,8 @@ def midifile_to_stream(filename, keep_drums=False):
 
 def midi_to_matrix(filename, instruments, length=None, print_instruments=False, notes_range=None):
     """
-    convert midi file to matrix for DL architecture.
-    :param filename: path to the midi file
+    convert Midi file to matrix for DL architecture.
+    :param filename: path to the Midi file
     :param instruments: instruments to train on
     :param length: length max of the song
     :param print_instruments: bool
@@ -146,7 +146,7 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
                 else:
                     name = 'Piano'
             # name = (str(instrument).split(' ')[-1])[
-            #        :-1]  # str(instrument) = "<midi.stream.Part object Electric Bass>"
+            #        :-1]  # str(instrument) = "<Midi.stream.Part object Electric Bass>"
             instrument_names.append(name)
         if print_instruments:
             print('instruments :', instrument_names)
@@ -228,8 +228,8 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
 
 def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_range=None):
     """
-    convert midi file to matrix for DL architecture.
-    :param filename: path to the midi file
+    convert Midi file to matrix for DL architecture.
+    :param filename: path to the Midi file
     :param length: length max of the song
     :param print_instruments: bool
     :return: matrix with shape
@@ -255,7 +255,7 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
                 else:
                     name = 'Piano'
             # name = (str(instrument).split(' ')[-1])[
-            #        :-1]  # str(instrument) = "<midi.stream.Part object Electric Bass>"
+            #        :-1]  # str(instrument) = "<Midi.stream.Part object Electric Bass>"
             instrument_names.append(name)
         if print_instruments:
             print('instruments :', instrument_names)
