@@ -147,8 +147,8 @@ class KerasNeuralNetwork:
         callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
 
         if validation > 0:
-            generator_train, generator_valid = tv_sequences.get_train_valid_mysequence(generator,
-                                                                                       validation_split=validation)
+            generator_train, generator_valid = tv_sequences.get_train_valid_sequence(generator,
+                                                                                     validation_split=validation)
 
             a = self.model.fit_generator(epochs=epochs, generator=generator_train, validation_data=generator_valid,
                                          shuffle=True, verbose=verbose, callbacks=callback_list)

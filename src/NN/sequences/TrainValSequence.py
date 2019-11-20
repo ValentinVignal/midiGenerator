@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 
-class MySequenceReduced(tf.keras.utils.Sequence):
+class ReducedSequence(tf.keras.utils.Sequence):
     """
     This class is use to train with a validation split
     """
@@ -18,7 +18,7 @@ class MySequenceReduced(tf.keras.utils.Sequence):
         return self.my_sequence[self.indexes[index]]
 
 
-def get_train_valid_mysequence(my_sequence, validation_split=0.0):
+def get_train_valid_sequence(my_sequence, validation_split=0.0):
     """
 
     :param my_sequence:
@@ -30,6 +30,6 @@ def get_train_valid_mysequence(my_sequence, validation_split=0.0):
     permutation = np.random.permutation(np.arange(all_len))
     indexes_valid = permutation[:len_valid]
     indexes_train = permutation[len_valid:]
-    my_sequence_valid = MySequenceReduced(my_sequence, indexes_valid)
-    my_sequence_train = MySequenceReduced(my_sequence, indexes_train)
+    my_sequence_valid = ReducedSequence(my_sequence, indexes_valid)
+    my_sequence_train = ReducedSequence(my_sequence, indexes_train)
     return my_sequence_train, my_sequence_valid
