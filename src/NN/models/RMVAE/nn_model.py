@@ -7,7 +7,8 @@ import sys
 if __name__ == '__main__':
     sys.path.append(sys.path[0] + '\\..\\..\\..\\..')
 
-import src.NN.losses as l
+import src.NN.losses as mlosses
+import src.NN.metrics as mmetrics
 import src.global_variables as g
 import src.NN.layers as mlayers
 from src.NN.models.KerasModel import KerasModel
@@ -135,7 +136,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = l.loss_function_mono
+        losses[f'Output_{inst}'] = mlosses.loss_function_mono
 
     # Define kld
     model.add_loss(kld)
@@ -146,7 +147,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     model.compile(loss=losses,
                   optimizer=optimizer,
-                  metrics=[l.acc_mono])
+                  metrics=[mmetrics.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     return model, losses, (lambda_loss_activation, lambda_loss_duration)
