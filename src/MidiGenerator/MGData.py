@@ -2,8 +2,10 @@ from pathlib import Path
 import pickle
 from termcolor import colored, cprint
 
+from .MGInit import MGInit
 
-class MGData:
+
+class MGData(MGInit):
     
     def load_data(self, data_transformed_path=None):
         """

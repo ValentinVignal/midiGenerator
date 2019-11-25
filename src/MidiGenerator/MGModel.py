@@ -5,9 +5,10 @@ from termcolor import cprint, colored
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 import src.global_variables as g
 import src.text.summary as summary
+from .MGInit import MGInit
 
 
-class MGModel:
+class MGModel(MGInit):
 
     def new_nn_model(self, model_id, work_on=None, opt_param=None, type_loss=g.type_loss, model_options=None,
                      print_model=True):

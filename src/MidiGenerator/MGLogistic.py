@@ -3,10 +3,10 @@ from termcolor import colored, cprint
 from pathlib import Path
 
 from src import global_variables as g
+from .MGInit import MGInit
 
 
-class MGLogistic:
-
+class MGLogistic(MGInit):
 
     # --------------------------------------------------
     #                   Names function

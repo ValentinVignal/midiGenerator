@@ -8,9 +8,10 @@ import src.Midi as midi
 import src.image.pianoroll as pianoroll
 import src.global_variables as g
 import src.text.summary as summary
+from .MGInit import MGInit
 
 
-class MGPredict:
+class MGPredict(MGInit):
     """
 
     """
