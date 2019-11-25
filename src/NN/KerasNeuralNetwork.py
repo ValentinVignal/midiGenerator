@@ -42,7 +42,8 @@ class KerasNeuralNetwork:
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
         self.allow_growth()
 
-        self.tensorboard = TensorBoard(log_dir='tensorboard\\{0}'.format(time()))
+        log_dir = os.path.join('tensorboard', f'{time()}')
+        self.tensorboard = TensorBoard(log_dir=log_dir)
 
     def new_model(self, model_id, input_param, opt_param, type_loss=None, step_length=1, model_options={}):
         """
