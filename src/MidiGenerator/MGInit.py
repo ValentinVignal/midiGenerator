@@ -47,15 +47,15 @@ class MGInit:
         #                   Properties
         # --------------------------------------------------
 
-        @property
-        def nb_steps(self):
-            """
+    @property
+    def nb_steps(self):
+        """
 
-            :return:
-            """
-            return int(self.model_id.split(',')[2])
+        :return:
+        """
+        return int(self.model_id.split(',')[2])
 
-        @property
-        def step_length(self):
-            return g.work_on2nb(self.work_on)
+    @property
+    def step_length(self):
+        return g.work_on2nb(self.work_on)
 
