@@ -191,36 +191,6 @@ class KerasNeuralNetwork:
                 'model_options': self.model_options,
             }, dump_file)
 
-    def load(self, path):
-        """
-
-        :param path:
-        :return:
-        """
-        path = Path(path)
-        with open(str(path / 'MyNN.p'), 'rb') as dump_file:
-            d = pickle.load(dump_file)
-            string_loss = d['loss']
-            self.losses = dill.loads(string_loss)
-            self.loss_lambdas = d['loss_lambdas']
-            self.model_id = d['model_id']
-            self.input_param = d['input_param']
-            self.nb_steps = d['nb_steps']
-            self.decay = dill.loads(d['decay'])
-            self.opt_param = d['opt_param']
-            self.type_loss = d['type_loss']
-            self.step_length = d['step_length']
-
-        optimizer, self.decay = KerasNeuralNetwork.create_optimizer(**self.opt_param)
-        metrics = [nn_losses.acc_act, nn_losses.mae_dur]
-        self.model = tf.keras.models.load_model(str(path / 'm.h5'),
-                                                custom_objects={'losses': self.losses,
-                                                                'loss_function': nn_losses.choose_loss(self.type_loss)(
-                                                                    *self.loss_lambdas),
-                                                                'optimizer': optimizer,
-                                                                'acc_act': nn_losses.acc_act,
-                                                                'mae_dur': nn_losses.mae_dur})
-
     def recreate(self, path):
         """
 

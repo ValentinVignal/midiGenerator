@@ -50,38 +50,7 @@ class MGModel(MGInit):
         if print_model:
             self.print_model()
 
-
-    def load_model(self, id, keep_name=True):
-        # TODO: only create and load weights
-        """
-
-        :param id: id of the model to load
-        :param keep_name: if true keep the name, if not, get a new index at the and of the full name
-        :return: load a model
-        """
-        self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
-        self.work_on = g.letter2work_on(work_on_letter)
-        self.total_epochs = int(total_epochs)
-        if keep_name:
-            self.get_full_name(indice)
-        else:
-            self.get_new_full_name()
-        path_to_load = Path('saved_models',
-                            '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs,
-                                                                     indice, work_on_letter))
-        self.keras_nn = KerasNeuralNetwork()
-        self.keras_nn.load(str(path_to_load / 'MyNN'))
-        with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
-            d = pickle.load(dump_file)
-            self.input_param = d['nn']['input_param']
-            self.instruments = d['instruments']
-            self.notes_range = d['notes_range']
-            self.work_on = d['work_on']
-        self.print_model()
-        print('Model', colored(id, 'white', 'on_blue'), 'loaded')
-
     def recreate_model(self, id, with_weigths=True, print_model=True):
-        # TODO: only create and load weights
         """
         create a new model witht the same options as the saved model and then load the weights (if with_weights==True)
         :param id:
@@ -114,7 +83,6 @@ class MGModel(MGInit):
             self.print_model()
 
     def load_weights(self, id, keep_name=True):
-        # TODO: only create and load weights
         """
 
         :param id: id of the model to load
@@ -141,7 +109,6 @@ class MGModel(MGInit):
         print(self.keras_nn.model.summary())
 
     def save_model(self, path=None):
-        # TODO: Only save weights and information
         """
 
         :param path: path were to save the model, if Nonem it will be at self.saved_model_path
