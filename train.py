@@ -6,10 +6,98 @@ from src.MidiGenerator import MidiGenerator
 import src.global_variables as g
 
 
-def main():
+def main(args):
     """
         Entry point
     """
+
+    if args.pc:
+        # args.data = 'lmd_matched_mini'
+        data_path = os.path.join('../Dataset', args.data)
+    else:
+        data_path = os.path.join('../../../../../../storage1/valentin', args.data)
+    data_transformed_path = data_path + '_transformed'
+    if args.mono:
+        data_transformed_path += 'Mono'
+
+    # -------------------- Create model --------------------
+    midi_generator = MidiGenerator(name=args.name)
+    # Choose GPU
+    if not args.pc:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    if args.debug:
+        pass
+
+    if args.model_id != '':
+        midi_generator.load_data(data_transformed_path=data_transformed_path)
+        opt_param = {
+            'lr': args.lr,
+            'name': args.optimizer,
+            'drop': float(args.decay_drop),
+            'epoch_drop': float(args.epochs_drop)
+        }
+        model_options = {
+            'dropout': args.dropout,
+            'all_sequence': args.all_sequence,
+            'lstm_state': args.lstm_state,
+            'no_batch_norm': args.no_batch_norm,
+            'bn_momentum': args.bn_momentum,
+            'lambdas_loss': args.lambdas_loss
+        }
+        midi_generator.new_nn_model(model_id=args.model_id,
+                              opt_param=opt_param,
+                              work_on=args.work_on,
+                              type_loss=args.type_loss,
+                              model_options=model_options)
+    elif args.load != '':
+        midi_generator.recreate_model(args.load)
+
+    # -------------------- Train --------------------
+    midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation)
+
+    # -------------------- Test --------------------
+    if args.evaluate:
+        midi_generator.evaluate()
+
+    # -------------------- Test overfit --------------------
+    if args.compare_generation:
+        midi_generator.compare_generation(max_length=None,
+                                    no_duration=args.no_duration,
+                                    verbose=1)
+
+    # -------------------- Generate --------------------
+    if args.generate:
+        midi_generator.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
+
+    # -------------------- Generate --------------------
+    if args.fill_instruments:
+        midi_generator.fill_instruments(no_duration=args.no_duration, verbose=1)
+
+    # -------------------- Debug batch generation --------------------
+    if args.check_batch > -1:
+        for i in range(len(midi_generator.my_sequence)):
+            midi_generator.compare_test_predict_on_batch(i)
+
+    # -------------------- Save the model --------------------
+    midi_generator.save_model()
+
+    cprint('---------- Done ----------', 'grey', 'on_green')
+
+
+def preprocess_args(args):
+    """
+
+    :param args:
+    :return:
+    """
+    if args.pc:
+        args.epochs = 1
+        args.batch = 4
+    return args
+
+
+if __name__ == '__main__':
+    # create a separate main function because original main function is too mainstream
 
     parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -86,81 +174,11 @@ def main():
 
     args = parser.parse_args()
 
-    if args.pc:
-        # args.data = 'lmd_matched_mini'
-        data_path = os.path.join('../Dataset', args.data)
-        args.epochs = 1
-        args.batch = 4
-    else:
-        data_path = os.path.join('../../../../../../storage1/valentin', args.data)
-    data_transformed_path = data_path + '_transformed'
-    if args.mono:
-        data_transformed_path += 'Mono'
+    # ------------------------------------------------------------
 
-    # -------------------- Create model --------------------
-    midi_generator = MidiGenerator(name=args.name)
-    # Choose GPU
-    if not args.pc:
-        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    if args.debug:
-        pass
+    args = preprocess_args(args)
 
-    if args.model_id != '':
-        midi_generator.load_data(data_transformed_path=data_transformed_path)
-        opt_param = {
-            'lr': args.lr,
-            'name': args.optimizer,
-            'drop': float(args.decay_drop),
-            'epoch_drop': float(args.epochs_drop)
-        }
-        model_options = {
-            'dropout': args.dropout,
-            'all_sequence': args.all_sequence,
-            'lstm_state': args.lstm_state,
-            'no_batch_norm': args.no_batch_norm,
-            'bn_momentum': args.bn_momentum,
-            'lambdas_loss': args.lambdas_loss
-        }
-        midi_generator.new_nn_model(model_id=args.model_id,
-                              opt_param=opt_param,
-                              work_on=args.work_on,
-                              type_loss=args.type_loss,
-                              model_options=model_options)
-    elif args.load != '':
-        midi_generator.recreate_model(args.load)
-
-    # -------------------- Train --------------------
-    midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation)
-
-    # -------------------- Test --------------------
-    if args.evaluate:
-        midi_generator.evaluate()
-
-    # -------------------- Test overfit --------------------
-    if args.compare_generation:
-        midi_generator.compare_generation(max_length=None,
-                                    no_duration=args.no_duration,
-                                    verbose=1)
-
-    # -------------------- Generate --------------------
-    if args.generate:
-        midi_generator.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
-
-    # -------------------- Generate --------------------
-    if args.fill_instruments:
-        midi_generator.fill_instruments(no_duration=args.no_duration, verbose=1)
-
-    # -------------------- Debug batch generation --------------------
-    if args.check_batch > -1:
-        for i in range(len(midi_generator.my_sequence)):
-            midi_generator.compare_test_predict_on_batch(i)
-
-    # -------------------- Save the model --------------------
-    midi_generator.save_model()
-
-    cprint('---------- Done ----------', 'grey', 'on_green')
+    main(args)
 
 
-if __name__ == '__main__':
-    # create a separate main function because original main function is too mainstream
-    main()
+

@@ -34,7 +34,7 @@ class MGTrain(MGInit):
 
         if flag_new_sequence:
             self.my_sequence = Sequences.MissingInstSequence(
-                path=str(self.data_transformed_pathlib),
+                path=str(self.data_transformed_path),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
                 work_on=self.work_on
@@ -64,7 +64,7 @@ class MGTrain(MGInit):
         cprint('Evaluation', 'blue')
         if self.my_sequence is None:
             self.my_sequence = Sequences.AllInstSequence(
-                path=str(self.data_transformed_pathlib),
+                path=str(self.data_transformed_path),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
                 work_on=self.work_on

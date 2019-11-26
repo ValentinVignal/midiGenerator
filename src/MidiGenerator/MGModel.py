@@ -101,7 +101,7 @@ class MGModel(MGInit):
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
             self.work_on = d['work_on']
-            self.data_transformed_pathlib = d['data_transformed_pathlib']
+            self.data_transformed_path = d['data_transformed_path']
 
         self.keras_nn = KerasNeuralNetwork()
         self.keras_nn.recreate((path_to_load / 'MyNN').as_posix())
@@ -147,9 +147,9 @@ class MGModel(MGInit):
         :param path: path were to save the model, if Nonem it will be at self.saved_model_path
         :return:
         """
-        path_to_save = self.saved_model_pathlib if path is None else Path(path)
+        path_to_save = self.saved_model_path if path is None else Path(path)
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
-        self.saved_model_pathlib.mkdir(parents=True, exist_ok=True)
+        self.saved_model_path.mkdir(parents=True, exist_ok=True)
         self.keras_nn.save(str(path_to_save / 'MyNN'))
         with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
             pickle.dump({
@@ -163,7 +163,7 @@ class MGModel(MGInit):
                 'instruments': self.instruments,
                 'notes_range': self.notes_range,
                 'work_on': self.work_on,
-                'data_transformed_pathlib': self.data_transformed_pathlib,
+                'data_transformed_path': self.data_transformed_path,
                 'mono': self.mono
             }, dump_file)
         summary.summarize_train(path_to_save, **{

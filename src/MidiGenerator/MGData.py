@@ -12,10 +12,10 @@ class MGData(MGInit):
 
         :return: load the data
         """
-        self.data_transformed_pathlib = Path(
-            data_transformed_path) if data_transformed_path is not None else self.data_transformed_pathlib
+        self.data_transformed_path = Path(
+            data_transformed_path) if data_transformed_path is not None else self.data_transformed_path
         self.input_param = {}
-        with open(str(self.data_transformed_pathlib / 'infos_dataset.p'), 'rb') as dump_file:
+        with open(str(self.data_transformed_path / 'infos_dataset.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
             self.input_param['input_size'] = d['input_size']
             self.input_param['nb_instruments'] = d['nb_instruments']

@@ -18,11 +18,11 @@ class MGInit:
         self.work_on = None
         self.get_new_full_name()
 
-        self.saved_model_pathlib = Path(
+        self.saved_model_path = Path(
             os.path.join('saved_models', self.full_name))  # Where to saved the trained model
 
         # ----- Data -----
-        self.data_transformed_pathlib = None
+        self.data_transformed_path = None
 
         self.instruments = None  # List of instruments used
         self.notes_range = None
@@ -38,7 +38,24 @@ class MGInit:
         self.train_history = None
 
         # ------ save_midi_path -----
-        self.save_midis_pathlib = None  # Where to save the generated Midi files
+        self.save_midis_path = None  # Where to save the generated Midi files
 
         if data is not None:
             self.load_data(data)
+
+        # --------------------------------------------------
+        #                   Properties
+        # --------------------------------------------------
+
+        @property
+        def nb_steps(self):
+            """
+
+            :return:
+            """
+            return int(self.model_id.split(',')[2])
+
+        @property
+        def step_length(self):
+            return g.work_on2nb(self.work_on)
+

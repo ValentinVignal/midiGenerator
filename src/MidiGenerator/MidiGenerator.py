@@ -1,6 +1,3 @@
-import os
-from pathlib import Path
-
 import src.global_variables as g
 from .MGPredict import MGPredict
 from .MGData import MGData
@@ -55,20 +52,4 @@ class MidiGenerator(MGPredict, MGData, MGTrain, MGModel, MGLogistic, MGInit):
         my_model = cls()
         my_model.recreate_model(id=id, with_weigths=with_weights)
         return my_model
-
-    # --------------------------------------------------
-    #                   Properties
-    # --------------------------------------------------
-
-    @property
-    def nb_steps(self):
-        """
-
-        :return:
-        """
-        return int(self.model_id.split(',')[2])
-
-    @property
-    def step_length(self):
-        return g.work_on2nb(self.work_on)
 
