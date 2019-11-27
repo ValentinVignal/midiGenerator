@@ -20,10 +20,11 @@ class MissingInstSequence(KerasSequence):
         self.nb_combinations = self.nb_instruments + 1 + k
 
     def __len__(self):
-        return super(MissingInstSequence, self).__len__() * self.nb_combinations
+        return super(MissingInstSequence, self).__len__()# * self.nb_combinations
 
     def __getitem__(self, item):
-        x, y = super(MissingInstSequence, self).__getitem__(item // self.nb_combinations)
+        x, y = super(MissingInstSequence, self).__getitem__(item)# // self.nb_combinations)
+        '''
         # x (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         # x (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
         mod = item % self.nb_combinations
@@ -45,7 +46,8 @@ class MissingInstSequence(KerasSequence):
             mask = np.ones((self.batch_size, self.nb_instruments, self.nb_steps))
             mask[:, zeros_axis] = 0
             y[:, zeros_axis] = np.nan
-        return list(x) + [mask], list(y)
+        '''
+        return list(x) + [np.ones((self.batch_size, self.nb_instruments, self.nb_steps))], list(y)
 
     def change_batch_size(self, batch_size):
         self.batch_size = batch_size
