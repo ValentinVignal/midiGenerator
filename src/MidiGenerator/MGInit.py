@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from src import global_variables as g
 
 
 class MGInit:

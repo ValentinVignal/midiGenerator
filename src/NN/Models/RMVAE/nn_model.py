@@ -117,8 +117,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
     kld = mlayers.vae.KLD()(poe)
-    #samples = mlayers.vae.SampleGaussian()(poe)  # (batch, nb_steps, size)
-    samples = layers.concatenate(poe)
+    samples = mlayers.vae.SampleGaussian()(poe)  # (batch, nb_steps, size)
+    #samples = layers.concatenate(poe)
 
     x = mlayers.rnn.LstmRNN(
         model_param['lstm'])(samples)  # TODO : Put eval in it and declare nb_instrument blablabla...
