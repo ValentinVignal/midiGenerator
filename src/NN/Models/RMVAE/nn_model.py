@@ -121,7 +121,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     #samples = layers.concatenate(poe)
 
     x = mlayers.rnn.LstmRNN(
-        model_param['lstm'])(samples)  # TODO : Put eval in it and declare nb_instrument blablabla...
+        model_param['lstm'])(samples)
     x = mlayers.coder3D.Decoder3D(decoder_param=model_param_dec,
                                   shape_before_conv=shape_before_conv_dec,
                                   dropout=dropout,

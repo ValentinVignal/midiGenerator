@@ -10,12 +10,12 @@ from time import time
 import progressbar
 import numpy as np
 
-import src.NN.losses as nn_losses
 import src.global_variables as g
 from src.NN import Sequences
 from . import Models
 
 K = tf.keras.backend
+tf.compat.v1.disable_eager_execution()
 
 
 class KerasNeuralNetwork:
@@ -284,6 +284,7 @@ class KerasNeuralNetwork:
         config.gpu_options.allow_growth = True
         sess = tf.compat.v1.Session(config=config)
         tf.compat.v1.keras.backend.set_session(sess)
+
 
     @staticmethod
     def choose_gpu(gpu):
