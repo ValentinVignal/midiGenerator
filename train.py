@@ -42,13 +42,14 @@ def main(args):
             'lstm_state': args.lstm_state,
             'no_batch_norm': args.no_batch_norm,
             'bn_momentum': args.bn_momentum,
-            'lambdas_loss': args.lambdas_loss
+            'lambdas_loss': args.lambdas_loss,
+            'sample': not args.no_sample
         }
         midi_generator.new_nn_model(model_id=args.model_id,
-                              opt_param=opt_param,
-                              work_on=args.work_on,
-                              type_loss=args.type_loss,
-                              model_options=model_options)
+                                    opt_param=opt_param,
+                                    work_on=args.work_on,
+                                    type_loss=args.type_loss,
+                                    model_options=model_options)
     elif args.load != '':
         midi_generator.recreate_model(args.load)
 
@@ -62,8 +63,8 @@ def main(args):
     # -------------------- Test overfit --------------------
     if args.compare_generation:
         midi_generator.compare_generation(max_length=None,
-                                    no_duration=args.no_duration,
-                                    verbose=1)
+                                          no_duration=args.no_duration,
+                                          verbose=1)
 
     # -------------------- Generate --------------------
     if args.generate:
@@ -128,6 +129,8 @@ if __name__ == '__main__':
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--lstm-state', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
+    parser.add_argument('--no-sample', default=False, action='store_true',
+                        help='Gaussian Sample')
     # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')
@@ -179,6 +182,3 @@ if __name__ == '__main__':
     args = preprocess_args(args)
 
     main(args)
-
-
-

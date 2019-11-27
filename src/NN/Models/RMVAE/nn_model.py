@@ -44,6 +44,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     mmodel_options = {
         'dropout': g.dropout,
         'lambdas_loss': g.lambdas_loss,
+        'sample': g.sample
     }
     mmodel_options.update(model_options)
 
@@ -117,8 +118,10 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
     kld = mlayers.vae.KLD()(poe)
-    samples = mlayers.vae.SampleGaussian()(poe)  # (batch, nb_steps, size)
-    #samples = layers.concatenate(poe)
+    if mmodel_options['sample']:
+        samples = mlayers.vae.SampleGaussian()(poe)  # (batch, nb_steps, size)
+    else:
+        samples = layers.concatenate(poe)
 
     x = mlayers.rnn.LstmRNN(
         model_param['lstm'])(samples)

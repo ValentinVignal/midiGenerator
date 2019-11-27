@@ -43,15 +43,16 @@ class LstmRNN(KerasLayer):
 
     type_size_list = t.List[int]
 
-    def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
+    def __init__(self, size_list: type_size_list, dropout: float = g.dropout, return_sequence: bool = False):
         super(LstmRNN, self).__init__()
         self.lstm_blocks = []
         self.size_list = size_list
+        self.return_sequence = return_sequence
         self.init_lstm_blocks(size_list, dropout)
 
     def init_lstm_blocks(self, size_list, dropout=g.dropout):
         for index, size in enumerate(size_list):
-            return_sequence = index < len(size_list) - 1
+            return_sequence = index < len(size_list) - 1 or self.return_sequence
             self.lstm_blocks.append(LstmBlock(size=size, dropout=dropout, return_sequence=return_sequence))
 
     def build(self, input_shape):
