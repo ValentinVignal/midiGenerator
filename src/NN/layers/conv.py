@@ -118,6 +118,116 @@ class ConvTransposedBlock3D(KerasLayer):
             return self.conv_transposed.compute_output_shape(input_shape)
 
 
+# ------------------------------------------------------------
+#                               2D
+# ------------------------------------------------------------
+
+class ConvBlock2D(KerasLayer):
+    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.dropout):
+        """
+
+        :param filters: int: the size of the filters
+        :param strides: tuple<int>: (2,):
+        :param dropout: float:
+        """
+        super(ConvBlock2D, self).__init__()
+        self.strides = strides
+        self.conv = layers.Conv2D(filters=filters,
+                                  kernel_size=(5, 5),
+                                  strides=strides,
+                                  padding='same')
+        self.batch_norm = layers.BatchNormalization()
+        self.leaky_relu = layers.LeakyReLU()
+        self.dropout = layers.Dropout(dropout)
+
+    def build(self, input_shape: t.bshape):
+        self.conv.build(input_shape)
+        new_shape = self.conv.compute_output_shape(input_shape)
+        self.batch_norm.build(new_shape)
+        self.leaky_relu.build(new_shape)
+        self.dropout.build(new_shape)
+        self.set_weights_variables(self.conv, self.batch_norm)
+        super(ConvBlock2D, self).build(input_shape)
+
+    def call(self, inputs):
+        x = self.conv(inputs)
+        x = self.batch_norm(x)
+        x = self.leaky_relu(x)
+        return self.dropout(x)
+
+    def compute_output_shape(self, input_shape):
+        return self.conv.compute_output_shape(input_shape)
+
+
+class ConvTransposedBlock2D(KerasLayer):
+    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.dropout,
+                 final_shape: t.anyshape_ = None):
+        """
+
+        :param filters: int:
+        :param strides: Tuple[int]:
+        :param dropout: float:
+        :param final_shape: Optional[Tuple[int]]
+            ⚠ Batch dim in the axis0 : (?, a, b, c, d) ⚠
+        """
+        super(ConvTransposedBlock2D, self).__init__()
+
+        self.filters = filters
+
+        self.conv_transposed = layers.Conv2DTranspose(filters=filters,
+                                                      kernel_size=(5, 5),
+                                                      padding='same',
+                                                      strides=strides)
+        self.batch_norm = layers.BatchNormalization()
+        self.leaky_relu = layers.LeakyReLU()
+        self.dropout = layers.Dropout(dropout)
+
+        self.final_shape: t.bshape_ = ConvTransposedBlock2D.check_final_shape(final_shape)
+
+    @staticmethod
+    def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:
+        """
+        if batch dim is not in the shape, then put it
+
+        :param final_shape: tuple<int>: (4,) or (5,): (a, b, c, d) or (?, a, b, c, d)
+        :return: tuple<int>: (5,): (?, a, b, c, d)
+        """
+        if final_shape is None or len(final_shape) == 5:
+            return final_shape
+        else:
+            return (None, *final_shape)
+
+    def build(self, input_shape):
+        self.conv_transposed.build(input_shape)
+        if self.final_shape is None:
+            new_shape = self.conv_transposed.compute_output_shape(input_shape)
+        else:
+            new_shape = self.final_shape
+        self.batch_norm.build(new_shape)
+        self.leaky_relu.build(new_shape)
+        self.dropout.build(new_shape)
+        self.set_weights_variables(self.conv_transposed, self.batch_norm)
+        super(ConvTransposedBlock2D, self).build(input_shape)
+
+    def call(self, inputs):
+        x = self.conv_transposed(inputs)
+        if self.final_shape is not None:
+            if x.shape[3] != self.final_shape[3]:       # Input size check
+                x = x[:, :, :, :-1]
+            if x.shape[2] != self.final_shape[2]:       # step_size check
+                x = x[:, :, :-1]
+        x = self.batch_norm(x)
+        x = self.leaky_relu(x)
+        return self.dropout(x)
+
+    def compute_output_shape(self, input_shape):
+        if self.final_shape is not None:
+            return self.final_shape
+        else:
+            return self.conv_transposed.compute_output_shape(input_shape)
+
+
+
 def new_shape_conv(input_shape: t.shape, strides: t.strides, filters: int) -> t.shape:
     """
     To handle with padding = 'same'
