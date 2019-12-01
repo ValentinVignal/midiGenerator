@@ -85,12 +85,13 @@ class LastInstMono(KerasLayer):
         self.softmax = layers.Softmax(axis=softmax_axis)
 
     def build(self, input_shape):
+        print('LastInstMono, build, input_shape', input_shape)
         self.flatten.build(input_shape)
         new_shape = self.flatten.compute_output_shape(input_shape)
         self.dense.build(new_shape)
         new_shape = self.dense.compute_output_shape(new_shape)
         if not self.already_built:
-            self.reshape = layers.Reshape(input_shape[1:])  # Don't take the batch shape and the nb_step shape
+            self.reshape = layers.Reshape(input_shape[1:])
             self.already_built = True
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)

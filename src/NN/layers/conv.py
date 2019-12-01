@@ -183,6 +183,7 @@ class ConvTransposedBlock2D(KerasLayer):
         self.dropout = layers.Dropout(dropout)
 
         self.final_shape: t.bshape_ = ConvTransposedBlock2D.check_final_shape(final_shape)
+        print('ConvTransposedBlock2D, init, final_shape', self.final_shape)
 
     @staticmethod
     def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:
@@ -192,7 +193,7 @@ class ConvTransposedBlock2D(KerasLayer):
         :param final_shape: tuple<int>: (4,) or (5,): (a, b, c, d) or (?, a, b, c, d)
         :return: tuple<int>: (5,): (?, a, b, c, d)
         """
-        if final_shape is None or len(final_shape) == 5:
+        if final_shape is None or len(final_shape) == 4:
             return final_shape
         else:
             return (None, *final_shape)
@@ -225,7 +226,6 @@ class ConvTransposedBlock2D(KerasLayer):
             return self.final_shape
         else:
             return self.conv_transposed.compute_output_shape(input_shape)
-
 
 
 def new_shape_conv(input_shape: t.shape, strides: t.strides, filters: int) -> t.shape:

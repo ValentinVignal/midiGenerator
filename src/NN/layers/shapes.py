@@ -132,3 +132,17 @@ class Unstack(KerasLayer):
     def call(self, inputs):
         return tf.unstack(inputs, axis=self.axis_with_batch)
 
+
+class ExpandDims(KerasLayer):
+    def __init__(self, axis=0):
+        super(ExpandDims, self).__init__()
+        self.axis = axis
+        self.axis_with_batch = axis + 1 if axis >= 0 else axis
+
+    def compute_output_shape(self, input_shape):
+        return (*input_shape[:self.axis_with_batch], 1, *input_shape[self.axis_with_batch:])
+
+    def call(self, inputs):
+        return tf.expand_dims(inputs, self.axis_with_batch)
+
+

@@ -67,10 +67,11 @@ def compute_filters_before_pooling(input_filters: int, filters: t.List[t.List[in
 
 def compute_model_param_dec(input_shape: t.shape,
                             model_param_enc: t.Dict[str, t.Union[t.List[t.List[int]], t.List[int]]],
-                            strides: t.List[t.Tuple[int, ...]]
+                            strides: t.List[t.Tuple[int, ...]], nb_steps_to_1: bool = True
                             ) -> t.Tuple[t.Dict[str, t.Union[t.List[t.List[int]], t.List[int]]], t.shape]:
     """
 
+    :param nb_steps_to_1: 
     :param input_shape: real input of the convolution
     :param model_param_enc:
     :param strides:
@@ -86,9 +87,11 @@ def compute_model_param_dec(input_shape: t.shape,
                                                         strides_list=strides,
                                                         filters_list=[conv_enc[-1][-1] for i in range(nb_pool)])
     last_shape_conv_enc = last_shapes_conv_enc[-1]
+    if nb_steps_to_1:
+        last_shape_conv_enc = (1, *last_shape_conv_enc[1:])
     # 2. compute the last size
     last_size_conv_enc = 1
-    for i, s in enumerate(last_shape_conv_enc[1:]):  # Don't take the time axis (1 step only in decoder)
+    for i, s in enumerate(last_shape_conv_enc):
         last_size_conv_enc *= s
 
     # --- Create the dictionnary to return ---
@@ -96,5 +99,5 @@ def compute_model_param_dec(input_shape: t.shape,
         dense=dense_enc[::-1] + [last_size_conv_enc],
         conv=mlayers.conv.reverse_conv_param(original_dim=input_shape[-1], param_list=conv_enc)
     )
-    return model_param_dec, (1, *last_shape_conv_enc[1:])
+    return model_param_dec, last_shape_conv_enc
 

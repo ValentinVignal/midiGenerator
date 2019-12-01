@@ -76,13 +76,16 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # ----- For the decoder -----
 
     model_param_dec, shape_before_conv_dec = s_conv.compute_model_param_dec(
-        input_shape=(*midi_shape[:-1], nb_instruments),
+        input_shape=midi_shape[1:],
         model_param_enc=model_param,
-        strides=[(time_stride, 2) for i in range(len(model_param['conv']) - 1)]
+        strides=[(time_stride, 2) for i in range(len(model_param['conv']) - 1)],
+        nb_steps_to_1=False
     )
+    print('midi_shape', midi_shape)
+    print('shape before conv dec', shape_before_conv_dec)
 
     shapes_before_pooling = s_conv.compute_shapes_before_pooling(
-        input_shape=midi_shape,
+        input_shape=midi_shape[1:],
         model_param_conv=model_param['conv'],
         strides=(time_stride, 2)
     )
@@ -100,22 +103,27 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         inputs_midi.append(tf.keras.Input(midi_shape))  # [(batch, nb_steps, step_length, input_size, 2)]
 
     inputs_inst_step = [mlayers.shapes.Unstack(axis=0)(input_inst) for input_inst in
-                        inputs_midi]  # List(nb_instruments, nb_steps)[(batch, step_length, channels)]
+                        inputs_midi]  # List(nb_instruments, nb_steps)[(batch, step_length, size, channels)]
+    print('inputs_inst_step', len(inputs_inst_step), len(inputs_inst_step[0]), inputs_inst_step[0][0].shape)
 
     # ------------------------------ Encoding ------------------------------
 
     encoders = [mlayers.coder2D.Encoder2D(
         encoder_param=model_param,
         dropout=dropout,
-        time_stride=time_stride
+        time_stride=time_stride,
+        time_distributed=False
     ) for inst in range(nb_instruments)]
 
     encoded_step_inst = [[encoders[inst](inputs_inst_step[inst][step]) for inst in range(nb_instruments)] for step in
                          range(nb_steps)]  # List(nb_inst, nb_instruments)[(batch, size)]
+    print('encoded_step_inst', len(encoded_step_inst), len(encoded_step_inst[0]), encoded_step_inst[0][0].shape)
 
     encoded_steps = [layers.concatenate(encoded_step_inst[step]) for step in
                      range(nb_steps)]  # List(nb_steps)[(batch, size)]
+    print('encoded_steps', len(encoded_steps), encoded_steps[0].shape)
     encoded = mlayers.shapes.Stack(axis=0)(encoded_steps)
+    print('encoded', encoded.shape)
 
     # ------------------------------ RNN ------------------------------
 
@@ -131,11 +139,15 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         time_stride=time_stride,
         shapes_after_upsize=shapes_before_pooling
     ) for inst in range(nb_instruments)]
+    print('rnn_output', rnn_output.shape)
 
     decoded_inst = [decoders[inst](rnn_output) for inst in
                     range(nb_instruments)]  # List(nb_instruments)[(batch, step_length, size, channels)]
     outputs = [mlayers.last.LastInstMono(softmax_axis=-2)(decoded_inst[inst]) for inst in
                range(nb_instruments)]  # List(nb_instruments)[(batch, nb_steps=1, step_size, size, channels=1)]
+    print('outputs', len(outputs), outputs[0].shape)
+    outputs = [mlayers.shapes.ExpandDims(axis=0)(output) for output in outputs]     # Add the nb_steps=1
+    outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi, outputs=outputs)
 
