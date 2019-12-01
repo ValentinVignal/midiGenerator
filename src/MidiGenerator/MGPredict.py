@@ -30,8 +30,6 @@ class MGPredict(MGInit):
         :param verbose: Level of verbose
         :return:
         """
-        nb_steps = int(self.model_id.split(',')[2])
-
         # ---------- Verify the inputs ----------
 
         # ----- Create the seed -----
@@ -46,7 +44,7 @@ class MGPredict(MGInit):
         if need_new_sequence:
             self.my_sequence = Sequences.AllInstSequence(
                 path=str(self.data_transformed_path),
-                nb_steps=nb_steps,
+                nb_steps=self.nb_steps,
                 batch_size=1,
                 work_on=self.work_on)
         else:
@@ -54,7 +52,6 @@ class MGPredict(MGInit):
 
         seeds_indexes = random.sample(range(len(self.my_sequence)), nb_seeds)
 
-        step_length = g.work_on2nb(self.work_on)
         # -- Length --
         length = length if length is not None else 200
         # -- For save Midi path --
@@ -65,9 +62,13 @@ class MGPredict(MGInit):
         # --- Done Verifying the inputs ---
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
+        print('sequence', self.my_sequence)
         cprint('Start generating ...', 'blue')
         for s in range(nb_seeds):
             cprint('Generation {0}/{1}'.format(s + 1, nb_seeds), 'blue')
+            print('seed', s, len(self.my_sequence[seeds_indexes[s]]),
+                  len(self.my_sequence[seeds_indexes[s]][0]),
+                  self.my_sequence[seeds_indexes[s]][0][0].shape)
             generated = np.array(
                 self.my_sequence[seeds_indexes[s]][0])  # (nb_instruments, 1, nb_steps, step_size, inputs_size, 2)
             bar = progressbar.ProgressBar(maxval=length,
@@ -106,7 +107,7 @@ class MGPredict(MGInit):
             path_to_save = str(self.save_midis_path / m_str)
             path_to_save_img = str(self.save_midis_path / 'lstm_out_({0}).jpg'.format(i))
 
-            midi.create.print_informations(nb_steps=nb_steps * step_length, matrix=generated_midi_final,
+            midi.create.print_informations(nb_steps=self.nb_steps * self.step_length, matrix=generated_midi_final,
                                            notes_list=output_notes_list, verbose=verbose)
 
             # Saving the Midi file
@@ -115,7 +116,7 @@ class MGPredict(MGInit):
             if save_images:
                 pianoroll.save_pianoroll(array=generated_midi_final,
                                          path=path_to_save_img,
-                                         seed_length=nb_steps * step_length,
+                                         seed_length=self.nb_steps * self.step_length,
                                          instruments=self.instruments,
                                          mono=self.mono)
 

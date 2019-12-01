@@ -33,6 +33,6 @@ Use the option `--bach`
 
 | Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 8 |
+| **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 32 |
 
 

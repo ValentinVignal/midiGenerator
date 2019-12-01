@@ -109,7 +109,11 @@ class KerasSequence(tf.keras.utils.Sequence):
             self.nb_elements = KerasSequence.return_nb_elements(self.all_shapes, self.step_size,
                                                               self.nb_steps)  # nb element available in the generator
             self.nb_elements = int(self.nb_elements / self.batch_size)
-            self.all_len = self.know_all_len()
+            self.all_len = self.know_all_len(
+                all_shapes=self.all_shapes,
+                step_size=self.step_size,
+                nb_steps=self.nb_steps
+            )
 
     # -------------------- Helper functions --------------------
 
