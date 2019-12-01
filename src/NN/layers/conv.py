@@ -183,7 +183,6 @@ class ConvTransposedBlock2D(KerasLayer):
         self.dropout = layers.Dropout(dropout)
 
         self.final_shape: t.bshape_ = ConvTransposedBlock2D.check_final_shape(final_shape)
-        print('ConvTransposedBlock2D, init, final_shape', self.final_shape)
 
     @staticmethod
     def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:

@@ -85,7 +85,6 @@ class LastInstMono(KerasLayer):
         self.softmax = layers.Softmax(axis=softmax_axis)
 
     def build(self, input_shape):
-        print('LastInstMono, build, input_shape', input_shape)
         self.flatten.build(input_shape)
         new_shape = self.flatten.compute_output_shape(input_shape)
         self.dense.build(new_shape)
@@ -101,7 +100,6 @@ class LastInstMono(KerasLayer):
         super(LastInstMono, self).build(input_shape)
 
     def call(self, inputs):
-        # print('LastInstMono call: inputs', inputs.shape)
         x = self.flatten(inputs)
         x = self.dense(x)
         x = self.reshape(x)

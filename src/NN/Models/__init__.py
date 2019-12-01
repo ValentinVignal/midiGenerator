@@ -1,5 +1,5 @@
-from .RMVAE import nn_model as RMVAE
-from .AEMono import nn_model as AEMono
+from .RMVAE import RMVAE as RMVAE
+from .AEMono import AEMono as AEMono
 
 from_name = dict(
     RMVAE=RMVAE,

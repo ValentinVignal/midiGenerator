@@ -171,9 +171,7 @@ class ConvDecoder2D(KerasLayer):
     def build(self, input_shape):
         new_shape = input_shape
         self.reset_weights_variables()
-        print('ConvDecoder2D, build, input_shape', input_shape)
         for conv in self.conv_blocks:
-            print('ConvDecoder2D, build, new_shape', new_shape)
             conv.build(new_shape)
             new_shape = conv.compute_output_shape(new_shape)
             self.add_weights_variables(conv)
@@ -223,8 +221,6 @@ class Decoder2D(KerasLayer):
 
         self.dense_dec = dense.DenseCoder(size_list=decoder_param['dense'],
                                           dropout=dropout)
-        print('Decoder2D, init, decoder_param[dense]', decoder_param['dense'])
-        print('Decoder2D, init, shape before conv', shape_before_conv)
         self.reshape = layers.Reshape(self.shape_before_conv)
         self.conv_dec = ConvDecoder2D(filters_list=decoder_param['conv'],
                                       dropout=dropout,
@@ -243,7 +239,6 @@ class Decoder2D(KerasLayer):
         new_shape = self.dense_dec.compute_output_shape(input_shape)
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)
-        print('Decoder2D, build, reshaped', new_shape)
         self.conv_dec.build(new_shape)
 
         self.set_weights_variables(self.dense_dec, self.conv_dec)

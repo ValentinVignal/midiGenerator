@@ -92,7 +92,7 @@ def preprocess_args(args):
     :return:
     """
     if args.pc:
-        args.epochs = 1
+        args.epochs = 2
         args.batch = 4
     return args
 

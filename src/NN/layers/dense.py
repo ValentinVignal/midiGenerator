@@ -108,7 +108,6 @@ class DenseSameShape(KerasLayer):
         :param input_shape: (?, previous_size)
         :return:
         """
-        # print('DenseSameShape build:  input shape', input_shape)
         if not self.already_built:
             self.units = shapes.get_shape(input_shape, -1)
             self.dense = layers.Dense(units=self.units, **self.kwargs)
