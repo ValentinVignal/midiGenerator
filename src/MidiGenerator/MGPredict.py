@@ -53,7 +53,7 @@ class MGPredict(MGInit):
         seeds_indexes = random.sample(range(len(self.my_sequence)), nb_seeds)
 
         # -- Length --
-        length = length if length is not None else 200
+        length = length if length is not None else 20
         # -- For save Midi path --
         if type(new_save_path) is str or (
                 type(new_save_path) is bool and new_save_path) or (

@@ -29,7 +29,7 @@ def normalize_activation(arr, threshold=0.5, mono=False):
         return arr
 
 
-def converter_func(arr, no_duration=False):
+def converter_func_poly(arr, no_duration=False):
     """
 
     :param arr: (nb_instruments, 88, nb_steps, 2)
@@ -101,6 +101,21 @@ def converter_func_mono(arr):
     return matrix_norm
 
 
+def converter_func(arr, mono=False, no_duration=False):
+    """
+
+    :param arr:
+    :param mono:
+    :param no_duration:
+    :return:
+    """
+    if mono:
+        arr = converter_func_mono(arr)  # Make it consistent      # (nb_instruments, 128, nb_steps)
+    else:
+        arr = converter_func_poly(arr, no_duration=no_duration)
+    return arr
+
+
 def int_to_note(integer):
     # convert pitch value to the note which is a letter form.
     note_base_name = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -127,11 +142,14 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
     notes_range = (0, 88) if notes_range is None else notes_range
 
+    matrix_norm = converter_func(matrix, mono=mono, no_duration=no_duration)
+    """
     if mono:
         matrix_norm = converter_func_mono(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     else:
-        matrix_norm = converter_func(matrix,
-                                     no_duration=no_duration)  # Make it consistent   # (nb_instruments, 128, nb_steps)
+        matrix_norm = converter_func_poly(matrix,
+                                          no_duration=no_duration)  # Make it consistent   # (nb_instruments, 128, nb_steps)
+    """
     # ---- Delete silence in the beginning of the song ----
     how_many_in_start_zeros = 0
     for step in range(nb_steps):

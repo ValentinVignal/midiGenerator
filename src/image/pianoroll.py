@@ -5,6 +5,8 @@ from colour import Color
 import random
 import matplotlib.pyplot as plt
 
+from src import Midi
+
 
 def save_img(array, path):
     """
@@ -69,10 +71,16 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False):
     """
     # Colors
     colors_rgb = return_colors(len(instruments))
+    activations = Midi.create.converter_func(
+        array,
+        mono=mono
+    )  # Array of the duration of each notes   # (nb_instruments, nb_notes, nb_steps)
+    """
     if mono:
         activations = array[:, :-1, :, 0]  # (nb_instruments, 88, nb_steps)
     else:
         activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
+    """
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
@@ -170,7 +178,7 @@ def see_compare_generation_step(inputs, outputs, truth):
                       inst in range(nb_instruments)]
     acc_alone = sum(acc_alone_inst) / len(acc_alone_inst)
     acc_helped_inst = [1 - (np.count_nonzero(outputs_helped[inst] - truth_a[inst]) / truth_a[inst].size) for
-                      inst in range(nb_instruments)]
+                       inst in range(nb_instruments)]
     acc_helped = sum(acc_helped_inst) / len(acc_helped_inst)
 
     fig, axs = plt.subplots(3, 2)
@@ -233,7 +241,8 @@ def see_compare_on_batch(x, yt, yp):
     fig, axs = plt.subplots(batch, 3)
     accs = np.zeros((batch, nb_instruments))
     for b in range(batch):
-        accs[b] = np.array([1 - (np.count_nonzero(yt[inst, b] - yp[inst, b]) / yp[inst, b].size) for inst in range(nb_instruments)])
+        accs[b] = np.array(
+            [1 - (np.count_nonzero(yt[inst, b] - yp[inst, b]) / yp[inst, b].size) for inst in range(nb_instruments)])
         acc = np.sum(accs[b]) / nb_instruments
         axs[b, 0].imshow(x_final[b])
         axs[b, 0].set_title('Input')
@@ -245,11 +254,3 @@ def see_compare_on_batch(x, yt, yp):
     acc = np.sum(accs) / len(accs)
     plt.title('{0}, {1}'.format(accs, acc))
     plt.show()
-
-
-
-
-
-
-
-
