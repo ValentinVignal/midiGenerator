@@ -212,9 +212,9 @@ class ConvTransposedBlock2D(KerasLayer):
     def call(self, inputs):
         x = self.conv_transposed(inputs)
         if self.final_shape is not None:
-            if x.shape[3] != self.final_shape[3]:       # Input size check
-                x = x[:, :, :, :-1]
-            if x.shape[2] != self.final_shape[2]:       # step_size check
+            if x.shape[1] != self.final_shape[1]:       # step_length check
+                x = x[:, :-1]
+            if x.shape[2] != self.final_shape[2]:       # input_size check
                 x = x[:, :, :-1]
         x = self.batch_norm(x)
         x = self.leaky_relu(x)

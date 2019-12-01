@@ -80,7 +80,7 @@ lambda_loss_activation, lambda_loss_duration = get_lambdas_loss(lambdas_loss)
 all_sequence = False
 lstm_state = False
 last_fc = False
-sample = True
+sampling = True
 # ----- Data -----
 noise = 0
 

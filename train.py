@@ -43,7 +43,7 @@ def main(args):
             'no_batch_norm': args.no_batch_norm,
             'bn_momentum': args.bn_momentum,
             'lambdas_loss': args.lambdas_loss,
-            'sample': not args.no_sample
+            'sampling': not args.no_sampling
         }
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,
@@ -129,8 +129,8 @@ if __name__ == '__main__':
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--lstm-state', default=False, action='store_true',
                         help='Use or not all the sequence in the RNN layer')
-    parser.add_argument('--no-sample', default=False, action='store_true',
-                        help='Gaussian Sample')
+    parser.add_argument('--no-sampling', default=False, action='store_true',
+                        help='Gaussian Sampling')
     # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')

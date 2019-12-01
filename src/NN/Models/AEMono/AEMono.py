@@ -44,7 +44,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     mmodel_options = {
         'dropout': g.dropout,
         'lambdas_loss': g.lambdas_loss,
-        'sample': g.sample
+        'sampling': g.sampling
     }
     mmodel_options.update(model_options)
 
@@ -80,14 +80,15 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         model_param_enc=model_param,
         strides=[(time_stride, 2) for i in range(len(model_param['conv']) - 1)],
         nb_steps_to_1=False
-    )
+    )  # Compute the values of the filters for
+    # transposed convolution and fully connected + the size of the tensor before the flatten layer in the encoder
 
     shapes_before_pooling = s_conv.compute_shapes_before_pooling(
         input_shape=midi_shape[1:],
         model_param_conv=model_param['conv'],
         strides=(time_stride, 2)
-    )
-    # Put time to 1 :
+    )       # All the shapes of the tensors before each pooling
+    # Put time to 1 for the output:
     shapes_before_pooling = s_time.time_step_to_x(l=shapes_before_pooling, axis=1, x=1)
 
     # --------- End Variables ----------
@@ -138,7 +139,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                     range(nb_instruments)]  # List(nb_instruments)[(batch, step_length, size, channels)]
     outputs = [mlayers.last.LastInstMono(softmax_axis=-2)(decoded_inst[inst]) for inst in
                range(nb_instruments)]  # List(nb_instruments)[(batch, nb_steps=1, step_size, size, channels=1)]
-    outputs = [mlayers.shapes.ExpandDims(axis=0)(output) for output in outputs]     # Add the nb_steps=1
+    outputs = [mlayers.shapes.ExpandDims(axis=0)(output) for output in outputs]  # Add the nb_steps=1
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi, outputs=outputs)

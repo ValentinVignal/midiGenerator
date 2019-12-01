@@ -75,12 +75,6 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False):
         array,
         mono=mono
     )  # Array of the duration of each notes   # (nb_instruments, nb_notes, nb_steps)
-    """
-    if mono:
-        activations = array[:, :-1, :, 0]  # (nb_instruments, 88, nb_steps)
-    else:
-        activations = array[:, :, :, 0]  # (nb_instruments, 88, nb_steps)
-    """
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)

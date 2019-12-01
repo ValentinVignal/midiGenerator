@@ -28,10 +28,11 @@ def time_stride(step_length: int) -> int:
 
 def time_step_to_x(l: t.List[t.bshape], axis: int = 1, x: int = 1) -> t.List[t.bshape]:
     """
+    transform a list of shapes by replacing the value of nb_steps to x
 
-    :param l:
-    :param axis:
-    :param x:
+    :param l: list of the shapes
+    :param axis: axis of the time steps
+    :param x: value to replace with
 
     :return:
     """

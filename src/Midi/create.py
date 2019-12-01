@@ -143,13 +143,6 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False
     notes_range = (0, 88) if notes_range is None else notes_range
 
     matrix_norm = converter_func(matrix, mono=mono, no_duration=no_duration)
-    """
-    if mono:
-        matrix_norm = converter_func_mono(matrix)  # Make it consistent      # (nb_instruments, 128, nb_steps)
-    else:
-        matrix_norm = converter_func_poly(matrix,
-                                          no_duration=no_duration)  # Make it consistent   # (nb_instruments, 128, nb_steps)
-    """
     # ---- Delete silence in the beginning of the song ----
     how_many_in_start_zeros = 0
     for step in range(nb_steps):
