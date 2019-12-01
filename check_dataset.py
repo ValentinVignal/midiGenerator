@@ -30,6 +30,8 @@ def main():
                         help='The length of the data')
     parser.add_argument('--bach', action='store_true', default=False,
                         help='To compute the bach data')
+    parser.add_argument('--mono', default=False, action='store_true',
+                        help='For monophonic instruments')
 
     args = parser.parse_args()
 
@@ -75,8 +77,11 @@ def main():
             matrix_midi = midi_open.midi_to_matrix(filename=midi_path.as_posix(),
                                                    instruments=args.instruments,
                                                    print_instruments=True,
-                                                   notes_range=args.notes_range
+                                                   notes_range=args.notes_range,
+
                                                    )  # (nb_args.instruments, 128, nb_steps, 2)
+        if args.mono:
+            matrix_of_single_midi = midi_open.to_mono_matrix(matrix_midi)
         if matrix_midi is None:
             continue
 

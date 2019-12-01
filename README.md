@@ -5,7 +5,7 @@ Generate midi file with deep neural network :notes:
 
 ## One note Dataset
 
-| Dataset | Can use `one_note` :musical_note: |
+| Dataset | Can use `mono` :musical_note: |
 | :---: | :---: |
 | Bach(...) | :heavy_check_mark: |
 | SimpleDataset | :x: |
@@ -28,5 +28,11 @@ Use the option `--bach`
 | **Small** | 3 | 2 | 22:54 | 23 |
 | **Medium** | 15 | 11 | 19:58 | 155 |
 | **Medium2** | 30 | 21 | 18:61 | 322 |
+
+# Other Dataset
+
+| Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 8 |
 
 
