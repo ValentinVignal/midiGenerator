@@ -62,13 +62,9 @@ class MGPredict(MGInit):
         # --- Done Verifying the inputs ---
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
-        print('sequence', self.my_sequence)
         cprint('Start generating ...', 'blue')
         for s in range(nb_seeds):
             cprint('Generation {0}/{1}'.format(s + 1, nb_seeds), 'blue')
-            print('seed', s, len(self.my_sequence[seeds_indexes[s]]),
-                  len(self.my_sequence[seeds_indexes[s]][0]),
-                  self.my_sequence[seeds_indexes[s]][0][0].shape)
             generated = np.array(
                 self.my_sequence[seeds_indexes[s]][0])  # (nb_instruments, 1, nb_steps, step_size, inputs_size, 2)
             bar = progressbar.ProgressBar(maxval=length,
@@ -94,31 +90,13 @@ class MGPredict(MGInit):
                 generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
             generated_midi_final = np.transpose(generated_midi_final,
                                                 (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
-            output_notes_list = midi.create.matrix_to_midi(generated_midi_final, instruments=self.instruments,
-                                                           notes_range=self.notes_range, no_duration=no_duration,
-                                                           mono=self.mono)
-
-            # --- find the name for the midi_file ---
-            i = 0
-            m_str = "lstm_out_({0}).mid".format(i)
-            while (self.save_midis_path / m_str).exists():
-                i += 1
-                m_str = "lstm_out_({0}).mid".format(i)
-            path_to_save = str(self.save_midis_path / m_str)
-            path_to_save_img = str(self.save_midis_path / 'lstm_out_({0}).jpg'.format(i))
-
-            midi.create.print_informations(nb_steps=self.nb_steps * self.step_length, matrix=generated_midi_final,
-                                           notes_list=output_notes_list, verbose=verbose)
-
-            # Saving the Midi file
-            midi.create.save_midi(output_notes_list=output_notes_list, instruments=self.instruments,
-                                  path=path_to_save, )
-            if save_images:
-                pianoroll.save_pianoroll(array=generated_midi_final,
-                                         path=path_to_save_img,
-                                         seed_length=self.nb_steps * self.step_length,
-                                         instruments=self.instruments,
-                                         mono=self.mono)
+            self.compute_generated_array(
+                generated_array=generated_midi_final,
+                file_name=self.save_midis_path / f'out_{s}',
+                no_duration=no_duration,
+                verbose=verbose,
+                save_images=save_images
+            )
 
         if self.batch is not None:
             self.my_sequence.change_batch_size(self.batch)
@@ -371,10 +349,17 @@ class MGPredict(MGInit):
         :param file_name:
         :param no_duration:
         """
-        name = file_name.name
         file_name = Path(file_name)
+        # if files exist -> find new name
+        if file_name.with_suffix('.mid').exists() or file_name.with_suffix('.jpg').exists():
+            i = 0
+            while file_name.with_suffix(f'_({i}).mid').exists() or file_name.with_suffix(f'_({i}).jpg').exists():
+                i += 1
+            file_name = file_name.with_suffix(f'_({i})')
+        name = file_name.name
         midi_path = file_name.with_suffix('.mid')
         img_path = file_name.with_suffix('.jpg')
+
         output_notes = midi.create.matrix_to_midi(generated_array,
                                                   instruments=self.instruments,
                                                   notes_range=self.notes_range, no_duration=no_duration,
