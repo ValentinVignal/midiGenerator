@@ -1,5 +1,6 @@
 from .RMVAE import RMVAE as RMVAE
 from .AEMono import AEMono as AEMono
+from src.NN import Sequences
 
 from_name = dict(
     RMVAE=RMVAE,
@@ -7,7 +8,7 @@ from_name = dict(
 )
 
 sequences = dict(
-    RMVAE='MissingInstSequence',
-    AEMono='AllInstSequence'
+    RMVAE=Sequences.MissingInstSequence,
+    AEMono=Sequences.AllInstSequence
 )
 

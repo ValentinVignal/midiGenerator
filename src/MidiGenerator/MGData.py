@@ -38,7 +38,10 @@ class MGData(MGInit):
         :param kwargs:
         :return:
         """
-        sequence_name = Models.sequences[self.model_name] if sequence_name is None else sequence_name
-        self.sequence = Sequences.from_name[sequence_name](**kwargs)
+
+        if sequence_name is not None:
+            self.sequence = Sequences.from_name[sequence_name](**kwargs)
+        else:
+            self.sequence = Models.sequences[self.model_name](**kwargs)
 
 
