@@ -29,7 +29,7 @@ class MGInit:
         self.notes_range = None
 
         # ----- MySequence -----
-        self.my_sequence = None  # Instance of MySequence Generator
+        self.sequence = None  # Instance of MySequence Generator
         self.batch = None  # Size if the batch
         self.mono = None  # If this is not polyphonic instrument and no rest
 
@@ -59,4 +59,8 @@ class MGInit:
     @property
     def step_length(self):
         return g.work_on2nb(self.work_on)
+
+    @property
+    def model_name(self):
+        return self.model_id.split(',')[0]
 

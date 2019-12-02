@@ -89,7 +89,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         strides=(time_stride, 2)
     )       # All the shapes of the tensors before each pooling
     # Put time to 1 for the output:
-    shapes_before_pooling = s_time.time_step_to_x(l=shapes_before_pooling, axis=1, x=1)
+    # shapes_before_pooling = s_time.time_step_to_x(l=shapes_before_pooling, axis=1, x=1)
+    # To use only if there is nb steps in conv
 
     # --------- End Variables ----------
 

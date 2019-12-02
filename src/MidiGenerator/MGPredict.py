@@ -39,18 +39,18 @@ class MGPredict(MGInit):
             need_new_sequence = True
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
-        if self.my_sequence is None:
+        if self.sequence is None:
             need_new_sequence = True
         if need_new_sequence:
-            self.my_sequence = Sequences.AllInstSequence(
+            self.sequence = Sequences.AllInstSequence(
                 path=str(self.data_transformed_path),
                 nb_steps=self.nb_steps,
                 batch_size=1,
                 work_on=self.work_on)
         else:
-            self.my_sequence.change_batch_size(1)
+            self.sequence.change_batch_size(1)
 
-        seeds_indexes = random.sample(range(len(self.my_sequence)), nb_seeds)
+        seeds_indexes = random.sample(range(len(self.sequence)), nb_seeds)
 
         # -- Length --
         length = length if length is not None else 20
@@ -66,7 +66,7 @@ class MGPredict(MGInit):
         for s in range(nb_seeds):
             cprint('Generation {0}/{1}'.format(s + 1, nb_seeds), 'blue')
             generated = np.array(
-                self.my_sequence[seeds_indexes[s]][0])  # (nb_instruments, 1, nb_steps, step_size, inputs_size, 2)
+                self.sequence[seeds_indexes[s]][0])  # (nb_instruments, 1, nb_steps, step_size, inputs_size, 2)
             bar = progressbar.ProgressBar(maxval=length,
                                           widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                    progressbar.ETA()])
@@ -99,7 +99,7 @@ class MGPredict(MGInit):
             )
 
         if self.batch is not None:
-            self.my_sequence.change_batch_size(self.batch)
+            self.sequence.change_batch_size(self.batch)
 
         summary.summarize_generation(str(self.save_midis_path), **{
             'full_name': self.full_name,
@@ -214,19 +214,19 @@ class MGPredict(MGInit):
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before comparing the generation')
         nb_steps = int(self.model_id.split(',')[2])
-        if self.my_sequence is None:
-            self.my_sequence = Sequences.AllInstSequence(
+        if self.sequence is None:
+            self.sequence = Sequences.AllInstSequence(
                 path=str(self.data_transformed_path),
                 nb_steps=nb_steps,
                 batch_size=1,
                 work_on=self.work_on)
         else:
-            self.my_sequence.change_batch_size(1)
-        self.my_sequence.set_noise(0)
-        max_length = len(self.my_sequence) if max_length is None else min(max_length, len(self.my_sequence))
+            self.sequence.change_batch_size(1)
+        self.sequence.set_noise(0)
+        max_length = len(self.sequence) if max_length is None else min(max_length, len(self.sequence))
 
         # -------------------- Construct seeds --------------------
-        generated = np.array(self.my_sequence[0][0])  # (nb_instrument, 1, nb_steps, step_size, input_size, 2) (1=batch)
+        generated = np.array(self.sequence[0][0])  # (nb_instrument, 1, nb_steps, step_size, input_size, 2) (1=batch)
         generated_helped = np.copy(generated)  # Each step will take the truth as an input
         generated_truth = np.copy(generated)  # The truth
 
@@ -236,7 +236,7 @@ class MGPredict(MGInit):
                                                progressbar.ETA()])
         bar.start()  # To see it working
         for l in range(max_length):
-            ms_input, ms_output = self.my_sequence[l]
+            ms_input, ms_output = self.sequence[l]
             sample = np.concatenate((generated[:, :, l:], np.array(ms_input)),
                                     axis=1)  # (nb_instruments, 2, nb_steps, step_size, input_size, 2)
 

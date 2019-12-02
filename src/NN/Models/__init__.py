@@ -5,3 +5,9 @@ from_name = dict(
     RMVAE=RMVAE,
     AEMono=AEMono
 )
+
+sequences = dict(
+    RMVAE='MissingInstSequence',
+    AEMono='AllInstSequence'
+)
+

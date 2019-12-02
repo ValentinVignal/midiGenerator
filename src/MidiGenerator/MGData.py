@@ -3,6 +3,8 @@ import pickle
 from termcolor import colored, cprint
 
 from .MGInit import MGInit
+from src.NN import Sequences
+from src.NN import Models
 
 
 class MGData(MGInit):
@@ -25,6 +27,18 @@ class MGData(MGInit):
         print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def change_batch_size(self, batch_size):
-        if self.my_sequence is not None and self.batch != batch_size:
+        if self.sequence is not None and self.batch != batch_size:
             self.batch = batch_size
-            self.my_sequence.change_batch_size(batch_size=batch_size)
+            self.sequence.change_batch_size(batch_size=batch_size)
+
+    def get_sequence(self, sequence_name=None, **kwargs):
+        """
+
+        :param sequence_name:
+        :param kwargs:
+        :return:
+        """
+        sequence_name = Models.sequences[self.model_name] if sequence_name is None else sequence_name
+        self.sequence = Sequences.from_name[sequence_name](**kwargs)
+
+
