@@ -8,7 +8,7 @@ from src.NN.Sequences.KerasSequence import KerasSequence
 
 class AllInstSequence(KerasSequence):
     def __init__(self, *args, **kwargs):
-        super(AllInstSequence, self).__init__(*args, **kwargs)
+        super(AllInstSequence, self).__init__(*args, fill=False, **kwargs)
 
     def __len__(self):
         return super(AllInstSequence, self).__len__()
