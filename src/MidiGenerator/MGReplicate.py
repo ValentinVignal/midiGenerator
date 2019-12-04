@@ -1,4 +1,3 @@
-import random
 from termcolor import colored, cprint
 import numpy as np
 import progressbar
@@ -16,7 +15,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
     """
 
     def replicate_fom_data(self, length=None, new_save_path=None, save_images=False,
-                           no_duration=False, verbose=1):
+                           no_duration=False, verbose=1, noise=0):
         """
         Generate Midi file from the seed and the trained model
         :param length: Length of th generation
@@ -24,24 +23,21 @@ class MGReplicate(MGComputeGeneration, MGInit):
         :param save_images: To save the pianoroll of the generation (.jpg images)
         :param no_duration: if True : all notes will be the shortest length possible
         :param verbose: Level of verbose
+        :param noise:
         :return:
         """
         # ---------- Verify the inputs ----------
 
         # ----- Create the seed -----
-        need_new_sequence = False
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
-        if self.sequence is None:
-            need_new_sequence = True
-        if need_new_sequence:
-            self.sequence = Sequences.AllInstSequenceReplicate(
-                path=str(self.data_transformed_path),
-                nb_steps=self.nb_steps,
-                batch_size=1,
-                work_on=self.work_on)
-        else:
-            self.sequence.change_batch_size(1)
+        self.sequence = Sequences.AllInstSequenceReplicate(
+            path=str(self.data_transformed_path),
+            nb_steps=self.nb_steps,
+            batch_size=1,
+            work_on=self.work_on,
+            noise=noise
+        )
 
         # -- Length --
         length = length if length is not None else min(20, len(self.sequence))
@@ -61,33 +57,45 @@ class MGReplicate(MGComputeGeneration, MGInit):
         shape_with_no_step = tuple(shape_with_no_step)
         generated = np.zeros(
             shape=shape_with_no_step)  # (nb_instruments, batch=1, nb_steps=0, step_size, inputs_size, 2)
+        truth = np.zeros(
+            shape=shape_with_no_step)  # (nb_instruments, batch=1, nb_steps=0, step_size, inputs_size, 2)
         bar = progressbar.ProgressBar(maxval=length,
                                       widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                progressbar.ETA()])
         bar.start()  # To see it working
         for l in range(0, length, self.nb_steps):
+            x, y = self.sequence[l]
+
             preds = self.keras_nn.generate(
-                input=self.sequence[l][0])  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
+                input=x)  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
             if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                 preds = preds[np.newaxis]
             next_array = midi.create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
-            generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, nb_steps, length, 88, 2)
+            generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, 1, nb_steps, length, 88, 2)
+            truth = np.concatenate((truth, np.asarray(y)),
+                                   axis=2)  # (nb_instruments, 1, nb_steps, step_length, size, channels)
 
             bar.update(l + 1)
         bar.finish()
 
+        """
         generated_midi_final = np.reshape(generated, (
             generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
             generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
         generated_midi_final = np.transpose(generated_midi_final,
                                             (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        """
+        generated_midi_final = self.reshape_generated_array(generated)
+        truth_final = self.reshape_generated_array(truth)
         self.compute_generated_array(
             generated_array=generated_midi_final,
             file_name=self.save_midis_path / f'out',
             no_duration=no_duration,
+            array_truth=truth_final,
             verbose=verbose,
-            save_images=save_images
+            save_images=save_images,
+            save_truth=True
         )
 
         if self.batch is not None:

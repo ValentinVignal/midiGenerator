@@ -12,6 +12,24 @@ class MGComputeGeneration(MGInit):
 
     """
     @staticmethod
+    def reshape_generated_array(array):
+        """
+
+        :param array: (nb_instruments, batch=1, nb_steps, step_length, size, channels)
+        :return: array: (nb_instruments, size, length, channels)
+        """
+        array = np.reshape(
+            array,
+            (array.shape[0], array.shape[2] * array.shape[3], *array.shape[4:])
+        )       # (nb_instruments, length, size, channels)
+        array = np.transpose(
+            array,
+            (0, 2, 1, 3)
+        )       # (nb_instruments, size, length, channels)
+        return array
+
+
+    @staticmethod
     def accuracy_generation(array, truth, mono=False):
         """
 
@@ -42,12 +60,17 @@ class MGComputeGeneration(MGInit):
         :param no_duration:
         """
         file_name = Path(file_name)
+        parent = file_name.parent
+        name = file_name.name
+
         # if files exist -> find new name
         if file_name.with_suffix('.mid').exists() or file_name.with_suffix('.jpg').exists():
             i = 0
-            while file_name.with_suffix(f'_({i}).mid').exists() or file_name.with_suffix(f'_({i}).jpg').exists():
+            while (parent / (name + f'_({i}).mid')).exists() or (parent / (name + f'_({i}).jpg')).exists():
                 i += 1
-            file_name = file_name.with_suffix(f'_({i})')
+            name += f'_({i})'
+            file_name = parent / name
+
         name = file_name.name
         midi_path = file_name.with_suffix('.mid')
         img_path = file_name.with_suffix('.jpg')
@@ -71,15 +94,15 @@ class MGComputeGeneration(MGInit):
             print(f'Accuracy of the generation {name} :', colored(accuracies_inst, 'magenta'), ', overall :',
                   colored(accuracy, 'magenta'))
             if save_truth:
-                output_notes_truth = midi.create.matrix_to_midi(generated_array,
+                output_notes_truth = midi.create.matrix_to_midi(array_truth,
                                                                 instruments=self.instruments,
                                                                 notes_range=self.notes_range, no_duration=no_duration,
                                                                 mono=self.mono)
                 midi.create.save_midi(output_notes_list=output_notes_truth, instruments=self.instruments,
-                                      path=file_name.with_suffix('_truth.mid'))
+                                      path=parent / f'{name}_truth.mid')
                 if save_images:
-                    pianoroll.save_pianoroll(array=generated_array,
-                                             path=file_name.with_suffix('_truth.jpg'),
+                    pianoroll.save_pianoroll(array=array_truth,
+                                             path=parent / f'{name}_truth.jpg',
                                              seed_length=self.nb_steps * self.step_length,
                                              instruments=self.instruments,
                                              mono=self.mono)

@@ -13,26 +13,26 @@ Generate midi file with deep neural network :notes:
 ## Informations
 ### Simple Dataset
 
-| Name | Number of songs | Piano | Trombone | Flute | Violin | Poly | Mono |
+| Name | Number of songs | Piano | Trombone | Flute | Violin | All | Mono |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **(1)** | 1 | 43:54 | 20:35 | 46:59 | 43:54 | 20:59 | 20:59 |
-| **2** | 3 | 42:56 | 20:44 | 46:63 | 36:54 | 20:63 |20:63 |
+| **(1)** | 1 | 43:54 | 20:35 | 46:59 | 43:54 | 20:59 | :x: |
+| **2** | 3 | 42:56 | 20:44 | 46:63 | 36:54 | 20:63 | :x: |
 
 
 ### BachChorale
 
 Use the option `--bach`
 
-| | nb songs | nb accepted songs :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: |
-| :---: | :---: | :---: | :---: | :---: |
-| **Small** | 3 | 2 | 22:54 | 23 |
-| **Medium** | 15 | 11 | 19:58 | 155 |
-| **Medium2** | 30 | 21 | 18:61 | 322 |
+| | nb songs | nb accepted songs :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **Small** | 3 | 2 | 22:54 | 23 | :heavy_check_mark: |
+| **Medium** | 15 | 11 | 19:58 | 155 | :heavy_check_mark: |
+| **Medium2** | 30 | 21 | 18:61 | 322 | :heavy_check_mark: |
 
 # Other Dataset
 
-| Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 32 |
+| Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 32 | :heavy_check_mark: |
 
 

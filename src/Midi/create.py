@@ -10,23 +10,30 @@ def normalize_activation(arr, threshold=0.5, mono=False):
     """
 
     :param mono:
-    :param arr: (nb_instruments, nb_steps=1, lenght, 88, 2)
+    :param arr: (nb_instruments, (batch=1), nb_steps=1, lenght, 88, 2)
     :param threshold:
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
     if mono:
-        argmax = np.argmax(arr, axis=3)
+        axis = len(arr.shape) - 2
+        argmax = np.argmax(arr, axis=axis)
         new_arr = np.zeros(arr.shape)
-        idx = list(np.ogrid[[slice(arr.shape[ax]) for ax in range(arr.ndim) if ax != 3]])
-        idx.insert(3, argmax)
+        idx = list(np.ogrid[[slice(arr.shape[ax]) for ax in range(arr.ndim) if ax != axis]])
+        idx.insert(axis, argmax)
         new_arr[tuple(idx)] = 1
-        return new_arr
     else:
-        activations = arr[:, :, :, :, 0]
+        activations = np.take(arr, axis=-1, indices=0)
         np.place(activations, threshold <= activations, 1)
         np.place(activations, activations < threshold, 0)
-        arr[:, :, :, :, 0] = activations
-        return arr
+        #arr[:, :, :, :, 0] = activations
+        np.put_along_axis(
+            arr=arr,
+            indices=np.zeros((1 for i in arr.shape), dtype=int),
+            values=np.expand_dims(activations, axis=-1),
+            axis=-1
+        )
+        new_arr = arr
+    return new_arr
 
 
 def converter_func_poly(arr, no_duration=False):
