@@ -70,9 +70,13 @@ def main(args):
     if args.generate:
         midi_generator.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
 
+    # -------------------- Replicate --------------------
+    if args.replicate:
+        midi_generator.replicate_fom_data(save_images=True, no_duration=args.no_duration)
+
     # -------------------- Generate --------------------
-    if args.fill_instruments:
-        midi_generator.fill_instruments(no_duration=args.no_duration, verbose=1)
+    if args.generate_fill:
+        midi_generator.generate_fill(no_duration=args.no_duration, verbose=1)
 
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
@@ -155,7 +159,9 @@ if __name__ == '__main__':
                         help='Compare generation after training')
     parser.add_argument('--generate', default=False, action='store_true',
                         help='Generation after training')
-    parser.add_argument('--fill-instruments', default=False, action='store_true',
+    parser.add_argument('--replicate', default=False, action='store_true',
+                        help='Replication after training')
+    parser.add_argument('--generate-fill', default=False, action='store_true',
                         help='Fill the missing instrument')
     parser.add_argument('--no-duration', action='store_true', default=False,
                         help='Generate only shortest notes possible')

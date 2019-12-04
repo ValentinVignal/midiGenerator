@@ -6,14 +6,14 @@ import src.image.pianoroll as pianoroll
 from src.NN.Sequences.KerasSequence import KerasSequence
 
 
-class AllInstSequenceFill(KerasSequence):
+class AllInstSequenceReplicate(KerasSequence):
     def __init__(self, *args, **kwargs):
-        super(AllInstSequenceFill, self).__init__(*args, fill=True, **kwargs)
+        super(AllInstSequenceReplicate, self).__init__(*args, replicate=True, **kwargs)
 
     def __len__(self):
-        return super(AllInstSequenceFill, self).__len__()
+        return super(AllInstSequenceReplicate, self).__len__()
 
     def __getitem__(self, item):
-        x, y = super(AllInstSequenceFill, self).__getitem__(item)
+        x, y = super(AllInstSequenceReplicate, self).__getitem__(item)
         return list(x), list(y)
 

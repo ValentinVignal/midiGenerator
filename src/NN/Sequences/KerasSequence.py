@@ -11,7 +11,7 @@ class KerasSequence(tf.keras.utils.Sequence):
     """
 
     """
-    def __init__(self, path, nb_steps, batch_size=4, work_on=g.work_on, noise=0, fill=False):
+    def __init__(self, path, nb_steps, batch_size=4, work_on=g.work_on, noise=0, replicate=False):
         """
 
         :param path:
@@ -27,7 +27,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         self.step_size = g.work_on2nb(work_on)
         self.noise = noise
         self.batch_size = batch_size
-        self.fill = fill
+        self.replicate = replicate
 
         # -------------------- Technical Attributs --------------------
 
@@ -91,7 +91,7 @@ class KerasSequence(tf.keras.utils.Sequence):
 
         x = np.transpose(x, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         y = np.transpose(y, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
-        if self.fill:
+        if self.replicate:
             y = x
 
         if self.noise is not None and self.noise > 0:

@@ -1,13 +1,15 @@
 import src.global_variables as g
-from .MGPredict import MGPredict
+from .MGGenerate import MGGenerate
 from .MGData import MGData
 from .MGTrain import MGTrain
 from .MGModel import MGModel
 from .MGLogistic import MGLogistic
 from .MGInit import MGInit
+from .MGComputeGeneration import MGComputeGeneration
+from .MGReplicate import MGReplicate
 
 
-class MidiGenerator(MGPredict, MGData, MGTrain, MGModel, MGLogistic, MGInit):
+class MidiGenerator(MGGenerate, MGReplicate, MGComputeGeneration, MGData, MGTrain, MGModel, MGLogistic, MGInit):
     """
 
     """
@@ -21,13 +23,13 @@ class MidiGenerator(MGPredict, MGData, MGTrain, MGModel, MGLogistic, MGInit):
 
     @classmethod
     def from_model(cls, id, name='name', data=None):
-        myModel = cls(name=name, data=data)
-        myModel.load_model(id=id)
-        return myModel
+        my_model = cls(name=name, data=data)
+        my_model.load_model(id=id)
+        return my_model
 
     @classmethod
     def with_new_model(cls, model_infos, name='name', work_on=g.work_on, data=None):
-        myModel = cls(name=name, data=data)
+        my_model = cls(name=name, data=data)
 
         def get_value(key):
             """
@@ -38,14 +40,14 @@ class MidiGenerator(MGPredict, MGData, MGTrain, MGModel, MGLogistic, MGInit):
             value = None if key not in model_infos else model_infos[key]
             return value
 
-        myModel.input_param = model_infos['input_param']
-        myModel.model_id = model_infos['model_id']
-        myModel.new_nn_model(
+        my_model.input_param = model_infos['input_param']
+        my_model.model_id = model_infos['model_id']
+        my_model.new_nn_model(
             model_id=model_infos['model_id'],
             work_on=work_on,
             opt_param=get_value('opt_param'),
         )
-        return myModel
+        return my_model
 
     @classmethod
     def with_model(cls, id, with_weights=True):
