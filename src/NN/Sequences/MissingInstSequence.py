@@ -10,8 +10,8 @@ class MissingInstSequence(KerasSequence):
         everyone
         k random combinations
     """
-    def __init__(self, k=2, *args, **kwargs):
-        super(MissingInstSequence, self).__init__(*args, **kwargs)
+    def __init__(self, k=2, replicate=False, *args, **kwargs):
+        super(MissingInstSequence, self).__init__(*args, replicate=replicate, **kwargs)
 
         self.batch_size = kwargs['batch_size']
         self.nb_steps = kwargs['nb_steps']
@@ -50,3 +50,11 @@ class MissingInstSequence(KerasSequence):
     def change_batch_size(self, batch_size):
         self.batch_size = batch_size
         super(MissingInstSequence, self).change_batch_size(batch_size)
+
+    @staticmethod
+    def predict(*args, **kwargs):
+        return MissingInstSequence(*args, replicate=False, **kwargs)
+
+    @staticmethod
+    def replicate(*args, **kwargs):
+        return MissingInstSequence(*args, replicate=True, **kwargs)

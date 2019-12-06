@@ -7,8 +7,8 @@ from src.NN.Sequences.KerasSequence import KerasSequence
 
 
 class AllInstSequence(KerasSequence):
-    def __init__(self, *args, **kwargs):
-        super(AllInstSequence, self).__init__(*args, replicate=False, **kwargs)
+    def __init__(self, *args, replicate=False,  **kwargs):
+        super(AllInstSequence, self).__init__(*args, replicate=replicate, **kwargs)
 
     def __len__(self):
         return super(AllInstSequence, self).__len__()
@@ -16,6 +16,14 @@ class AllInstSequence(KerasSequence):
     def __getitem__(self, item):
         x, y = super(AllInstSequence, self).__getitem__(item)
         return list(x), list(y)
+
+    @staticmethod
+    def predict(*args, **kwargs):
+        return AllInstSequence(*args, replicate=False, **kwargs)
+
+    @staticmethod
+    def replicate(*args, **kwargs):
+        return AllInstSequence(*args, replicate=True, **kwargs)
 
 
 # ------------------------------------------------------------
