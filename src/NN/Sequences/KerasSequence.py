@@ -92,7 +92,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         x = np.transpose(x, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         y = np.transpose(y, (3, 0, 1, 2, 4, 5))  # (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
         if self.replicate:
-            y = x
+            y = np.copy(x)
 
         if self.noise is not None and self.noise > 0:
             # Creation of the noise

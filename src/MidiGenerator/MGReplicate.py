@@ -31,7 +31,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
         # ----- Create the seed -----
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
-        self.sequence = Sequences.AllInstSequenceReplicate(
+        self.sequence = Sequences.AllInstSequence.replicate(
             path=str(self.data_transformed_path),
             nb_steps=self.nb_steps,
             batch_size=1,

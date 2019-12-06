@@ -13,11 +13,8 @@ class MissingInstSequence(KerasSequence):
     def __init__(self, k=2, replicate=False, *args, **kwargs):
         super(MissingInstSequence, self).__init__(*args, replicate=replicate, **kwargs)
 
-        self.batch_size = kwargs['batch_size']
-        self.nb_steps = kwargs['nb_steps']
         self.k = k
-        self.nb_instruments = super(MissingInstSequence, self).__getitem__(0)[0][0].shape[0]
-        self.nb_combinations = self.nb_instruments + 1 + k
+        self.nb_combinations = min(self.nb_instruments + 1 + k, 2 ** self.nb_instruments - 1)
 
     def __len__(self):
         return super(MissingInstSequence, self).__len__() * self.nb_combinations
@@ -27,15 +24,16 @@ class MissingInstSequence(KerasSequence):
         # x (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         # x (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
         mod = item % self.nb_combinations
-        if mod < self.nb_instruments:
+        if mod == 0:
+            # All the instruments
+            mask = np.ones((self.batch_size, self.nb_instruments, self.nb_steps))
+        elif mod < self.nb_instruments + 1:
             # Only on instrument
+            mod -= 1
             mask = np.zeros((self.batch_size, self.nb_instruments, self.nb_steps))
             mask[:, mod] = 1
             y[:, :mod] = np.nan
             y[:, :mod+1] = np.nan
-        elif mod == self.nb_instruments:
-            # All the instruments
-            mask = np.ones((self.batch_size, self.nb_instruments, self.nb_steps))
         else:
             # Combinations
             zeros_axis = np.random.choice(
