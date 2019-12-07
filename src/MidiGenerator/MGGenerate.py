@@ -4,9 +4,7 @@ import numpy as np
 import progressbar
 
 from src.NN import Sequences
-from src.NN import Models
 import src.Midi as midi
-import src.global_variables as g
 import src.text.summary as summary
 from .MGInit import MGInit
 from .MGComputeGeneration import MGComputeGeneration
@@ -33,22 +31,15 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # ---------- Verify the inputs ----------
 
         # ----- Create the seed -----
-        need_new_sequence = False
         if (new_data_path is not None) and (new_data_path != self.data_transformed_path.as_posix()):
             self.load_data(new_data_path)
-            need_new_sequence = True
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
-        if self.sequence is None:
-            need_new_sequence = True
-        if need_new_sequence:
-            self.sequence = Sequences.AllInstSequence(
-                path=str(self.data_transformed_path),
-                nb_steps=self.nb_steps,
-                batch_size=1,
-                work_on=self.work_on)
-        else:
-            self.sequence.change_batch_size(1)
+        self.sequence = Sequences.AllInstSequence(
+            path=str(self.data_transformed_path),
+            nb_steps=self.nb_steps,
+            batch_size=1,
+            work_on=self.work_on)
         nb_instruments = self.sequence.nb_instruments
 
         seeds_indexes = random.sample(range(len(self.sequence)), nb_seeds)
@@ -61,13 +52,10 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 new_save_path is None and self.save_midis_path is None):
             self.get_new_save_midis_path(path=new_save_path)
         # --- Done Verifying the inputs ---
-        if Models.needs_mask[self.model_name]:
-            mask = [np.ones((1, nb_instruments, self.nb_steps))]
-        else:
-            mask = []
+        mask = self.get_mask(nb_instruments)
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
-        cprint('Start generating ...', 'blue')
+        cprint('Start generating from data ...', 'blue')
         for s in range(nb_seeds):
             cprint('Generation {0}/{1}'.format(s + 1, nb_seeds), 'blue')
             generated = np.array(
@@ -90,14 +78,12 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 bar.update(l + 1)
             bar.finish()
 
-            generated_midi_final = np.reshape(generated, (
-                generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
-                generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-            generated_midi_final = np.transpose(generated_midi_final,
-                                                (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+            self.ensure_save_midis_path()
+
+            generated_midi_final = self.reshape_generated_array(generated)
             self.compute_generated_array(
                 generated_array=generated_midi_final,
-                file_name=self.save_midis_path / f'out_{s}',
+                file_name=self.save_midis_path / f'generated_{s}',
                 no_duration=no_duration,
                 verbose=verbose,
                 save_images=save_images
@@ -114,7 +100,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
             'notes_range': self.notes_range
         })
 
-        cprint('Done Generating', 'green')
+        cprint('Done generating', 'green')
 
     def generate_fill(self, max_length=None, no_duration=False, verbose=1):
         """
@@ -125,7 +111,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
         :return:
         """
         # ----- Parameters -----
-        max_length = 300 / g.work_on2nb(self.work_on) if max_length is None else max_length
+        max_length = 300 / self.step_length if max_length is None else max_length
 
         # ----- Variables -----
         if self.data_transformed_path is None:
@@ -147,6 +133,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
             mask[inst, inst] = 0
 
         # ----- Generation -----
+        cprint('Start generating (fill) ...', 'blue')
         bar = progressbar.ProgressBar(maxval=max_length,
                                       widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                progressbar.ETA()])
@@ -181,27 +168,14 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
         # -------------------- Compute notes list --------------------
         # ----- Reshape -----
-        """
-        truth = np.reshape(truth, (truth.shape[0], truth.shape[2] * truth.shape[3],
-                                   *truth.shape[
-                                    4:]))  # (nb_instruments, nb_steps * step_size, input_size, channels)
-        truth = np.transpose(truth, axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
-        """
         truth = self.reshape_generated_array(truth)
         for inst in range(nb_instruments):
-            """
-            s = filled_list[inst].shape
-            filled_list[inst] = np.reshape(filled_list[inst], (
-                s[0], s[2] * s[3], *s[4:]))  # (nb_instruments, nb_steps * step_size, input_size, channels)
-            filled_list[inst] = np.transpose(filled_list[inst],
-                                             axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
-            """
             filled_list[inst] = self.reshape_generated_array(filled_list[inst])
-        self.get_new_save_midis_path()
+        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
         self.compute_generated_array(
             generated_array=truth,
-            file_name=self.save_midis_path / 'truth',
+            file_name=self.save_midis_path / 'generated_fill_truth',
             no_duration=no_duration,
             verbose=verbose,
             save_images=True
@@ -209,13 +183,15 @@ class MGGenerate(MGComputeGeneration, MGInit):
         for inst in range(nb_instruments):
             self.compute_generated_array(
                 generated_array=filled_list[inst],
-                file_name=self.save_midis_path / f'missing_{inst}',
+                file_name=self.save_midis_path / f'generated_fill_{inst}',
                 no_duration=no_duration,
                 array_truth=truth,
                 verbose=verbose,
                 save_truth=False,
                 save_images=True
             )
+
+        cprint('Done generating (fill)', 'green')
 
     def compare_generation(self, max_length=None, no_duration=False, verbose=1):
         """
@@ -225,16 +201,13 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # -------------------- Find informations --------------------
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before comparing the generation')
-        nb_steps = int(self.model_id.split(',')[2])
-        if self.sequence is None:
-            self.sequence = Sequences.AllInstSequence(
-                path=str(self.data_transformed_path),
-                nb_steps=nb_steps,
-                batch_size=1,
-                work_on=self.work_on)
-        else:
-            self.sequence.change_batch_size(1)
-        self.sequence.set_noise(0)
+        self.sequence = Sequences.AllInstSequence(
+            path=str(self.data_transformed_path),
+            nb_steps=self.nb_steps,
+            batch_size=1,
+            work_on=self.work_on,
+            noise=0
+        )
         max_length = len(self.sequence) if max_length is None else min(max_length, len(self.sequence))
 
         # -------------------- Construct seeds --------------------
@@ -242,7 +215,10 @@ class MGGenerate(MGComputeGeneration, MGInit):
         generated_helped = np.copy(generated)  # Each step will take the truth as an input
         generated_truth = np.copy(generated)  # The truth
 
+        mask = self.get_mask(self.sequence.nb_instruments)
+
         # -------------------- Generation --------------------
+        cprint('Start comparing generation ...', 'blue')
         bar = progressbar.ProgressBar(maxval=max_length,
                                       widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                progressbar.ETA()])
@@ -253,7 +229,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
                                     axis=1)  # (nb_instruments, 2, nb_steps, step_size, input_size, 2)
 
             # Generation
-            preds = self.keras_nn.generate(input=list(sample))
+            preds = self.keras_nn.generate(input=list(sample) + mask)
 
             # Reshape
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, batch=2, nb_steps=1, length, 88, 2)
@@ -277,32 +253,20 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
         # -------------------- Compute notes list --------------------
         # Generated
-        generated_midi_final = np.reshape(generated, (
-            generated.shape[0], generated.shape[2] * generated.shape[3], generated.shape[4],
-            generated.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-        generated_midi_final = np.transpose(generated_midi_final,
-                                            (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        generated_midi_final = self.reshape_generated_array(generated)
         # Helped
-        generated_midi_final_helped = np.reshape(generated_helped, (
-            generated_helped.shape[0], generated_helped.shape[2] * generated_helped.shape[3],
-            generated_helped.shape[4], generated_helped.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-        generated_midi_final_helped = np.transpose(generated_midi_final_helped,
-                                                   (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        generated_midi_final_helped = self.reshape_generated_array(generated_helped)
         # Truth
-        generated_midi_final_truth = np.reshape(generated_truth, (
-            generated_truth.shape[0], generated_truth.shape[2] * generated_truth.shape[3], generated_truth.shape[4],
-            generated_truth.shape[5]))  # (nb_instruments, nb_step * length, 88 , 2)
-        generated_midi_final_truth = np.transpose(generated_midi_final_truth,
-                                                  (0, 2, 1, 3))  # (nb_instruments, 88, nb_steps * length, 2)
+        generated_midi_final_truth = self.reshape_generated_array(generated_truth)
 
         # ---------- find the name for the midi_file ----------
-        self.get_new_save_midis_path()
+        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
         # Generated
         self.compute_generated_array(
             generated_array=generated_midi_final,
-            file_name=self.save_midis_path / 'generated',
+            file_name=self.save_midis_path / 'compare_generation_alone',
             no_duration=no_duration,
             array_truth=generated_midi_final_truth,
             verbose=verbose,
@@ -312,7 +276,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # Helped
         self.compute_generated_array(
             generated_array=generated_midi_final_helped,
-            file_name=self.save_midis_path / 'helped',
+            file_name=self.save_midis_path / 'compare_generation_helped',
             no_duration=no_duration,
             array_truth=generated_midi_final_truth,
             verbose=verbose,
@@ -322,11 +286,11 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # Truth
         self.compute_generated_array(
             generated_array=generated_midi_final_truth,
-            file_name=self.save_midis_path / 'truth',
+            file_name=self.save_midis_path / 'compare_generation_truth',
             no_duration=no_duration,
             array_truth=None,
             verbose=verbose,
             save_truth=False,
             save_images=True
         )
-        cprint('Done Generating', 'green')
+        cprint('Done comparing generation', 'green')

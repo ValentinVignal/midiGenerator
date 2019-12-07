@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 
 import src.Midi as midi
+from src.NN import Models
 import src.image.pianoroll as pianoroll
 from .MGInit import MGInit
 
@@ -27,7 +28,6 @@ class MGComputeGeneration(MGInit):
             (0, 2, 1, 3)
         )       # (nb_instruments, size, length, channels)
         return array
-
 
     @staticmethod
     def accuracy_generation(array, truth, mono=False):
@@ -109,3 +109,11 @@ class MGComputeGeneration(MGInit):
                                              instruments=self.instruments,
                                              mono=self.mono,
                                              replicate=replicate)
+
+    def get_mask(self, nb_instruments):
+        if Models.needs_mask[self.model_name]:
+            mask = [np.ones((1, nb_instruments, self.nb_steps))]
+        else:
+            mask = []
+        return mask
+

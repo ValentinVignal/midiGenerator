@@ -27,7 +27,7 @@ def normalize_activation(arr, threshold=0.5, mono=False):
         np.place(activations, activations < threshold, 0)
         np.put_along_axis(
             arr=arr,
-            indices=np.zeros((1 for i in arr.shape), dtype=int),
+            indices=np.zeros(tuple(1 for i in arr.shape), dtype=int),
             values=np.expand_dims(activations, axis=-1),
             axis=-1
         )

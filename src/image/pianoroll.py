@@ -72,13 +72,8 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False, replicate=
     """
     # Colors
     colors_rgb = return_colors(len(instruments))
-    """
-    activations = Midi.create.converter_func(
-        array,
-        mono=mono
-    )  # Array of the duration of each notes   # (nb_instruments, nb_notes, nb_steps)
-    """
     activations = np.take(array, axis=-1, indices=0)        # (nb_instruments, size, nb_steps)
+    activations = activations[:, :-1] if mono else activations
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)

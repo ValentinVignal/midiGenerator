@@ -50,6 +50,14 @@ class MGLogistic(MGInit):
         self.name = self.name if name is None else name
         self.get_new_full_name()
 
+    def ensure_save_midis_path(self):
+        """
+
+        :return:
+        """
+        if self.save_midis_path is None:
+            self.get_new_save_midis_path()
+
     def get_new_save_midis_path(self, path=None):
         """
         set up a new save Midi path

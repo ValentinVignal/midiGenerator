@@ -3,7 +3,6 @@ import numpy as np
 import progressbar
 
 from src.NN import Sequences
-from src.NN import Models
 import src.Midi as midi
 import src.text.summary as summary
 from .MGInit import MGInit
@@ -52,8 +51,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
-        cprint('Start generating ...', 'blue')
-
         shape_with_no_step = list(np.array(self.sequence[0][0]).shape)
         shape_with_no_step[2] = 0
         shape_with_no_step = tuple(shape_with_no_step)
@@ -61,11 +58,9 @@ class MGReplicate(MGComputeGeneration, MGInit):
             shape=shape_with_no_step)  # (nb_instruments, batch=1, nb_steps=0, step_size, inputs_size, 2)
         truth = np.zeros(
             shape=shape_with_no_step)  # (nb_instruments, batch=1, nb_steps=0, step_size, inputs_size, 2)
-        if Models.needs_mask[self.model_name]:
-            mask = [np.ones((1, nb_instruments, self.nb_steps))]
-        else:
-            mask = []
+        mask = self.get_mask(nb_instruments)
 
+        cprint('Start replicating ...', 'blue')
         bar = progressbar.ProgressBar(maxval=length,
                                       widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                progressbar.ETA()])
@@ -88,12 +83,13 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
             bar.update(l + 1)
         bar.finish()
+        self.ensure_save_midis_path()
 
         generated_midi_final = self.reshape_generated_array(generated)
         truth_final = self.reshape_generated_array(truth)
         self.compute_generated_array(
             generated_array=generated_midi_final,
-            file_name=self.save_midis_path / f'out',
+            file_name=self.save_midis_path / f'replicated',
             no_duration=no_duration,
             array_truth=truth_final,
             verbose=verbose,
@@ -113,7 +109,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
             'notes_range': self.notes_range
         })
 
-        cprint('Done Generating', 'green')
+        cprint('Done replicating', 'green')
 
     def replicate_fill(self, max_length=None, no_duration=False, verbose=1, save_images=True, noise=0):
         """
@@ -141,8 +137,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
-        cprint('Start generating ...', 'blue')
-
         shape_with_no_step = list(np.array(self.sequence[0][0]).shape)
         shape_with_no_step[2] = 0
         shape_with_no_step = tuple(shape_with_no_step)
@@ -157,6 +151,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
         mask = np.ones((nb_instruments, nb_instruments, self.nb_steps))
         for inst in range(nb_instruments):
             mask[inst, inst] = 0
+
+        cprint('Start replicating (fill) ...', 'blue')
         bar = progressbar.ProgressBar(maxval=max_length,
                                       widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
                                                progressbar.ETA()])
@@ -168,7 +164,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 x_missing_inst = np.copy(x)
                 x_missing_inst[inst] = 0        # (nb_instruments, batch, nb_steps, step_length, size, channels)
                 x_missing_inst_list.append(x_missing_inst)
-            nn_input  = np.concatenate(
+            nn_input = np.concatenate(
                 tuple(x_missing_inst_list),
                 axis=1
             )       # (nb_instruments, batch=nb_instruments, nb_steps, step_length, size, channels)
@@ -192,13 +188,15 @@ class MGReplicate(MGComputeGeneration, MGInit):
             bar.update(l + 1)
         bar.finish()
 
+        self.ensure_save_midis_path()
+
         generated_midi_final_list = [
             self.reshape_generated_array(generated_list[inst]) for inst in range(nb_instruments)
         ]
         truth_final = self.reshape_generated_array(truth)
         self.compute_generated_array(
             generated_array=truth_final,
-            file_name=self.save_midis_path / 'truth',
+            file_name=self.save_midis_path / 'replicated_fill_truth',
             no_duration=no_duration,
             verbose=verbose,
             save_images=save_images,
@@ -207,7 +205,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
         for inst in range(nb_instruments):
             self.compute_generated_array(
                 generated_array=generated_midi_final_list[inst],
-                file_name=self.save_midis_path / f'fill_{inst}',
+                file_name=self.save_midis_path / f'replicated_fill_{inst}',
                 no_duration=no_duration,
                 array_truth=truth_final,
                 verbose=verbose,
@@ -227,4 +225,4 @@ class MGReplicate(MGComputeGeneration, MGInit):
             'notes_range': self.notes_range
         })
 
-        cprint('Done Generating', 'green')
+        cprint('Done replicating (fill)', 'green')

@@ -99,7 +99,7 @@ def preprocess_args(args):
     :return:
     """
     if args.pc:
-        args.epochs = 4
+        args.epochs = 8
         args.batch = 4
     return args
 
