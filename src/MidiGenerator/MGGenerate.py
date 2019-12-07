@@ -4,6 +4,7 @@ import numpy as np
 import progressbar
 
 from src.NN import Sequences
+from src.NN import Models
 import src.Midi as midi
 import src.global_variables as g
 import src.text.summary as summary
@@ -48,6 +49,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 work_on=self.work_on)
         else:
             self.sequence.change_batch_size(1)
+        nb_instruments = self.sequence.nb_instruments
 
         seeds_indexes = random.sample(range(len(self.sequence)), nb_seeds)
 
@@ -59,6 +61,10 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 new_save_path is None and self.save_midis_path is None):
             self.get_new_save_midis_path(path=new_save_path)
         # --- Done Verifying the inputs ---
+        if Models.needs_mask[self.model_name]:
+            mask = [np.ones((1, nb_instruments, self.nb_steps))]
+        else:
+            mask = []
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
         cprint('Start generating ...', 'blue')
@@ -74,7 +80,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 samples = generated[:, :, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
                 # expanded_samples = np.expand_dims(samples, axis=0)
                 preds = self.keras_nn.generate(
-                    input=list(samples))  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
+                    input=list(samples) + mask)  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis]
@@ -162,6 +168,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 preds = np.expand_dims(preds, axis=0)
             if len(s_output.shape) == 5:  # Only one instrument : output of nn not a list
                 s_output = np.expand_dims(s_output)
+            preds = midi.create.normalize_activation(preds, mono=self.mono)
             truth = np.concatenate((truth, s_output), axis=2)
             for inst in range(nb_instruments):
                 p = np.copy(s_output)
@@ -174,16 +181,22 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
         # -------------------- Compute notes list --------------------
         # ----- Reshape -----
+        """
         truth = np.reshape(truth, (truth.shape[0], truth.shape[2] * truth.shape[3],
                                    *truth.shape[
                                     4:]))  # (nb_instruments, nb_steps * step_size, input_size, channels)
         truth = np.transpose(truth, axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
+        """
+        truth = self.reshape_generated_array(truth)
         for inst in range(nb_instruments):
+            """
             s = filled_list[inst].shape
             filled_list[inst] = np.reshape(filled_list[inst], (
                 s[0], s[2] * s[3], *s[4:]))  # (nb_instruments, nb_steps * step_size, input_size, channels)
             filled_list[inst] = np.transpose(filled_list[inst],
                                              axes=(0, 2, 1, 3))  # (nb_instruments, input_size, length, channels)
+            """
+            filled_list[inst] = self.reshape_generated_array(filled_list[inst])
         self.get_new_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
         self.compute_generated_array(
