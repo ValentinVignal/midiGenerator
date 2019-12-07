@@ -18,3 +18,10 @@ sequences = dict(
     PoEMonoRep=Sequences.MissingInstSequence.replicate
 )
 
+needs_mask = dict(
+    RMVAE=True,
+    AEMono=False,
+    AEMonoRep=False,
+    PoEMonoRep=True
+)
+

@@ -48,9 +48,10 @@ class MGComputeGeneration(MGInit):
         return accuracy, list(accuracies_inst)
 
     def compute_generated_array(self, generated_array, file_name, no_duration=False, array_truth=None, verbose=1,
-                                save_truth=False, save_images=True):
+                                save_truth=False, save_images=True, replicate=False):
         """
 
+        :param replicate:
         :param save_images:
         :param save_truth:
         :param verbose:
@@ -88,7 +89,8 @@ class MGComputeGeneration(MGInit):
                                      path=img_path,
                                      seed_length=self.nb_steps * self.step_length,
                                      instruments=self.instruments,
-                                     mono=self.mono)
+                                     mono=self.mono,
+                                     replicate=replicate)
         if array_truth is not None:
             accuracy, accuracies_inst = self.accuracy_generation(generated_array, array_truth, mono=self.mono)
             print(f'Accuracy of the generation {name} :', colored(accuracies_inst, 'magenta'), ', overall :',
@@ -105,4 +107,5 @@ class MGComputeGeneration(MGInit):
                                              path=parent / f'{name}_truth.jpg',
                                              seed_length=self.nb_steps * self.step_length,
                                              instruments=self.instruments,
-                                             mono=self.mono)
+                                             mono=self.mono,
+                                             replicate=replicate)

@@ -10,7 +10,7 @@ def normalize_activation(arr, threshold=0.5, mono=False):
     """
 
     :param mono:
-    :param arr: (nb_instruments, (batch=1), nb_steps=1, lenght, 88, 2)
+    :param arr: (nb_instruments, (batch=1), nb_steps=1, length, 88, 2)
     :param threshold:
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
@@ -25,7 +25,6 @@ def normalize_activation(arr, threshold=0.5, mono=False):
         activations = np.take(arr, axis=-1, indices=0)
         np.place(activations, threshold <= activations, 1)
         np.place(activations, activations < threshold, 0)
-        #arr[:, :, :, :, 0] = activations
         np.put_along_axis(
             arr=arr,
             indices=np.zeros((1 for i in arr.shape), dtype=int),

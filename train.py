@@ -72,11 +72,14 @@ def main(args):
 
     # -------------------- Replicate --------------------
     if args.replicate:
-        midi_generator.replicate_fom_data(save_images=True, no_duration=args.no_duration)
+        midi_generator.replicate_fom_data(save_images=True, no_duration=args.no_duration, noise=args.noise)
 
     # -------------------- Generate --------------------
     if args.generate_fill:
         midi_generator.generate_fill(no_duration=args.no_duration, verbose=1)
+
+    if args.replicate_fill:
+        midi_generator.replicate_fill(save_images=True, no_duration=args.no_duration, verbose=1, noise=args.noise)
 
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
@@ -96,7 +99,7 @@ def preprocess_args(args):
     :return:
     """
     if args.pc:
-        args.epochs = 2
+        args.epochs = 4
         args.batch = 4
     return args
 
@@ -162,6 +165,8 @@ if __name__ == '__main__':
     parser.add_argument('--replicate', default=False, action='store_true',
                         help='Replication after training')
     parser.add_argument('--generate-fill', default=False, action='store_true',
+                        help='Fill the missing instrument')
+    parser.add_argument('--replicate-fill', default=False, action='store_true',
                         help='Fill the missing instrument')
     parser.add_argument('--no-duration', action='store_true', default=False,
                         help='Generate only shortest notes possible')

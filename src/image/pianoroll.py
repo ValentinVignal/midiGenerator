@@ -59,9 +59,10 @@ def see_MySequence(x, y):
     img.show()
 
 
-def save_pianoroll(array, path, seed_length, instruments, mono=False):
+def save_pianoroll(array, path, seed_length, instruments, mono=False, replicate=False):
     """
 
+    :param replicate:
     :param mono:
     :param array: shape (nb_instruments, 128, nb_steps, 2)
     :param path:
@@ -71,15 +72,22 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False):
     """
     # Colors
     colors_rgb = return_colors(len(instruments))
+    """
     activations = Midi.create.converter_func(
         array,
         mono=mono
     )  # Array of the duration of each notes   # (nb_instruments, nb_notes, nb_steps)
+    """
+    activations = np.take(array, axis=-1, indices=0)        # (nb_instruments, size, nb_steps)
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
     all = np.zeros((input_size, nb_steps, 3))  # RGB
-    all[:, :seed_length] = 25  # So seed is visible (grey)
+    if replicate:
+        for i in range(seed_length):
+            all[:, i::2 * seed_length] = 25     # So steps are visible (grey)
+    else:
+        all[:, :seed_length] = 25  # So seed is visible (grey)
     for inst in range(nb_instruments):
         for i in range(input_size):
             for j in range(nb_steps):
