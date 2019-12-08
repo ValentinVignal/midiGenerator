@@ -43,7 +43,8 @@ def main(args):
             'no_batch_norm': args.no_batch_norm,
             'bn_momentum': args.bn_momentum,
             'lambdas_loss': args.lambdas_loss,
-            'sampling': not args.no_sampling
+            'sampling': not args.no_sampling,
+            'kld': not args.no_kld
         }
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,
@@ -99,7 +100,8 @@ def preprocess_args(args):
     :return:
     """
     if args.pc:
-        args.epochs = 8
+        if args.epochs == g.epochs:
+            args.epochs = 2
         args.batch = 4
     return args
 
@@ -138,6 +140,8 @@ if __name__ == '__main__':
                         help='Use or not all the sequence in the RNN layer')
     parser.add_argument('--no-sampling', default=False, action='store_true',
                         help='Gaussian Sampling')
+    parser.add_argument('--no-kld', default=False, action='store_true',
+                        help='No KL Divergence')
     # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')

@@ -5,8 +5,6 @@ from colour import Color
 import random
 import matplotlib.pyplot as plt
 
-from src import Midi
-
 
 def save_img(array, path):
     """

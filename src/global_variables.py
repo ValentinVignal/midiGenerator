@@ -81,6 +81,7 @@ all_sequence = False
 lstm_state = False
 last_fc = False
 sampling = True
+kld = True
 # ----- Data -----
 noise = 0
 
