@@ -100,6 +100,10 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     inputs_inst_step = [mlayers.shapes.Unstack(axis=0)(input_inst) for input_inst in
                         inputs_midi]  # List(nb_instruments, nb_steps)[(batch, step_length, size, channels)]
+    inputs_step_inst = mlayers.shapes.transpose_list(
+        inputs_inst_step,
+        axes=(1, 0)
+    )       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
 
     # ------------------------------ Encoding ------------------------------
 
@@ -109,29 +113,25 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         time_stride=time_stride,
         time_distributed=False
     ) for inst in range(nb_instruments)]
-
-    encoded_step_inst = [[encoders[inst](inputs_inst_step[inst][step]) for inst in range(nb_instruments)] for step in
-                         range(nb_steps)]  # List(nb_steps, nb_instruments)[(batch, size)]
+    encoded_step_inst = mlayers.wrapper.ApplySameOnList(
+        layer=mlayers.wrapper.ApplyDifferentOnList(layers=encoders),
+        name='encoders'
+    )(inputs_step_inst)       # List(nb_steps, nb_instruments)[(batch, size)]
     # -------------------- Product of Expert --------------------
 
     latent_size = model_param['dense'][-1]
     denses_for_mean = [mlayers.dense.DenseForMean(units=latent_size) for inst in range(nb_instruments)]
     denses_for_std = [mlayers.dense.DenseForSTD(units=latent_size) for inst in range(nb_instruments)]
 
-    means_step_inst = [
-        [
-            denses_for_mean[inst](encoded_step_inst[step][inst])
-            for inst in range(nb_instruments)
-        ]
-        for step in range(nb_steps)
-    ]       # List(steps, nb_instruments)[(batch, size)]
-    stds_step_inst = [
-        [
-            denses_for_std[inst](encoded_step_inst[step][inst])
-            for inst in range(nb_instruments)
-        ]
-        for step in range(nb_steps)
-    ]       # List(steps, nb_instruments)[(batch, size)]
+    means_step_inst = mlayers.wrapper.ApplySameOnList(
+        layer=mlayers.wrapper.ApplyDifferentOnList(layers=denses_for_mean),
+        name='mean_denses'
+    )(encoded_step_inst)       # List(steps, nb_instruments)[(batch, size)]
+    stds_step_inst = mlayers.wrapper.ApplySameOnList(
+        layer=mlayers.wrapper.ApplyDifferentOnList(layers=denses_for_std),
+        name='std_denses'
+    )(encoded_step_inst)       # List(steps, nb_instruments)[(batch, size)]
+
     means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)      # (batch, nb_instruments, nb_steps, size)
     stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)        # (batch, nb_instruments, nb_steps, size)
 
@@ -161,21 +161,20 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         shapes_after_upsize=shapes_before_pooling
     ) for inst in range(nb_instruments)]
 
-    decoded_inst_steps = [
-        [
-            decoders[inst](rnn_output_steps[step])
-            for step in range(nb_steps)
-        ]
-        for inst in range(nb_instruments)
-    ]  # List(nb_instruments)[List(nb_steps)[batch, step_length, size, channels=1)]]
+    decoded_steps_inst = mlayers.wrapper.ApplySameOnList(
+        layer=mlayers.wrapper.ApplyDifferentLayers(layers=decoders),
+        name='decoders'
+    )(rnn_output_steps)     # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
+
     last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
-    outputs_inst_steps = [
-        [
-            last_mono[inst](decoded_inst_steps[inst][step])
-            for step in range(nb_steps)
-        ]
-        for inst in range(nb_instruments)
-    ]  # List(nb_instruments)[List(nb_steps)[(batch, step_length, size, channels=1)]]
+    outputs_steps_inst = mlayers.wrapper.ApplySameOnList(
+        layer=mlayers.wrapper.ApplyDifferentOnList(layers=last_mono),
+        name='last_mono'
+    )(decoded_steps_inst)       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
+    outputs_inst_steps = mlayers.shapes.transpose_list(
+        outputs_steps_inst,
+        axes=(1, 0))        # List(nb_instruments, nb_steps)[batch, step_length, size, channels)]
+
     outputs = [mlayers.shapes.Stack(axis=0)(o) for o in
                outputs_inst_steps]  # List(nb_instruments)[(batch, nb_steps, step_length, size, channel=1)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]

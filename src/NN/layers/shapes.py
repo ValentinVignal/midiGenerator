@@ -1,5 +1,6 @@
 import tensorflow as tf
 import warnings
+import numpy as np
 
 from .KerasLayer import KerasLayer
 from src import mtypes as t
@@ -238,5 +239,35 @@ class ExpandDims(KerasLayer):
 
     def call(self, inputs):
         return tf.expand_dims(inputs, self.axis_with_batch)
+
+
+def transpose_list(l, axes):
+    """
+
+    :param l: list of object (not np array)
+    :param axes:
+    :return:
+    """
+    l_np = np.asarray(l)
+    l_np = np.transpose(l_np, axes=axes)
+
+    def recurse_np2list(array, nb_lists):
+        """
+
+        :param array:
+        :param nb_lists:
+        :return:
+        """
+        if nb_lists == 0:
+            return array
+        else:
+            return [
+                recurse_np2list(arr, nb_lists - 1) for arr in array
+            ]
+    return recurse_np2list(l_np, len(axes))
+
+
+
+
 
 
