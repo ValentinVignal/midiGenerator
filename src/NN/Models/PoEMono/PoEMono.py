@@ -100,6 +100,10 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     inputs_inst_step = [mlayers.shapes.Unstack(axis=0)(input_inst) for input_inst in
                         inputs_midi]  # List(nb_instruments, nb_steps)[(batch, step_length, size, channels)]
+    inputs_step_inst = mlayers.shapes.transpose_list(
+        inputs_inst_step,
+        axes=(1, 0)
+    )       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
 
     # ------------------------------ Encoding ------------------------------
 
@@ -159,17 +163,17 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     decoded_inst = mlayers.wrapper.ApplyDifferentLayers(
         layers=decoders,
         name='decoders'
-    )(rnn_output)
+    )(rnn_output)       # List(nb_instruments)[(batch, step_length, size, channels)]
 
     last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
     outputs_inst = mlayers.wrapper.ApplyDifferentOnList(
         layers=last_mono,
         name='Last_inst_mono',
-    )(decoded_inst)
+    )(decoded_inst)     # List(nb_instruments)[(batch, step_length, size, channels)]
     outputs = mlayers.wrapper.ApplySameOnList(
         layer=mlayers.shapes.ExpandDims(axis=0),
         name='expand_dims'
-    )(outputs_inst)
+    )(outputs_inst)     # List(nb_instruments)[(batch, nb_steps=1, step_length, size, channels)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)

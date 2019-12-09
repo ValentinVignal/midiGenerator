@@ -116,7 +116,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     encoded_step_inst = mlayers.wrapper.ApplySameOnList(
         layer=mlayers.wrapper.ApplyDifferentOnList(layers=encoders),
         name='encoders'
-    )(inputs_step_inst)       # List(nb_steps, nb_instruments)[(batch, size)]
+    )(inputs_inst_step)       # List(nb_steps, nb_instruments)[(batch, size)]
     # -------------------- Product of Expert --------------------
 
     latent_size = model_param['dense'][-1]
