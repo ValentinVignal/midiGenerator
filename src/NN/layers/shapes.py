@@ -2,6 +2,7 @@ import tensorflow as tf
 import warnings
 
 from .KerasLayer import KerasLayer
+from src import mtypes as t
 
 
 def get_shape(t, ax):
@@ -76,25 +77,64 @@ class SwitchListAxis(KerasLayer):
 
 
 class Stack(KerasLayer):
-    def __init__(self, axis=0):
+    def __init__(self, axis: t.Any = 0, axis_reversed=False):
         """
 
         :param axis: No batch in axis
         """
         super(Stack, self).__init__()
+        self.axis = None
+        self.axis_with_batch = None
+        self.compute_axis(axis)
+        self.axis = self.axis[::-1] if axis_reversed else self.axis
+
+    def compute_axis(self, axis):
+        if isinstance(axis, int):
+            axis = [axis]
+        elif isinstance(axis, tuple):
+            axis = list(axis)
+        assert isinstance(axis, list)
         self.axis = axis
-        self.axis_with_batch = axis + 1 if axis >= 0 else axis
 
     def build(self, input_shape):
+        for ax in self.axis:
+            input_shape = input_shape[0]
+        self.compute_axis_with_batch(input_shape)
         super(Stack, self).build(input_shape)
 
-    def compute_output_shape(self, input_shape):
-        length = len(input_shape)
-        input_shape = input_shape[0]
-        return (*input_shape[:self.axis_with_batch], length, *input_shape[self.axis_with_batch:])
+    def compute_axis_with_batch(self, input_shape):
+        axis_with_batch = []
+        nb_dims = len(input_shape)      # (with batch in it)
+        for ax in self.axis:
+            if ax >= 0:
+                real_ax = ax + 1
+            else:
+                real_ax = nb_dims + 1 + ax
+            for ax_ in axis_with_batch:
+                if ax_ <= real_ax:
+                    real_ax -= 1
+            axis_with_batch.append(real_ax)
+        self.axis_with_batch = axis_with_batch
 
-    def call(self, inputs):
-        x = tf.stack(inputs, axis=self.axis_with_batch)
+    def compute_output_shape(self, input_shape):
+        all_length = []
+        for ax in self.axis_with_batch:
+            all_length.append(len(input_shape))
+            input_shape = input_shape[0]
+        output_shape = list(input_shape)
+        for i in range(len(self.axis_with_batch) - 1, -1, -1):
+            output_shape.insert(self.axis_with_batch[i], all_length[i])
+        return tuple(output_shape)
+
+    def recurse_stack(self, x, axis):
+        if isinstance(x, list):
+            x = [self.recurse_stack(x=x_, axis=axis[1:]) for x_ in x]
+            return tf.stack(x, axis=axis[0])
+        else:
+            return x
+
+    def call(self, x):
+        x = self.recurse_stack(x, self.axis_with_batch)
         return x
 
 
@@ -121,16 +161,70 @@ def is_equal_tuple(t1, t2, warn=False):
 
 class Unstack(KerasLayer):
 
-    def __init__(self, axis=0):
+    def __init__(self, axis: t.Any = 0, axis_reversed=False):
+        """
+
+        :param axis:
+        :param axis_reversed:
+        """
         super(Unstack, self).__init__()
+        self.axis = None,
+        self.axis_with_batch = None
+        self.compute_axis(axis)
+        self.axis = self.axis[::-1] if axis_reversed else self.axis
+
+    def compute_axis(self, axis):
+        if isinstance(axis, int):
+            axis = [axis]
+        elif isinstance(axis, tuple):
+            axis = list(axis)
+        assert isinstance(axis, list)
         self.axis = axis
-        self.axis_with_batch = axis + 1 if axis >= 0 else axis
+
+    def build(self, input_shape):
+        self.compute_axis_with_batch(input_shape)
+        super(Unstack, self).build(input_shape)
+
+    def compute_axis_with_batch(self, input_shape):
+        axis_with_batch = []
+        nb_dims = len(input_shape)      # (with batch in it)
+        for ax in self.axis:
+            if ax >= 0:
+                real_ax = ax + 1
+            else:
+                real_ax = nb_dims + 1 + ax
+            for ax_ in axis_with_batch:
+                if ax_ <= real_ax:
+                    real_ax -= 1
+            axis_with_batch.append(real_ax)
+        self.axis_with_batch = axis_with_batch
 
     def compute_output_shape(self, input_shape):
-        return [(*input_shape[:self.axis_with_batch], *input_shape[self.axis_with_batch+1:])]
+        input_shape = list(input_shape)
+        lengths = []
+        for ax in reversed(self.axis_with_batch):
+            lengths.append(input_shape.pop(ax))
+        output_shape = self.recurse_compute_output_shape(input_shape, lengths)
+        return output_shape
 
-    def call(self, inputs):
-        return tf.unstack(inputs, axis=self.axis_with_batch)
+    def recurse_compute_output_shape(self, input_shape, lengths):
+        if not lengths:
+            return input_shape
+        else:
+            return [
+                self.recurse_compute_output_shape(input_shape, lengths=lengths[1:]) for i in range(lengths[0])
+            ]
+
+    def call(self, x):
+        return self.recurse_call(x, self.axis_with_batch)
+
+    def recurse_call(self, x, axis):
+        if not axis:
+            return x
+        else:
+            x = tf.unstack(x, axis=axis[0])
+            x = [self.recurse_call(x_, axis[1:]) for x_ in x]
+            return x
 
 
 class ExpandDims(KerasLayer):

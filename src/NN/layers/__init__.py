@@ -6,5 +6,6 @@ from . import last
 from . import rnn
 from . import vae
 from . import shapes
+from . import wrapper
 
 from .KerasLayer import KerasLayer

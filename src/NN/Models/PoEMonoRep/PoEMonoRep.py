@@ -124,26 +124,17 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
             for inst in range(nb_instruments)
         ]
         for step in range(nb_steps)
-    ]
+    ]       # List(steps, nb_instruments)[(batch, size)]
     stds_step_inst = [
         [
             denses_for_std[inst](encoded_step_inst[step][inst])
             for inst in range(nb_instruments)
         ]
         for step in range(nb_steps)
-    ]
-    means = mlayers.shapes.Stack(axis=1)(
-        [
-            mlayers.shapes.Stack(axis=0)(means_step_inst[step]) for step in range(nb_steps)
-            # (batch, nb_instruments size)
-        ]
-    )       # (batch, nb_instruments, nb_steps, size)
-    stds = mlayers.shapes.Stack(axis=1)(
-        [
-            mlayers.shapes.Stack(axis=0)(stds_step_inst[step]) for step in range(nb_steps)
-            # (batch, nb_instruments size)
-        ]
-    )       # (batch, nb_instruments, nb_steps, size)
+    ]       # List(steps, nb_instruments)[(batch, size)]
+    means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)      # (batch, nb_instruments, nb_steps, size)
+    stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)        # (batch, nb_instruments, nb_steps, size)
+
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])    # List(2)[(batch, nb_steps, size)]
     if mmodel_options['kld']:
         kld = mlayers.vae.KLD()(poe)
