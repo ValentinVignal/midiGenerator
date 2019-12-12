@@ -39,14 +39,6 @@ class MGTrain(MGInit):
                 batch_size=self.batch,
                 work_on=self.work_on
             )
-            """
-            self.sequence = Sequences.AllInstSequence(
-                path=str(self.data_transformed_path),
-                nb_steps=self.nb_steps,
-                batch_size=self.batch,
-                work_on=self.work_on
-            )
-            """
         if noise is not None:
             self.sequence.set_noise(noise)
 
@@ -77,14 +69,6 @@ class MGTrain(MGInit):
                 batch_size=self.batch,
                 work_on=self.work_on
             )
-            """
-            self.sequence = Sequences.AllInstSequence(
-                path=str(self.data_transformed_path),
-                nb_steps=int(self.model_id.split(',')[2]),
-                batch_size=self.batch,
-                work_on=self.work_on
-            )
-            """
         evaluation = self.keras_nn.evaluate(generator=self.sequence)
 
         metrics_names = self.keras_nn.model.metrics_names
