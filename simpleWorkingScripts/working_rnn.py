@@ -20,6 +20,8 @@ if __name__ == '__main__':
                         help='Use Eager exectution')
     parser.add_argument('--log-placement', action='store_true', default=False,
                         help='log devicde placement')
+    parser.add_argument('--gpu', default='0', type=int,
+                        help='Choose the GPU')
     args = parser.parse_args()
 
 if not args.eager:
@@ -28,7 +30,7 @@ tf.debugging.set_log_device_placement(args.log_placement)
 
 start = time.time()
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print('gpus', gpus)
