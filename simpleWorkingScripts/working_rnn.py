@@ -20,7 +20,7 @@ if __name__ == '__main__':
                         help='Use Eager exectution')
     parser.add_argument('--log-placement', action='store_true', default=False,
                         help='log devicde placement')
-    parser.add_argument('--gpu', default='0', type=int,
+    parser.add_argument('--gpu', default='0', type=str,
                         help='Choose the GPU')
     args = parser.parse_args()
 
