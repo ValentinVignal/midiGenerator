@@ -13,25 +13,36 @@ import sys
 if __name__ == '__main__':
     root_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
     sys.path.extend([root_path])
-    from src.NN import layers as mlayers
 
     parser = argparse.ArgumentParser(description='Program to test eager execution',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--eager', action='store_true', default=False,
                         help='Use Eager exectution')
+    parser.add_argument('--log-placement', action='store_true', default=False,
+                        help='log devicde placement')
     args = parser.parse_args()
 
 if not args.eager:
     tf.compat.v1.disable_eager_execution()
+tf.debugging.set_log_device_placement(args.log_placement)
+
 start = time.time()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.compat.v1.Session(config=config)
-tf.compat.v1.keras.backend.set_session(sess)
+gpus = tf.config.experimental.list_physical_devices('GPU')
+print('gpus', gpus)
+
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
 
 
 def decay_func(lr_init):
@@ -61,18 +72,9 @@ my_sequence = MySequence(batch_size=4)
 
 def build_model():
     inputs = tf.keras.Input(shape=(20, 30))
-    x = tf.keras.layers.TimeDistributed(mlayers.dense.DenseCoder(
-        size_list=['10', '15', '20']
-    ))(inputs)
-    # x = tf.keras.layers.LSTM(20, return_sequences=True)(x)
-    x = mlayers.rnn.LstmRNN(
-        size_list=[30, 20, 10],
-        dropout=0.1,
-        return_sequence=True
-    )(x)
-    outputs = tf.keras.layers.TimeDistributed(mlayers.dense.DenseCoder(
-        size_list=['20', '15', '10']
-    ))(x)
+    x = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(20))(inputs)
+    x = tf.keras.layers.LSTM(20, return_sequences=True)(x)
+    outputs = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(10))(x)
 
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     return model
