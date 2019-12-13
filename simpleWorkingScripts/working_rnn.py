@@ -31,6 +31,7 @@ tf.debugging.set_log_device_placement(args.log_placement)
 start = time.time()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+print('supposed GPU', os.environ['CUDA_VISIBLE_DEVICES'])
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print('gpus', gpus)
