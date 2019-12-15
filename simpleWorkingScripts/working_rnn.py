@@ -91,7 +91,8 @@ def loss(labels, logits):
     return tf.keras.losses.mae(labels, logits)
 
 
-model.compile(optimizer='adam', loss=loss)
+optimizer = tf.keras.optimizers.Adam(lr=0.01, decay=1e-2)
+model.compile(optimizer=optimizer, loss=loss)
 
 # Directory where the checkpoints will be saved
 checkpoint_dir = './training_checkpoints'

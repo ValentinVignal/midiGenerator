@@ -1,6 +1,5 @@
 from termcolor import colored, cprint
 
-from src.NN import Sequences
 import src.global_variables as g
 import src.image.pianoroll as pianoroll
 from .MGInit import MGInit

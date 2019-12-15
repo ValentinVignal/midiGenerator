@@ -3,6 +3,7 @@ import os
 from termcolor import cprint
 
 from src.MidiGenerator import MidiGenerator
+from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 import src.global_variables as g
 
 
@@ -27,6 +28,9 @@ def main(args):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     if args.debug:
         pass
+
+    if args.no_eager:
+        KerasNeuralNetwork.disable_eager_exection()
 
     if args.model_id != '':
         midi_generator.load_data(data_transformed_path=data_transformed_path)
@@ -188,7 +192,9 @@ if __name__ == '__main__':
     parser.add_argument('--pc', action='store_true', default=False,
                         help='To work on a small computer with a cpu')
     parser.add_argument('--debug', action='store_true', default=False,
-                        help='To set special paremeters for a debug')
+                        help='To set special parameters for a debug')
+    parser.add_argument('--no-eager', default=False, action='store_true',
+                        help='Disable eager execution')
 
     args = parser.parse_args()
 

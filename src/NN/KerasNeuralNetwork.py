@@ -1,6 +1,5 @@
 import os
 import tensorflow as tf
-from tensorflow.python.keras.callbacks import TensorBoard
 from pathlib import Path
 import pickle
 import dill
@@ -15,7 +14,6 @@ from src.NN import Sequences
 from . import Models
 
 K = tf.keras.backend
-tf.compat.v1.disable_eager_execution()
 
 
 class KerasNeuralNetwork:
@@ -39,11 +37,11 @@ class KerasNeuralNetwork:
         self.model_options = None
 
         # Spare GPU
-        tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+        # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
         self.allow_growth()
 
         log_dir = os.path.join('tensorboard', f'{time()}')
-        self.tensorboard = TensorBoard(log_dir=log_dir)
+        self.tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
 
     def new_model(self, model_id, input_param, opt_param, type_loss=None, step_length=1, model_options={}):
         """
@@ -103,9 +101,9 @@ class KerasNeuralNetwork:
         # ----- Default values -----
         opt_param = {
             'name': 'adam',
-            'lr': 0.01,
-            'drop': 0.5,
-            'epochs_drop': 10
+            'lr': g.lr,
+            'drop': g.decay_drop,
+            'epochs_drop': g.epochs_drop
         }
         opt_param.update(kwargs)
 
@@ -113,10 +111,11 @@ class KerasNeuralNetwork:
         optimizer = None
         if opt_param['name'] == 'adam':
             optimizer = tf.keras.optimizers.Adam(lr=opt_param['lr'], beta_1=0.9, beta_2=0.999, epsilon=None,
-                                                 amsgrad=False)
+                                                 amsgrad=False, decay=opt_param['drop'])
         elif opt_param['name'] == 'sgd':
-            optimizer = tf.keras.optimizers.SGD(lr=opt_param['lr'])
+            optimizer = tf.keras.optimizers.SGD(lr=opt_param['lr'], decay=opt_param['drop'])
 
+        # TODO: to use it, make it work with LSTM and no eager execution
         # ----- Decay -----
         step_decay = dill.loads(
             KerasNeuralNetwork.decay_func(lr_init=opt_param['lr'], drop=opt_param['drop'],
@@ -144,19 +143,22 @@ class KerasNeuralNetwork:
         :param validation:
         :return:
         """
-        callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
+        # TODO: To do custom decay: make it work with LSTM and non eager execution
+        # callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
+        callback_list = [self.tensorboard] + callbacks
 
         if validation > 0:
             generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
                                                                                                    validation_split=validation)
 
-            a = self.model.fit_generator(epochs=epochs, generator=generator_train, validation_data=generator_valid,
-                                         shuffle=True, verbose=verbose, callbacks=callback_list)
+            history = self.model.fit_generator(epochs=epochs, generator=generator_train,
+                                               validation_data=generator_valid,
+                                               shuffle=True, verbose=verbose, callbacks=callback_list)
         else:  # So it won't print a lot of lines for nothing
-            a = self.model.fit_generator(epochs=epochs, generator=generator,
-                                         shuffle=True, verbose=verbose, callbacks=callback_list)
+            history = self.model.fit_generator(epochs=epochs, generator=generator,
+                                               shuffle=True, verbose=verbose, callbacks=callback_list)
 
-        return a.history
+        return history.history
 
     def evaluate(self, generator, verbose=1):
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
@@ -280,11 +282,28 @@ class KerasNeuralNetwork:
 
         :return:
         """
+        """
         config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
         sess = tf.compat.v1.Session(config=config)
         tf.compat.v1.keras.backend.set_session(sess)
 
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        print('gpus', gpus)
+        """
+
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            try:
+                # Currently, memory growth needs to be the same across GPUs
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+
+            except RuntimeError as e:
+                # Memory growth must be set before GPUs have been initialized
+                print(e)
 
     @staticmethod
     def choose_gpu(gpu):
@@ -293,3 +312,7 @@ class KerasNeuralNetwork:
     @staticmethod
     def clear_session():
         K.clear_session()
+
+    @staticmethod
+    def disable_eager_exection():
+        tf.compat.v1.disable_eager_execution()

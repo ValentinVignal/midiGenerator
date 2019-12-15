@@ -55,3 +55,7 @@ class KerasLayer(layers.Layer):
 
     def __call__(self, *args, **kwargs):
         return super(KerasLayer, self).__call__(*args, **kwargs)
+
+    def build(self, inputs_shape):
+        super(KerasLayer, self).build(inputs_shape)
+        # print(self.__class__.__name__, 'is built with shape', inputs_shape)
