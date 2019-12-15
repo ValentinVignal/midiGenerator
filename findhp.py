@@ -6,7 +6,7 @@ import tensorflow as tf
 K = tf.keras.backend
 
 from MidiGenerator.MidiGenerator import MidiGenerator
-from src.NN.callbacks import LossHistory
+from Callbacks.LossHistory import LossHistory
 import src.global_variables as g
 
 

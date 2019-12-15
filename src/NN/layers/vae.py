@@ -150,9 +150,13 @@ class KLD(KerasLayer):
     """
 
     """
+    def __init__(self, weight, **kwargs):
+        super(KLD, self).__init__(**kwargs)
+        self.weigth = weight
+
     def call(self, inputs):
         mean, std = inputs
-        return - 0.5 * tf.reduce_mean(
+        return - self.weigth * 0.5 * tf.reduce_mean(
             2 * math.log(std) - math.square(mean) - math.square(std) + 1
         )
 

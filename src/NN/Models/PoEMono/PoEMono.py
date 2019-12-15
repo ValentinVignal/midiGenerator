@@ -8,6 +8,7 @@ from src.NN.Models.KerasModel import KerasModel
 import src.NN.shapes.convolution as s_conv
 import src.NN.shapes.time as s_time
 from src.eval_string import eval_object
+from src.NN import Callbacks
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -117,7 +118,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     encoded_step_inst = mlayers.wrapper.ApplySameOnList(
         layer=mlayers.wrapper.ApplyDifferentOnList(layers=encoders),
         name='encoders'
-    )(inputs_inst_step)       # List(steps, nb_instruments)[(batch, size)]
+    )(inputs_step_inst)       # List(steps, nb_instruments)[(batch, size)]
     # -------------------- Product of Expert --------------------
 
     latent_size = model_param['dense'][-1]
@@ -138,7 +139,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])    # List(2)[(batch, nb_steps, size)]
     if mmodel_options['kld']:
-        kld = mlayers.vae.KLD()(poe)
+        kld_weight = K.variable(0)
+        kld_weight._trainable = False
+        kld = mlayers.vae.KLD(kld_weight)(poe)
     if mmodel_options['sampling']:
         samples = mlayers.vae.SampleGaussian()(poe)
     else:
@@ -189,12 +192,19 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         model.add_loss(kld)
     # ------------------ Metrics -----------------
 
+    # -------------------- Callbacks --------------------
+    callbacks = []
+    if mmodel_options['kld']:
+        callbacks.append(Callbacks.Annealing(kld_weight, start_value=0, final_value=1, epoch_start=0.5))
+
     # ------------------------------ Compile ------------------------------
 
     model.compile(loss=losses,
                   optimizer=optimizer,
                   metrics=[mmetrics.acc_mono])
-    # model.build([(None, *midi_shape) for inst in range(nb_instruments)])
-    # model.build()
 
-    return model, losses, (lambda_loss_activation, lambda_loss_duration)
+    # return model, losses, (lambda_loss_activation, lambda_loss_duration)
+    return dict(
+        model=model,
+        callbacks=callbacks
+    )

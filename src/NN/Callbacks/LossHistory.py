@@ -1,9 +1,10 @@
-import tensorflow as tf
-import src.text.summary as summary
 from pathlib import Path
 
+import src.text.summary as summary
+from .KerasCallback import KerasCallback
 
-class LossHistory(tf.keras.callbacks.Callback):
+
+class LossHistory(KerasCallback):
     def __init__(self):
         super().__init__()
         self.logs = []  # logs = {'loss': 4.495124205389112, 'Output_0_loss' : 2.400269569744329,

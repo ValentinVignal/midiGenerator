@@ -28,11 +28,10 @@ class KerasNeuralNetwork:
         self.step_length = None
         # --- TF ---
         self.model = None
-        self.losses = None
-        self.loss_lambdas = None
         self.opt_param = None
         self.decay = None
         self.type_loss = None
+        self.callbacks = []
 
         self.model_options = None
 
@@ -78,7 +77,7 @@ class KerasNeuralNetwork:
         self.opt_param = opt_param
         optimizer, self.decay = KerasNeuralNetwork.create_optimizer(**self.opt_param)
 
-        self.model, self.losses, self.loss_lambdas = nn_model.create_model(
+        model_dict = nn_model.create_model(
             input_param=input_param,
             model_param=model_param,
             nb_steps=nb_steps,
@@ -86,6 +85,8 @@ class KerasNeuralNetwork:
             step_length=step_length,
             type_loss=self.type_loss,
             model_options=model_options)
+        self.model = model_dict['model']
+        self.callbacks.extend(model_dict['callbacks'])
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps
@@ -145,7 +146,9 @@ class KerasNeuralNetwork:
         """
         # TODO: To do custom decay: make it work with LSTM and non eager execution
         # callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
-        callback_list = [self.tensorboard] + callbacks
+        for callback in self.callbacks:
+            callback.update_with_fit_args(epochs=epochs)
+        callback_list = self.callbacks + [self.tensorboard] + callbacks
 
         if validation > 0:
             generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
@@ -172,7 +175,6 @@ class KerasNeuralNetwork:
         """
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
-        string_loss = dill.dumps(self.losses)
         string_decay = dill.dumps(self.decay)
         with open(str(path / 'weights.p'), 'wb') as dump_file:
             pickle.dump({
@@ -181,8 +183,6 @@ class KerasNeuralNetwork:
 
         with open(str(path / 'MyNN.p'), 'wb') as dump_file:
             pickle.dump({
-                'loss': string_loss,
-                'loss_lambdas': self.loss_lambdas,
                 'model_id': self.model_id,
                 'input_param': self.input_param,
                 'nb_steps': self.nb_steps,
@@ -282,16 +282,6 @@ class KerasNeuralNetwork:
 
         :return:
         """
-        """
-        config = tf.compat.v1.ConfigProto()
-        config.gpu_options.allow_growth = True
-        sess = tf.compat.v1.Session(config=config)
-        tf.compat.v1.keras.backend.set_session(sess)
-
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        print('gpus', gpus)
-        """
-
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
             try:
