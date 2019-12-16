@@ -215,7 +215,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
         generated_helped = np.copy(generated)  # Each step will take the truth as an input
         generated_truth = np.copy(generated)  # The truth
 
-        mask = self.get_mask(self.sequence.nb_instruments)
+        mask = self.get_mask(self.sequence.nb_instruments, batch_size=2)
 
         # -------------------- Generation --------------------
         cprint('Start comparing generation ...', 'blue')

@@ -59,7 +59,7 @@ def letter2work_on(letter):
 # ---------- Neural Network ----------
 # ------------------------------------------------------------
 # ----- Optimizer -----
-lr = 0.05
+lr = 0.01
 dropout = 0.2
 decay = 2e-1
 epochs_drop = 50

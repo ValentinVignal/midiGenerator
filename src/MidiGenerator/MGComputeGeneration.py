@@ -110,9 +110,9 @@ class MGComputeGeneration(MGInit):
                                              mono=self.mono,
                                              replicate=replicate)
 
-    def get_mask(self, nb_instruments):
+    def get_mask(self, nb_instruments, batch_size=1):
         if Models.needs_mask[self.model_name]:
-            mask = [np.ones((1, nb_instruments, self.nb_steps))]
+            mask = [np.ones((batch_size, nb_instruments, self.nb_steps))]
         else:
             mask = []
         return mask
