@@ -101,7 +101,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     inputs_step_inst = mlayers.shapes.transpose_list(
         inputs_inst_step,
         axes=(1, 0)
-    )       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
+    )  # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
 
     # ------------------------------ Encoding ------------------------------
 
@@ -115,7 +115,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     encoded_step_inst = mlayers.wrapper.ApplySameOnList(
         layer=mlayers.wrapper.ApplyDifferentOnList(layers=encoders),
         name='encoders'
-    )(inputs_step_inst)       # List(steps, nb_instruments)[(batch, size)]
+    )(inputs_step_inst)  # List(steps, nb_instruments)[(batch, size)]
     # -------------------- Product of Expert --------------------
 
     latent_size = model_param['dense'][-1]
@@ -125,16 +125,16 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     means_step_inst = mlayers.wrapper.ApplySameOnList(
         layer=mlayers.wrapper.ApplyDifferentOnList(layers=denses_for_mean),
         name='mean_denses'
-    )(encoded_step_inst)       # List(steps, nb_instruments)[(batch, size)]
+    )(encoded_step_inst)  # List(steps, nb_instruments)[(batch, size)]
     stds_step_inst = mlayers.wrapper.ApplySameOnList(
         layer=mlayers.wrapper.ApplyDifferentOnList(layers=denses_for_std),
         name='std_denses'
-    )(encoded_step_inst)       # List(steps, nb_instruments)[(batch, size)]
+    )(encoded_step_inst)  # List(steps, nb_instruments)[(batch, size)]
 
-    means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)      # (batch, nb_instruments, nb_steps, size)
-    stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)        # (batch, nb_instruments, nb_steps, size)
+    means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)  # (batch, nb_instruments, nb_steps, size)
+    stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)  # (batch, nb_instruments, nb_steps, size)
 
-    poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])    # List(2)[(batch, nb_steps, size)]
+    poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
     if mmodel_options['kld']:
         kld_weight = K.variable(0)
         kld_weight._trainable = False
@@ -142,7 +142,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     if mmodel_options['sampling']:
         samples = mlayers.vae.SampleGaussian()(poe)
     else:
-        samples = layers.Concatenate(axis=-1)(poe)      # (batch, nb_steps, size)
+        samples = layers.Concatenate(axis=-1)(poe)  # (batch, nb_steps, size)
 
     # ------------------------------ RNN ------------------------------
 
@@ -160,20 +160,20 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         time_stride=time_stride,
         shapes_after_upsize=shapes_before_pooling
     ) for inst in range(nb_instruments)]
-    decoded_inst = mlayers.wrapper.ApplyDifferentLayers(
+    decoded_inst = mlayers.wrapper.apply_different_layers(
         layers=decoders,
-        name='decoders'
-    )(rnn_output)       # List(nb_instruments)[(batch, step_length, size, channels)]
+        x=rnn_output
+    )       # List(nb_instruments)[(batch, step_length, size, channels)]
 
     last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
-    outputs_inst = mlayers.wrapper.ApplyDifferentOnList(
+    outputs_inst = mlayers.wrapper.apply_different_on_list(
         layers=last_mono,
-        name='Last_inst_mono',
-    )(decoded_inst)     # List(nb_instruments)[(batch, step_length, size, channels)]
-    outputs = mlayers.wrapper.ApplySameOnList(
-        layer=mlayers.shapes.ExpandDims(axis=0),
-        name='expand_dims'
-    )(outputs_inst)     # List(nb_instruments)[(batch, nb_steps=1, step_length, size, channels)]
+        x=decoded_inst
+    )  # List(nb_instruments)[(batch, step_length, size, channels)]
+    outputs = mlayers.wrapper.apply_different_on_list(
+        layers=[mlayers.shapes.ExpandDims(axis=0) for _ in range(len(outputs_inst))],
+        x=outputs_inst
+    )       # List(nb_instruments)[(batch, nb_steps=1, step_length, size, channels)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)
