@@ -103,8 +103,9 @@ class KerasNeuralNetwork:
         opt_param = {
             'name': 'adam',
             'lr': g.lr,
-            'drop': g.decay_drop,
-            'epochs_drop': g.epochs_drop
+            'decay_drop': g.decay_drop,
+            'epochs_drop': g.epochs_drop,
+            'decay': g.decay
         }
         opt_param.update(kwargs)
 
@@ -112,14 +113,14 @@ class KerasNeuralNetwork:
         optimizer = None
         if opt_param['name'] == 'adam':
             optimizer = tf.keras.optimizers.Adam(lr=opt_param['lr'], beta_1=0.9, beta_2=0.999, epsilon=None,
-                                                 amsgrad=False, decay=opt_param['drop'])
+                                                 amsgrad=False, decay=opt_param['decay'])
         elif opt_param['name'] == 'sgd':
-            optimizer = tf.keras.optimizers.SGD(lr=opt_param['lr'], decay=opt_param['drop'])
+            optimizer = tf.keras.optimizers.SGD(lr=opt_param['lr'], decay=opt_param['decay'])
 
         # TODO: to use it, make it work with LSTM and no eager execution
         # ----- Decay -----
         step_decay = dill.loads(
-            KerasNeuralNetwork.decay_func(lr_init=opt_param['lr'], drop=opt_param['drop'],
+            KerasNeuralNetwork.decay_func(lr_init=opt_param['lr'], drop=opt_param['decay_drop'],
                                           epochs_drop=opt_param['epochs_drop']))
         # lrate = tf.keras.callbacks.LearningRateScheduler(step_decay)
         # callback_list = [lrate]
@@ -129,7 +130,7 @@ class KerasNeuralNetwork:
     @staticmethod
     def decay_func(lr_init, **kwargs):
         def step_decay(epoch):
-            lrate = lr_init * math.pow(kwargs['drop'], math.floor(epoch / kwargs['epochs_drop']))
+            lrate = lr_init * math.pow(kwargs['decay_drop'], math.floor(epoch / kwargs['epochs_drop']))
             return lrate
 
         return dill.dumps(step_decay)

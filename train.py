@@ -37,7 +37,7 @@ def main(args):
         opt_param = {
             'lr': args.lr,
             'name': args.optimizer,
-            'drop': float(args.decay_drop),
+            'decay_drop': float(args.decay_drop),
             'epoch_drop': float(args.epochs_drop)
         }
         model_options = {
@@ -131,6 +131,8 @@ if __name__ == '__main__':
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=float, default=g.decay_drop,
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
+    parser.add_argument('--decay', type=float, default=g.decay,
+                        help='Value of normal decay: lr = lr_ / (1 + epochs * decay)')
     parser.add_argument('--type-loss', type=str, default=g.type_loss,
                         help='Value of the dropout')
     parser.add_argument('--lambdas-loss', type=str, default=g.lambdas_loss,
