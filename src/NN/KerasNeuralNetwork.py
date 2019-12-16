@@ -85,8 +85,8 @@ class KerasNeuralNetwork:
             step_length=step_length,
             type_loss=self.type_loss,
             model_options=model_options)
-        self.model = model_dict['model']
-        self.callbacks.extend(model_dict['callbacks'])
+        self.model = model_dict.get('model')
+        self.callbacks.extend(model_dict.get('callbacks', []))
         self.model_id = model_id
         self.input_param = input_param
         self.nb_steps = nb_steps

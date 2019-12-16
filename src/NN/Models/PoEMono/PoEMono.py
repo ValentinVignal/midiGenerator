@@ -37,15 +37,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # ---------- Model options ----------
     mmodel_options = {
         'dropout': g.dropout,
-        'lambdas_loss': g.lambdas_loss,
         'sampling': g.sampling,
         'kld': g.kld
     }
     mmodel_options.update(model_options)
 
     dropout = mmodel_options['dropout']
-
-    lambda_loss_activation, lambda_loss_duration = g.get_lambdas_loss(mmodel_options['lambdas_loss'])
 
     print('Definition of the graph ...')
 
@@ -195,7 +192,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # -------------------- Callbacks --------------------
     callbacks = []
     if mmodel_options['kld']:
-        callbacks.append(Callbacks.Annealing(kld_weight, start_value=0, final_value=1, epoch_start=0.5))
+        callbacks.append(Callbacks.Annealing(kld_weight, start_value=0, final_value=1))
 
     # ------------------------------ Compile ------------------------------
 

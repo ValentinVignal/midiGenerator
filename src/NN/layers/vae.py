@@ -150,7 +150,7 @@ class KLD(KerasLayer):
     """
 
     """
-    def __init__(self, weight, **kwargs):
+    def __init__(self, weight=1, **kwargs):
         super(KLD, self).__init__(**kwargs)
         self.weigth = weight
 

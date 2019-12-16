@@ -43,14 +43,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # ---------- Model options ----------
     mmodel_options = {
         'dropout': g.dropout,
-        'lambdas_loss': g.lambdas_loss,
         'sample': g.sample
     }
     mmodel_options.update(model_options)
 
     dropout = mmodel_options['dropout']
-
-    lambda_loss_activation, lambda_loss_duration = g.get_lambdas_loss(mmodel_options['lambdas_loss'])
 
     print('Definition of the graph ...')
 
@@ -155,7 +152,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
                   metrics=[mmetrics.acc_mono])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
-    return model, losses, (lambda_loss_activation, lambda_loss_duration)
+    return dict(
+        model=model,
+    )
 
 
 def create_fake_data(input_shape, size=20):
