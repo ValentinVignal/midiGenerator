@@ -49,7 +49,7 @@ class Annealing(KerasCallback):
         """
         if epoch < self.epoch_start:
             K.set_value(self.weigth, self.start_value)
-        elif epoch >= self.epoch_start:
+        elif self.epoch_start <= epoch <= self.epoch_stop:
             K.set_value(self.weigth, self.start_value + (epoch - self.epoch_start) * self.delta)
         elif epoch > self.epoch_stop:
             K.set_value(self.weigth, self.final_value)
@@ -71,4 +71,3 @@ class Annealing(KerasCallback):
             self.delta = (self.final_value - self.start_value) / (nb_active_epochs - 1)
         else:
             self.delta = 0
-
