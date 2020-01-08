@@ -1,11 +1,4 @@
 import tensorflow as tf
-import numpy as np
-import argparse
-import json
-import sys
-
-if __name__ == '__main__':
-    sys.path.append(sys.path[0] + '\\..\\..\\..\\..')
 
 import src.NN.losses as mlosses
 import src.NN.metrics as mmetrics

@@ -111,8 +111,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         time_stride=time_stride,
         time_distributed=False
     ) for inst in range(nb_instruments)]
-    encoded_step_inst = mlayers.wrapper.ApplySameOnList(
-        layer=mlayers.wrapper.ApplyDifferentOnList(layers=encoders),
+    encoded_step_inst = mlayers.wrapper.l.ApplySameOnList(
+        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=encoders),
         name='encoders'
     )(inputs_step_inst)       # List(nb_steps, nb_instruments)[(batch, size)]
     # -------------------- Product of Expert --------------------
@@ -121,12 +121,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     denses_for_mean = [mlayers.dense.DenseForMean(units=latent_size) for inst in range(nb_instruments)]
     denses_for_std = [mlayers.dense.DenseForSTD(units=latent_size) for inst in range(nb_instruments)]
 
-    means_step_inst = mlayers.wrapper.ApplySameOnList(
-        layer=mlayers.wrapper.ApplyDifferentOnList(layers=denses_for_mean),
+    means_step_inst = mlayers.wrapper.l.ApplySameOnList(
+        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=denses_for_mean),
         name='mean_denses'
     )(encoded_step_inst)       # List(steps, nb_instruments)[(batch, size)]
-    stds_step_inst = mlayers.wrapper.ApplySameOnList(
-        layer=mlayers.wrapper.ApplyDifferentOnList(layers=denses_for_std),
+    stds_step_inst = mlayers.wrapper.l.ApplySameOnList(
+        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=denses_for_std),
         name='std_denses'
     )(encoded_step_inst)       # List(steps, nb_instruments)[(batch, size)]
 
@@ -161,14 +161,14 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         shapes_after_upsize=shapes_before_pooling
     ) for inst in range(nb_instruments)]
 
-    decoded_steps_inst = mlayers.wrapper.ApplySameOnList(
-        layer=mlayers.wrapper.ApplyDifferentLayers(layers=decoders),
+    decoded_steps_inst = mlayers.wrapper.l.ApplySameOnList(
+        layer=mlayers.wrapper.l.ApplyDifferentLayers(layers=decoders),
         name='decoders'
     )(rnn_output_steps)     # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
 
     last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
-    outputs_steps_inst = mlayers.wrapper.ApplySameOnList(
-        layer=mlayers.wrapper.ApplyDifferentOnList(layers=last_mono),
+    outputs_steps_inst = mlayers.wrapper.l.ApplySameOnList(
+        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=last_mono),
         name='last_mono'
     )(decoded_steps_inst)       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
     outputs_inst_steps = mlayers.shapes.transpose_list(

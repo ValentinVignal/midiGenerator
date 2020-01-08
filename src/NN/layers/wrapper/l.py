@@ -1,4 +1,4 @@
-from .KerasLayer import KerasLayer
+from ..KerasLayer import KerasLayer
 
 
 class ApplySameOnList(KerasLayer):
@@ -22,10 +22,6 @@ class ApplySameOnList(KerasLayer):
 
     def call(self, x):
         return [self.layer(x_) for x_ in x]
-
-
-def apply_same_on_list(layer, x):
-    return [layer(x_) for x_ in x]
 
 
 class ApplyDifferentOnList(KerasLayer):
@@ -56,12 +52,6 @@ class ApplyDifferentOnList(KerasLayer):
         return [self.layers[i](x[i]) for i in range(len(self.layers))]
 
 
-def apply_different_on_list(layers, x):
-    if len(layers) != len(x):
-        raise IndexError(f'Number of inputs {len(x)} != number of layers {len(layers)}')
-    return [layers[i](x[i]) for i in range(len(layers))]
-
-
 class ApplyDifferentLayers(KerasLayer):
     def __init__(self, layers, *args, **kwargs):
         """
@@ -86,11 +76,3 @@ class ApplyDifferentLayers(KerasLayer):
 
     def call(self, x):
         return [layer(x) for layer in self.layers]
-
-
-def apply_different_layers(layers, x):
-    return [layer(x) for layer in layers]
-
-
-
-
