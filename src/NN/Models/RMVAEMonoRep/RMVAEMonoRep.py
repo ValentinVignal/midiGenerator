@@ -202,7 +202,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     model.compile(loss=losses,
                   optimizer=optimizer,
-                  metrics=[mmetrics.acc_mono])
+                  metrics=[mmetrics.acc_mono()])
     if mmodel_options['kld']:
         model.add_metric(kld, name='kld', aggregation='mean')
 

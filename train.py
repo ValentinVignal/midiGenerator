@@ -38,7 +38,8 @@ def main(args):
             'lr': args.lr,
             'name': args.optimizer,
             'decay_drop': float(args.decay_drop),
-            'epoch_drop': float(args.epochs_drop)
+            'epoch_drop': float(args.epochs_drop),
+            'decay': float(args.decay)
         }
         model_options = {
             'dropout': args.dropout,

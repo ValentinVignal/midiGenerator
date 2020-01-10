@@ -44,8 +44,8 @@ class KerasNeuralNetwork:
             log_dir=log_dir,
             write_graph=True,
             write_images=True,
-            embedding_freq=0.5,
-            write_grad=True
+            #embedding_freq=0.5,
+            #write_grad=True
         )
 
     def __del__(self):
