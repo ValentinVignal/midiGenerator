@@ -40,7 +40,18 @@ class KerasNeuralNetwork:
         self.allow_growth()
 
         log_dir = os.path.join('tensorboard', f'{time()}')
-        self.tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
+        self.tensorboard = tf.keras.callbacks.TensorBoard(
+            log_dir=log_dir,
+            write_graph=True,
+            write_images=True,
+            embedding_freq=0.5,
+            write_grad=True
+        )
+
+    def __del__(self):
+        del self.tensorboard
+        del self.model
+
 
     def new_model(self, model_id, input_param, opt_param, type_loss=None, step_length=1, model_options={}):
         """

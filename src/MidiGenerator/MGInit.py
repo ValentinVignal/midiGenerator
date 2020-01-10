@@ -64,3 +64,8 @@ class MGInit:
     def model_name(self):
         return self.model_id.split(',')[0]
 
+    def __del__(self):
+        del self.keras_nn
+        del self.sequence
+        del self.train_history
+
