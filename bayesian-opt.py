@@ -3,7 +3,7 @@ import os
 from termcolor import cprint, colored
 import numpy as np
 import tensorflow as tf
-import random
+from pathlib import Path
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -91,13 +91,13 @@ def create_dimensions(args):
     add_Categorical(all_sequence_tuple, name='all_sequence')
     # model name
     model_name_tuple = get_tuple(args.model_name, t=str, separator=',')
-    add_Categorical(model_name_tuple)
+    add_Categorical(model_name_tuple, 'model_name')
     # model param
     model_param_tuple = get_tuple(args.model_param, t=str, separator=',')
-    add_Categorical(model_param_tuple)
+    add_Categorical(model_param_tuple, 'model_param')
     # nb steps
     nb_steps_tuple = get_tuple(args.nb_steps, t=int, separator=',')
-    add_Categorical(nb_steps_tuple)
+    add_Categorical(nb_steps_tuple, 'nb_steps')
 
     return dimensions, default_dim
 
@@ -199,7 +199,7 @@ def main(args):
         s += str_hp_to_print('decay', decay, exp_format=True)
         s += str_hp_to_print('dropout', dropout, exp_format=True)
         s += str_hp_to_print('sampling', sampling)
-        s += str2bool('kld', kld)
+        s += str_hp_to_print('kld', kld)
         s += str_hp_to_print('all_sequence', all_sequence)
 
         print(s)
@@ -230,15 +230,113 @@ def main(args):
 
         return -accuracy
 
+    # ------------------------------
+    #           Run it
+    # ------------------------------
+
     search_result = gp_minimize(
         func=fitness,
         dimensions=dimensions,
         acq_func='EI',
-        n_calls=20,
+        n_calls=args.n_calls,
         x0=default_dim
     )
+    dimension_names = [x._name for x in dimensions]
+
+    best_param_list = search_result.x
+    best_accuracy = - search_result.fun
+
+    # ----- Print the best results -----
+    print('Best Result:', colored(f'{best_accuracy}', 'green'))
+    s = ''
+    for i in range(len(dimension_names)):
+        if isinstance(best_param_list[i], float):
+            s += f'{dimension_names[i]}:' + colored(f'{best_param_list[i]:.1e}', 'magenta') + ' - '
+        else:
+            s += f'{dimension_names[i]}:' + colored(f'{best_param_list[i]}', 'magenta') + ' - '
+
+    print(s)
+
+    sorted_scores = sorted(zip(search_result.func_vals, search_result.x_iters))
+
+    # ------------------------------
+    #           Save it
+    # ------------------------------
+
+    folder_path = get_folder_path()
+    folder_path.mkdir(exist_ok=True, parents=True)
+
+    save_best_result(
+        folder_path=folder_path,
+        best_accuracy=best_accuracy,
+        param_list=best_param_list,
+        dim_names=dimension_names
+    )
+    save_sorted_results(
+        folder_path=folder_path,
+        sorted_scores=sorted_scores,
+        dim_names=dimension_names
+    )
+
+    print('Results saved in', colored(folder_path.as_posix(), 'green'))
+
+
+
+
+
+
 
     cprint('---------- Done ----------', 'grey', 'on_green')
+
+
+def save_sorted_results(folder_path, sorted_scores, dim_names):
+    """
+    Save the list of the sorted scores and the correspondings parameters
+    :param folder_path:
+    :param sorted_scores:
+    :return:
+    """
+    text = '\t\tSorted scores and parameters:\n\n'
+    for score, param_list in sorted_scores:
+        text += f'{score:%}\t->\t'
+        for i in range(len(dim_names)):
+            text += f'{dim_names[i]}: {param_list[i]} - '
+        text += '\n'
+    with open(folder_path / 'sorted_scores.txt', 'w') as f:
+        f.write(text)
+
+
+def save_best_result(folder_path, best_accuracy, param_list, dim_names):
+    """
+    Save the best results and the parameters in a folder path
+    :param best_accuracy:
+    :param param_list:
+    :param folder_path:
+    :return:
+    """
+    text = f'\t\tAccuracy: {best_accuracy:%}\n\n'
+    text += 'Params:\n'
+    for i in range(len(param_list)):
+        text += f'{dim_names[i]} : '
+        if isinstance(param_list[i], float):
+            text += f'{param_list[i]:.3e}\t({param_list[i]})\n'
+        else:
+            text += f'{param_list[i]}\n'
+    with open(folder_path / 'best_params.txt', 'w') as f:
+        f.write(text)
+
+
+def get_folder_path():
+    """
+
+    :return: the path to the folder to save the results
+    """
+    folder_path = Path('hp_search')
+    i = 0
+    while (folder_path / f'bayesian_opt_{i}').exists() :
+        i += 1
+    folder_path = folder_path / f'bayensian_opt_{i}'
+    return folder_path
 
 
 def preprocess_args(args):
@@ -257,6 +355,10 @@ if __name__ == '__main__':
     # create a separate main function because original main function is too mainstream
     parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # -------------------- Grid search options --------------------
+    parser.add_argument('--n-calls', type=int, default=20,
+                        help='Number of point for the bayesian search')
+
     parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
                         help='The name of the data')
     # ----------------
@@ -285,7 +387,7 @@ if __name__ == '__main__':
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--no-sampling', type=str, default='False',
                         help='Gaussian Sampling')
-    parser.add_argument('--no-kld', default=False, action='store_true',
+    parser.add_argument('--no-kld', type= str, default='False',
                         help='No KL Divergence')
     # ---------------- Training options ----------------
     parser.add_argument('--noise', type=float, default=g.noise,

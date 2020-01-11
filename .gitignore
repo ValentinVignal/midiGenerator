@@ -11,6 +11,7 @@ test/
 saved_models
 generated_midis
 tests_hp
+hp_search
 
 # TensorFlow
 tensorboard
