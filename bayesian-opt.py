@@ -3,6 +3,7 @@ import os
 from termcolor import cprint, colored
 import numpy as np
 import tensorflow as tf
+import random
 
 import skopt
 from skopt import gp_minimize, forest_minimize
@@ -30,14 +31,19 @@ def create_list(string):
             np.arange(float(string_list[0]), float(string_list[1]) + float(string_list[2]), float(string_list[2])))
 
 
-def get_tuple(string, t=float):
+def get_tuple(string, t=float, separator=':'):
     """
-
-    :param t: float, int or other type
-    :param string:
+    Get the tuple from the string given by the user
+    :param separator: separator of the value in the string
+    :param t: float, int or other type (function)
+    :param string: the string given by the user
     :return:
     """
-    return tuple(map(t, string.split(':')))
+    return tuple(map(t, string.split(separator)))
+
+
+def str2bool(string):
+    return string == 'True'
 
 
 def create_dimensions(args):
@@ -49,10 +55,49 @@ def create_dimensions(args):
     dimensions = []
     default_dim = []
 
+    def add_Real(mtuple, name, prior='uniform'):
+        if len(mtuple) == 1:
+            dimensions.append(Categorical([mtuple[0]], name=name))
+            default_dim.append(mtuple[0])
+        elif len(mtuple) == 2:
+            dimensions.append(Real(low=min(mtuple), high=max(mtuple), name=name, prior=prior))
+            default_dim.append(sum(mtuple) / len(mtuple))
+
+    def add_Categorical(m_tuple, name):
+        dimensions.append(Categorical(list(m_tuple), name=name))
+        default_dim.append(m_tuple[0])
+
     # lr
     lr_tuple = get_tuple(args.lr)
-    dimensions.append(Real(low=10**(-max(lr_tuple)), high=10**(-min(lr_tuple)), prior='log-uniform', name='lr'))
-    default_dim.append(10**(-(lr_tuple[0] + lr_tuple[1]) / 2))
+    lr_tuple = tuple(map(lambda x: 10**(-x), lr_tuple))
+    add_Real(lr_tuple, name='lr', prior='log-uniform')
+    # optimizer
+    opt_tuple = get_tuple(args.optimizer, t=str, separator=',')
+    add_Categorical(opt_tuple, name='optimizer')
+    # decay
+    decay_tuple = get_tuple(args.decay)
+    add_Real(decay_tuple, name='decay')
+    # dropout
+    dropout_tuple = get_tuple(args.dropout)
+    add_Real(dropout_tuple, name='dropout')
+    # sampling
+    sampling_tuple = get_tuple(args.no_sampling, t=lambda x: not str2bool(x), separator=',')
+    add_Categorical(sampling_tuple, name='sampling')
+    # kld
+    kld_tuple = get_tuple(args.no_kld, t=lambda x: not str2bool(x), separator=',')
+    add_Categorical(kld_tuple, name='kld')
+    # all sequence
+    all_sequence_tuple = get_tuple(args.all_sequence, t=str2bool, separator=',')
+    add_Categorical(all_sequence_tuple, name='all_sequence')
+    # model name
+    model_name_tuple = get_tuple(args.model_name, t=str, separator=',')
+    add_Categorical(model_name_tuple)
+    # model param
+    model_param_tuple = get_tuple(args.model_param, t=str, separator=',')
+    add_Categorical(model_param_tuple)
+    # nb steps
+    nb_steps_tuple = get_tuple(args.nb_steps, t=int, separator=',')
+    add_Categorical(nb_steps_tuple)
 
     return dimensions, default_dim
 
@@ -64,6 +109,30 @@ def get_history_acc(history):
         accuracy += history[f'val_Output_{i}_acc'][-1]
         i += 1
     return accuracy / i
+
+
+def str_hp_to_print(name, value, exp_format=False, first_printed=False):
+    """
+
+    :param name:
+    :param value:
+    :param exp_format:
+    :param first_printed:
+    :return: string which is pretty to print (to show current hp tested)
+    """
+    s = ''
+    if not first_printed:
+        s += ' - '
+    s += f'{name}: '
+    if exp_format:
+        s += colored(f'{value:.1e}', 'magenta')
+    else:
+        s += colored(f'{value}', 'magenta')
+    return s
+
+# --------------------------------------------------
+# --------------------------------------------------
+# --------------------------------------------------
 
 
 def main(args):
@@ -86,28 +155,28 @@ def main(args):
 
     dimensions, default_dim = create_dimensions(args)
 
-    global acc
-    acc = 0
+    global best_accuracy
+    best_accuracy = 0
 
-    model_id = f'{args.model_name},{args.model_param},{args.nb_steps}'
-
-    def create_model(lr):
+    def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps):
         midi_generator = MidiGenerator(name=args.name)
-        midi_generator.load_data(data_transformed_path=data_transformed_path)
+        midi_generator.load_data(data_transformed_path=data_transformed_path, verbose=0)
+
+        model_id = f'{model_name},{model_param},{nb_steps}'
 
         opt_params = dict(
             lr=lr,
-            name=args.optimizer,
+            name=optimizer,
             decay_drop=float(args.decay_drop),
             epoch_drop=float(args.epochs_drop),
-            decay=args.decay
+            decay=decay
         )
         model_options = dict(
-            dropout=args.dropout,
-            all_sequence=args.all_sequence,
+            dropout=dropout,
+            all_sequence=all_sequence,
             lstm_state=args.lstm_state,
-            sampling=not args.no_sampling,
-            kld=not args.no_kld
+            sampling=sampling,
+            kld=kld
         )
 
         midi_generator.new_nn_model(
@@ -121,22 +190,40 @@ def main(args):
         return midi_generator
 
     @use_named_args(dimensions=dimensions)
-    def fitness(lr):
-        print(f'lr {lr:.1e}')
+    def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps):
+        s = ''
+        model_id = f'{model_name},{model_param},{nb_steps}'
+        s += str_hp_to_print('model', model_id, first_printed=True)
+        s += str_hp_to_print('lr', lr, exp_format=True)
+        s += str_hp_to_print('opt', optimizer)
+        s += str_hp_to_print('decay', decay, exp_format=True)
+        s += str_hp_to_print('dropout', dropout, exp_format=True)
+        s += str_hp_to_print('sampling', sampling)
+        s += str2bool('kld', kld)
+        s += str_hp_to_print('all_sequence', all_sequence)
+
+        print(s)
+
         midi_generator = create_model(
-            lr=lr
+            lr=lr,
+            optimizer=optimizer,
+            decay=decay,
+            dropout=dropout,
+            sampling=sampling,
+            kld=kld,
+            all_sequence=all_sequence,
+            model_name=model_name,
+            model_param=model_param,
+            nb_steps=nb_steps
         )
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
                                        validation=args.validation)
-        for k in history:
-            print(k)
         accuracy = get_history_acc(history)
         print(f'Accuracy - {accuracy:.2%}')
 
-
-        global acc
-        if accuracy > acc:
-            acc = accuracy
+        global best_accuracy
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
 
         midi_generator.keras_nn.clear_session()
         del midi_generator
@@ -186,17 +273,17 @@ if __name__ == '__main__':
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=float, default=0.25,#'0.25:0.5:0.25',
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-    parser.add_argument('--decay', type=float, default=0.25,#'0.25:0.5:0.25',
+    parser.add_argument('--decay', type=str, default='0.01:1',
                         help='the value of the decay')
-    parser.add_argument('--dropout', type=float, default=0.1,#'0.1:0.2:0.1',
+    parser.add_argument('--dropout', type=str, default='0.1:0.2',
                         help='Value of the dropout')
     parser.add_argument('--type-loss', type=str, default=g.type_loss,
                         help='Value of the dropout')
-    parser.add_argument('--all-sequence', type=bool, default=False,#'False',
+    parser.add_argument('--all-sequence', type=str, default='False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--lstm-state', type=bool, default=False,#'False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
-    parser.add_argument('--no-sampling', default=False, action='store_true',
+    parser.add_argument('--no-sampling', type=str, default='False',
                         help='Gaussian Sampling')
     parser.add_argument('--no-kld', default=False, action='store_true',
                         help='No KL Divergence')

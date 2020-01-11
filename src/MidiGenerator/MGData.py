@@ -9,7 +9,7 @@ from src.NN import Models
 
 class MGData(MGInit):
     
-    def load_data(self, data_transformed_path=None):
+    def load_data(self, data_transformed_path=None, verbose=1):
         """
 
         :return: load the data
@@ -24,7 +24,8 @@ class MGData(MGInit):
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
             self.mono = d['mono']
-        print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
+        if verbose == 1:
+            print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 
     def change_batch_size(self, batch_size):
         if self.sequence is not None and self.batch != batch_size:
