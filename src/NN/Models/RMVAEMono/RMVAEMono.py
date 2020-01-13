@@ -38,7 +38,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     mmodel_options = {
         'dropout': g.dropout,
         'sampling': g.sampling,
-        'kld': g.kld
+        'kld': g.kld,
+        'kld_annealing_start': g.kld_annealing_start,
+        'kld_annealing_stop': g.kld_annealing_stop
     }
     mmodel_options.update(model_options)
 
@@ -192,7 +194,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # -------------------- Callbacks --------------------
     callbacks = []
     if mmodel_options['kld']:
-        callbacks.append(Callbacks.Annealing(kld_weight, start_value=0, final_value=1))
+        callbacks.append(Callbacks.Annealing(
+            kld_weight,
+            start_value=mmodel_options['kld_annealing_start'],
+            final_value=mmodel_options['kld_annealing_stop']
+        ))
 
     # ------------------------------ Compile ------------------------------
 

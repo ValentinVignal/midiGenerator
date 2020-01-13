@@ -99,6 +99,12 @@ def create_dimensions(args):
     # nb steps
     nb_steps_tuple = get_tuple(args.nb_steps, t=int, separator=',')
     add_Categorical(nb_steps_tuple, 'nb_steps')
+    # kld annealing start
+    kld_annealing_start_tuple = get_tuple(args.kld_annealing_start)
+    add_Real(kld_annealing_start_tuple, name='kld_annealing_start')
+    # kld annealing stop
+    kld_annealing_stop_tuple = get_tuple(args.kld_annealing_stop)
+    add_Real(kld_annealing_stop_tuple, name='kld_annealing_stop')
 
     return dimensions, default_dim
 
@@ -160,7 +166,8 @@ def main(args):
     global best_accuracy
     best_accuracy = 0
 
-    def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps):
+    def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
+                     kld_annealing_start, kld_annealing_stop):
         midi_generator = MidiGenerator(name=args.name)
         midi_generator.load_data(data_transformed_path=data_transformed_path, verbose=0)
 
@@ -178,7 +185,9 @@ def main(args):
             all_sequence=all_sequence,
             lstm_state=args.lstm_state,
             sampling=sampling,
-            kld=kld
+            kld=kld,
+            kld_annealing_start=kld_annealing_start,
+            kld_annealing_stop=kld_annealing_stop
         )
 
         midi_generator.new_nn_model(
@@ -192,7 +201,8 @@ def main(args):
         return midi_generator
 
     @use_named_args(dimensions=dimensions)
-    def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps):
+    def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
+                kld_annealing_start, kld_annealing_stop):
         s = ''
         model_id = f'{model_name},{model_param},{nb_steps}'
         s += str_hp_to_print('model', model_id, first_printed=True)
@@ -203,6 +213,8 @@ def main(args):
         s += str_hp_to_print('sampling', sampling)
         s += str_hp_to_print('kld', kld)
         s += str_hp_to_print('all_sequence', all_sequence)
+        s += str_hp_to_print('kld_annealing_start', kld_annealing_start, exp_format=True)
+        s += str_hp_to_print('kld_annealing_stop', kld_annealing_stop, exp_format=True)
 
         print(s)
 
@@ -216,7 +228,9 @@ def main(args):
             all_sequence=all_sequence,
             model_name=model_name,
             model_param=model_param,
-            nb_steps=nb_steps
+            nb_steps=nb_steps,
+            kld_annealing_start=kld_annealing_start,
+            kld_annealing_stop=kld_annealing_stop
         )
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
                                        validation=args.validation)
@@ -453,14 +467,14 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=str, default='2:4',
                         help='learning rate = 10^-lr')
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
-                        help='Name of the optimizer (separeted with ,)(ex : adam,sgd)')
+                        help='Name of the optimizer (separated with ,)(ex : adam,sgd)')
     parser.add_argument('--epochs-drop', type=int, default=50,  # '50:100:50',
                         help='how long before a complete drop (decay)')
     parser.add_argument('--decay-drop', type=float, default=0.25,  # '0.25:0.5:0.25',
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     parser.add_argument('--decay', type=str, default='0.01:1',
                         help='the value of the decay')
-    parser.add_argument('--dropout', type=str, default='0.1:0.2',
+    parser.add_argument('--dropout', type=str, default='0.1:0.3',
                         help='Value of the dropout')
     parser.add_argument('--type-loss', type=str, default=g.type_loss,
                         help='Value of the dropout')
@@ -472,6 +486,10 @@ if __name__ == '__main__':
                         help='Gaussian Sampling')
     parser.add_argument('--no-kld', type=str, default='False',
                         help='No KL Divergence')
+    parser.add_argument('--kld-annealing-start', type=str, default='0:0.5',
+                        help='Start of the annealing of the kld')
+    parser.add_argument('--kld-annealing-stop', type=str, default='0.5:1',
+                        help='Stop of the annealing of the kld')
     # ---------------- Training options ----------------
     parser.add_argument('--noise', type=float, default=g.noise,
                         help='If not 0, add noise to the input for training')

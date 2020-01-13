@@ -49,7 +49,9 @@ def main(args):
             'bn_momentum': args.bn_momentum,
             'lambdas_loss': args.lambdas_loss,
             'sampling': not args.no_sampling,
-            'kld': not args.no_kld
+            'kld': not args.no_kld,
+            'kld_annealing_start': args.kld_annealing_start,
+            'kld_annealing_stop': args.kld_annealing_stop
         }
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,
@@ -149,6 +151,10 @@ if __name__ == '__main__':
                         help='Gaussian Sampling')
     parser.add_argument('--no-kld', default=False, action='store_true',
                         help='No KL Divergence')
+    parser.add_argument('--kld-annealing-start', type=float, default=g.kld_annealing_start,
+                        help='Start of the annealing of the kld')
+    parser.add_argument('--kld-annealing-stop', type=float, default=g.kld_annealing_stop,
+                        help='Stop of the annealing of the kld')
     # ---------------- Batch Norm ----------------
     parser.add_argument('--no-batch-norm', default=False, action='store_true',
                         help='Either to use batch norm')
