@@ -4,11 +4,12 @@ from termcolor import cprint, colored
 import numpy as np
 import tensorflow as tf
 from pathlib import Path
+import matplotlib.pyplot as plt
 
-import skopt
-from skopt import gp_minimize, forest_minimize
-from skopt.space import Real, Categorical, Integer
-from skopt.utils import use_named_args
+from src import skopt_
+from src.skopt_.space import Real, Categorical
+from src.skopt_.utils import use_named_args
+from src.skopt_ import gp_minimize
 
 K = tf.keras.backend
 
@@ -69,7 +70,7 @@ def create_dimensions(args):
 
     # lr
     lr_tuple = get_tuple(args.lr)
-    lr_tuple = tuple(map(lambda x: 10**(-x), lr_tuple))
+    lr_tuple = tuple(map(lambda x: 10 ** (-x), lr_tuple))
     add_Real(lr_tuple, name='lr', prior='log-uniform')
     # optimizer
     opt_tuple = get_tuple(args.optimizer, t=str, separator=',')
@@ -129,6 +130,7 @@ def str_hp_to_print(name, value, exp_format=False, first_printed=False):
     else:
         s += colored(f'{value}', 'magenta')
     return s
+
 
 # --------------------------------------------------
 # --------------------------------------------------
@@ -228,6 +230,13 @@ def main(args):
         midi_generator.keras_nn.clear_session()
         del midi_generator
 
+        '''
+        # To do quick tests
+        res = lr * decay / dropout ** (2 + nb_steps)
+        print(res)
+        return res
+        '''
+
         return -accuracy
 
     # ------------------------------
@@ -241,27 +250,32 @@ def main(args):
         n_calls=args.n_calls,
         x0=default_dim
     )
-    dimension_names = [x._name for x in dimensions]
+    space = search_result.space
 
-    best_param_list = search_result.x
+    best_param_dict = space.point_to_dict(search_result.x)
     best_accuracy = - search_result.fun
 
     # ----- Print the best results -----
     print('Best Result:', colored(f'{best_accuracy}', 'green'))
     s = ''
-    for i in range(len(dimension_names)):
-        if isinstance(best_param_list[i], float):
-            s += f'{dimension_names[i]}:' + colored(f'{best_param_list[i]:.1e}', 'magenta') + ' - '
+    for k in best_param_dict:
+        if isinstance(best_param_dict[k], float):
+            s += f'{k}:' + colored(f'{best_param_dict[k]:.1e}', 'magenta') + ' - '
         else:
-            s += f'{dimension_names[i]}:' + colored(f'{best_param_list[i]}', 'magenta') + ' - '
+            s += f'{k}:' + colored(f'{best_param_dict[k]}', 'magenta') + ' - '
 
     print(s)
 
-    sorted_scores = sorted(zip(search_result.func_vals, search_result.x_iters))
+    sorted_scores = sorted(zip(
+        search_result.func_vals,
+        [space.point_to_dict(x_) for x_ in search_result.x_iters]
+    ))
 
     # ------------------------------
     #           Save it
     # ------------------------------
+
+    # ---------- Text ----------
 
     folder_path = get_folder_path()
     folder_path.mkdir(exist_ok=True, parents=True)
@@ -269,27 +283,94 @@ def main(args):
     save_best_result(
         folder_path=folder_path,
         best_accuracy=best_accuracy,
-        param_list=best_param_list,
-        dim_names=dimension_names
+        param_dict=best_param_dict
     )
     save_sorted_results(
         folder_path=folder_path,
-        sorted_scores=sorted_scores,
-        dim_names=dimension_names
+        sorted_scores=sorted_scores
+    )
+
+    # ---------- Images ----------
+
+    save_histogram(
+        search_result=search_result,
+        folder_path=folder_path
+    )
+
+    save_objective_2D(
+        search_result=search_result,
+        folder_path=folder_path
+    )
+
+    save_objective(
+        search_result=search_result,
+        folder_path=folder_path
     )
 
     print('Results saved in', colored(folder_path.as_posix(), 'green'))
 
-
-
-
-
-
-
     cprint('---------- Done ----------', 'grey', 'on_green')
 
 
-def save_sorted_results(folder_path, sorted_scores, dim_names):
+def save_histogram(search_result, folder_path):
+    """
+
+    :param search_result:
+    :param folder_path:
+    :return:
+    """
+    histogram_folder_path = folder_path / 'histogram'
+    histogram_folder_path.mkdir(exist_ok=True, parents=True)
+    for dim_name in search_result.space.dimension_names:
+        fig, ax = skopt_.plots.plot_histogram(
+            result=search_result,
+            dimension_name=dim_name
+        )
+        fig.savefig(histogram_folder_path / f'{dim_name}.png')
+        plt.close(fig)
+
+
+def save_objective(search_result, folder_path):
+    """
+
+    :param search_result:
+    :param folder_path:
+    :return:
+    """
+    dimension_names = [
+        name for name in search_result.space.dimension_names if not isinstance(search_result.space[name], Categorical)
+    ]
+    fig, ax = skopt_.plots.plot_objective(result=search_result, dimension_names=dimension_names)
+    folder_path.mkdir(exist_ok=True, parents=True)
+    fig.savefig(folder_path / 'objective.png')
+    plt.close(fig)
+
+
+def save_objective_2D(search_result, folder_path):
+    """
+
+    :param folder_path:
+    :param search_result:
+    :return:
+    """
+    dimensions_names = search_result.space.dimension_names
+    objective_folder_path = folder_path / 'objective_2D'
+    objective_folder_path.mkdir(exist_ok=True, parents=True)
+    for i in range(len(dimensions_names)):
+        for j in range(i + 1, len(dimensions_names)):
+            name1, name2 = dimensions_names[i], dimensions_names[j]
+            if not any(isinstance(search_result.space[name], Categorical) for name in [name1, name2]):
+                fig, ax = skopt_.plots.plot_objective_2D(
+                    result=search_result,
+                    dimension_name1=name1,
+                    dimension_name2=name2,
+                    levels=50
+                )
+                fig.savefig(objective_folder_path / f'{name1}-{name2}.png')
+                plt.close(fig)
+
+
+def save_sorted_results(folder_path, sorted_scores):
     """
     Save the list of the sorted scores and the correspondings parameters
     :param folder_path:
@@ -297,31 +378,33 @@ def save_sorted_results(folder_path, sorted_scores, dim_names):
     :return:
     """
     text = '\t\tSorted scores and parameters:\n\n'
-    for score, param_list in sorted_scores:
-        text += f'{score:%}\t->\t'
-        for i in range(len(dim_names)):
+    for score, param_dict in sorted_scores:
+        text += f'{score:%}\t->\t{param_dict}\n'
+        """
+        for k in range(len(dim_names)):
             text += f'{dim_names[i]}: {param_list[i]} - '
         text += '\n'
+        """
     with open(folder_path / 'sorted_scores.txt', 'w') as f:
         f.write(text)
 
 
-def save_best_result(folder_path, best_accuracy, param_list, dim_names):
+def save_best_result(folder_path, best_accuracy, param_dict):
     """
     Save the best results and the parameters in a folder path
     :param best_accuracy:
-    :param param_list:
+    :param param_dict:
     :param folder_path:
     :return:
     """
     text = f'\t\tAccuracy: {best_accuracy:%}\n\n'
     text += 'Params:\n'
-    for i in range(len(param_list)):
-        text += f'{dim_names[i]} : '
-        if isinstance(param_list[i], float):
-            text += f'{param_list[i]:.3e}\t({param_list[i]})\n'
+    for k in param_dict:
+        text += f'{k} : '
+        if isinstance(param_dict[k], float):
+            text += f'{param_dict[k]:.3e}\t({param_dict[k]})\n'
         else:
-            text += f'{param_list[i]}\n'
+            text += f'{param_dict[k]}\n'
     with open(folder_path / 'best_params.txt', 'w') as f:
         f.write(text)
 
@@ -333,9 +416,9 @@ def get_folder_path():
     """
     folder_path = Path('hp_search')
     i = 0
-    while (folder_path / f'bayesian_opt_{i}').exists() :
+    while (folder_path / f'bayesian_opt_{i}').exists():
         i += 1
-    folder_path = folder_path / f'bayensian_opt_{i}'
+    folder_path = folder_path / f'bayesian_opt_{i}'
     return folder_path
 
 
@@ -371,9 +454,9 @@ if __name__ == '__main__':
                         help='learning rate = 10^-lr')
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
                         help='Name of the optimizer (separeted with ,)(ex : adam,sgd)')
-    parser.add_argument('--epochs-drop', type=int, default=50,#'50:100:50',
+    parser.add_argument('--epochs-drop', type=int, default=50,  # '50:100:50',
                         help='how long before a complete drop (decay)')
-    parser.add_argument('--decay-drop', type=float, default=0.25,#'0.25:0.5:0.25',
+    parser.add_argument('--decay-drop', type=float, default=0.25,  # '0.25:0.5:0.25',
                         help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
     parser.add_argument('--decay', type=str, default='0.01:1',
                         help='the value of the decay')
@@ -383,11 +466,11 @@ if __name__ == '__main__':
                         help='Value of the dropout')
     parser.add_argument('--all-sequence', type=str, default='False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
-    parser.add_argument('--lstm-state', type=bool, default=False,#'False',
+    parser.add_argument('--lstm-state', type=bool, default=False,  # 'False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--no-sampling', type=str, default='False',
                         help='Gaussian Sampling')
-    parser.add_argument('--no-kld', type= str, default='False',
+    parser.add_argument('--no-kld', type=str, default='False',
                         help='No KL Divergence')
     # ---------------- Training options ----------------
     parser.add_argument('--noise', type=float, default=g.noise,
@@ -404,7 +487,7 @@ if __name__ == '__main__':
                         help='The model name')
     parser.add_argument('--model-param', type=str, default='pc,0,1',
                         help='the model param (json file)')
-    parser.add_argument('--nb-steps', type=str, default='4',#'8,16',
+    parser.add_argument('--nb-steps', type=str, default='4',  # '8,16',
                         help='Nb step to train on')
     # ---------- Generation ----------
     parser.add_argument('--compare-generation', default=False, action='store_true',
