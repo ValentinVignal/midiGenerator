@@ -55,11 +55,11 @@ class Annealing(KerasCallback):
             K.set_value(self.weigth, self.final_value)
 
     def compute_epoch_start(self):
-        if isinstance(self.epoch_start, float):
+        if isinstance(self.epoch_start, float) or 0 <= self.epoch_start <= 1:
             self.epoch_start = int(self.epoch_start * self.epochs)
 
     def compute_epoch_stop(self):
-        if isinstance(self.epoch_stop, float):
+        if isinstance(self.epoch_stop, float) or 0 <= self.epoch_stop <= 1:
             self.epoch_stop = int(self.epoch_stop * self.epochs)
 
     def update_with_fit_args(self, **kwargs):

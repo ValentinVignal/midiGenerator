@@ -56,15 +56,15 @@ def main():
 
     parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('data', type=str, default='lmd_matched_small',
+    parser.add_argument('data', type=str, default='',
                         help='The name of the data')
     parser.add_argument('--pc', action='store_true', default=False,
                         help='to work on a small computer with a cpu')
-    parser.add_argument('-l', '--length', type=str, default='',
+    parser.add_argument('--length', type=str, default='',
                         help='The length of the data')
     parser.add_argument('--notes-range', type=str, default='0:88',
                         help='The length of the data')
-    parser.add_argument('-i', '--instruments', type=str, default='Piano,Trombone',
+    parser.add_argument('--instruments', type=str, default='Piano,Trombone',
                         help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
     parser.add_argument('--bach', action='store_true', default=False,
                         help='To compute the bach data')
