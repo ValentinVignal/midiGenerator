@@ -64,7 +64,6 @@ dropout = 0.2
 decay = 2e-1
 epochs_drop = 50
 decay_drop = 0.5
-epochs = 200
 bn_momentum = 0.99
 # ----- Loss -----
 type_loss = 'dur'
@@ -85,7 +84,12 @@ sampling = True
 kld = True
 kld_annealing_start = 0.4
 kld_annealing_stop = 0.8
-# ----- Data -----
+
+# ----- Training -----
+epochs = 200
+batch = 8
+validation = 0.1
+# --- Data ---
 noise = 0
 
 

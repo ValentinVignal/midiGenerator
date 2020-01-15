@@ -165,6 +165,8 @@ def main(args):
 
     global best_accuracy
     best_accuracy = 0
+    global iteration
+    iteration = 0
 
     def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
                      kld_annealing_start, kld_annealing_stop):
@@ -203,9 +205,13 @@ def main(args):
     @use_named_args(dimensions=dimensions)
     def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
                 kld_annealing_start, kld_annealing_stop):
-        s = ''
+        global iteration
+        iteration += 1
+        #print(f'Iteration {iteration}/{args.n_calls}')
+
+        s = 'Iteration ' + colored(f'{iteration}/{args.n_calls}', 'yellow')
         model_id = f'{model_name},{model_param},{nb_steps}'
-        s += str_hp_to_print('model', model_id, first_printed=True)
+        s += str_hp_to_print('model', model_id, first_printed=False)
         s += str_hp_to_print('lr', lr, exp_format=True)
         s += str_hp_to_print('opt', optimizer)
         s += str_hp_to_print('decay', decay, exp_format=True)
@@ -235,11 +241,15 @@ def main(args):
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
                                        validation=args.validation)
         accuracy = get_history_acc(history)
-        print(f'Accuracy - {accuracy:.2%}')
 
         global best_accuracy
         if accuracy > best_accuracy:
             best_accuracy = accuracy
+
+        print(f'Accuracy:',
+              colored(f'{accuracy:.2%}', 'cyan'),
+              '- Best Accuracy for now:',
+              colored(f'{best_accuracy:.2%}', 'white', 'on_blue'))
 
         midi_generator.keras_nn.clear_session()
         del midi_generator
@@ -503,7 +513,7 @@ if __name__ == '__main__':
     # ----------------
     parser.add_argument('--model-name', type=str, default='rnn',
                         help='The model name')
-    parser.add_argument('--model-param', type=str, default='pc,0,1',
+    parser.add_argument('--model-param', type=str, default='pc',
                         help='the model param (json file)')
     parser.add_argument('--nb-steps', type=str, default='4',  # '8,16',
                         help='Nb step to train on')
