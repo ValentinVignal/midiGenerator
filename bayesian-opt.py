@@ -1,4 +1,3 @@
-import argparse
 import os
 from termcolor import cprint, colored
 import numpy as np
@@ -16,6 +15,7 @@ K = tf.keras.backend
 from src.MidiGenerator import MidiGenerator
 from src.NN.Callbacks import LossHistory
 import src.global_variables as g
+from src.Args import ArgType, Parser
 
 
 def create_list(string):
@@ -207,7 +207,6 @@ def main(args):
                 kld_annealing_start, kld_annealing_stop):
         global iteration
         iteration += 1
-        #print(f'Iteration {iteration}/{args.n_calls}')
 
         s = 'Iteration ' + colored(f'{iteration}/{args.n_calls}', 'yellow')
         model_id = f'{model_name},{model_param},{nb_steps}'
@@ -459,85 +458,7 @@ def preprocess_args(args):
 
 
 if __name__ == '__main__':
-    # create a separate main function because original main function is too mainstream
-    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # -------------------- Grid search options --------------------
-    parser.add_argument('--n-calls', type=int, default=20,
-                        help='Number of point for the bayesian search')
-
-    parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
-                        help='The name of the data')
-    # ----------------
-    parser.add_argument('-e', '--epochs', type=int, default=g.epochs,
-                        help='number of epochs to train')
-    parser.add_argument('-b', '--batch', type=int, default=8,
-                        help='The number of the batches')
-    # ----------------
-    parser.add_argument('--lr', type=str, default='2:4',
-                        help='learning rate = 10^-lr')
-    parser.add_argument('-o', '--optimizer', type=str, default='adam',
-                        help='Name of the optimizer (separated with ,)(ex : adam,sgd)')
-    parser.add_argument('--epochs-drop', type=int, default=50,  # '50:100:50',
-                        help='how long before a complete drop (decay)')
-    parser.add_argument('--decay-drop', type=float, default=0.25,  # '0.25:0.5:0.25',
-                        help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-    parser.add_argument('--decay', type=str, default='0.01:1',
-                        help='the value of the decay')
-    parser.add_argument('--dropout', type=str, default='0.1:0.3',
-                        help='Value of the dropout')
-    parser.add_argument('--type-loss', type=str, default=g.type_loss,
-                        help='Value of the dropout')
-    parser.add_argument('--all-sequence', type=str, default='False',
-                        help='Use or not all the sequence in the RNN layer (separated with ,)')
-    parser.add_argument('--lstm-state', type=bool, default=False,  # 'False',
-                        help='Use or not all the sequence in the RNN layer (separated with ,)')
-    parser.add_argument('--no-sampling', type=str, default='False',
-                        help='Gaussian Sampling')
-    parser.add_argument('--no-kld', type=str, default='False',
-                        help='No KL Divergence')
-    parser.add_argument('--kld-annealing-start', type=str, default='0:0.5',
-                        help='Start of the annealing of the kld')
-    parser.add_argument('--kld-annealing-stop', type=str, default='0.5:1',
-                        help='Stop of the annealing of the kld')
-    # ---------------- Training options ----------------
-    parser.add_argument('--noise', type=float, default=g.noise,
-                        help='If not 0, add noise to the input for training')
-    # ----------------
-    parser.add_argument('-n', '--name', type=str, default='name',
-                        help='Name given to the model')
-    parser.add_argument('--work-on', type=str, default=g.work_on,
-                        help='note, beat or measure')
-    parser.add_argument('--mono', default=False, action='store_true',
-                        help='To work with monophonic instruments')
-    # ----------------
-    parser.add_argument('--model-name', type=str, default='rnn',
-                        help='The model name')
-    parser.add_argument('--model-param', type=str, default='pc',
-                        help='the model param (json file)')
-    parser.add_argument('--nb-steps', type=str, default='4',  # '8,16',
-                        help='Nb step to train on')
-    # ---------- Generation ----------
-    parser.add_argument('--compare-generation', default=False, action='store_true',
-                        help='Compare generation after training')
-    parser.add_argument('--generate', default=False, action='store_true',
-                        help='Generation after training')
-    parser.add_argument('--seed', default=4,
-                        help='number of seeds or the path to the folder with the seeds')
-    parser.add_argument('--length', type=int, default=20,
-                        help='The length of the generated music')
-    parser.add_argument('--no-duration', action='store_true', default=False,
-                        help='Generate only shortest notes possible')
-    parser.add_argument('--verbose_generation', type=int, default=1,
-                        help='Level of verbose')
-    parser.add_argument('--validation', type=float, default=0.1,
-                        help='Fraction of the training data to be used as validation data')
-    # ---------------- Hardware options ----------------
-    parser.add_argument('--gpu', type=str, default='0',
-                        help='What GPU to use')
-    parser.add_argument('--pc', action='store_true', default=False,
-                        help='To work on a small computer with a cpu')
-
+    parser = Parser(argtype=ArgType.HPSearch)
     args = parser.parse_args()
 
     args = preprocess_args(args)

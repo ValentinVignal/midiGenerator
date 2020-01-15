@@ -1,10 +1,10 @@
-import argparse
 import os
 from termcolor import cprint
 
 from src.MidiGenerator import MidiGenerator
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 import src.global_variables as g
+from src.Args import ArgType, Parser
 
 
 def main(args):
@@ -115,91 +115,8 @@ def preprocess_args(args):
 
 if __name__ == '__main__':
     # create a separate main function because original main function is too mainstream
-
-    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-d', '--data', type=str, default='lmd_matched_small',
-                        help='The name of the data')
-    # ----------------
-    # parser.add_argument('-e', '--epochs', type=int, default=g.epochs,
-    #                     help='number of epochs to train')
-    # parser.add_argument('-b', '--batch', type=int, default=4,
-    #                     help='The number of the batches')
-    # ---------------- Optimizer ----------------
-    # parser.add_argument('--lr', type=float, default=g.lr,
-    #                     help='learning rate')
-    # parser.add_argument('-o', '--optimizer', type=str, default='adam',
-    #                     help='Name of the optimizer')
-    # parser.add_argument('--decay', type=float, default=g.decay,
-    #                     help='Value of normal decay: lr = lr_ / (1 + epochs * decay)')
-    # parser.add_argument('--type-loss', type=str, default=g.type_loss,
-    #                     help='Value of the dropout')
-    # parser.add_argument('--lambdas-loss', type=str, default=g.lambdas_loss,
-    #                     help='Value of the lambdas (activation and duration) for the loss function')
-    # ---------------- Neural Network Model ----------------
-    # parser.add_argument('--dropout', type=float, default=g.dropout,
-    #                     help='Value of the dropout')
-    # parser.add_argument('--all-sequence', default=False, action='store_true',
-    #                     help='Use or not all the sequence in the RNN layer')
-    # parser.add_argument('--lstm-state', default=False, action='store_true',
-    #                     help='Use or not all the sequence in the RNN layer')
-    # parser.add_argument('--no-sampling', default=False, action='store_true',
-    #                     help='Gaussian Sampling')
-    # parser.add_argument('--no-kld', default=False, action='store_true',
-    #                     help='No KL Divergence')
-    # parser.add_argument('--kld-annealing-start', type=float, default=g.kld_annealing_start,
-    #                     help='Start of the annealing of the kld')
-    # parser.add_argument('--kld-annealing-stop', type=float, default=g.kld_annealing_stop,
-    #                     help='Stop of the annealing of the kld')
-    # ---------------- Training options ----------------
-    # parser.add_argument('--noise', type=float, default=g.noise,
-    #                     help='If not 0, add noise to the input for training')
-    # ----------------
-    # parser.add_argument('-n', '--name', type=str, default='name',
-    #                     help='Name given to the model')
-    # parser.add_argument('--work-on', type=str, default=g.work_on,
-    #                     help='note, beat or measure')
-    # parser.add_argument('--mono', default=False, action='store_true',
-    #                     help='To work with monophonic instruments')
-    # ----------------
-    # parser.add_argument('--validation', type=float, default=0.1,
-    #                     help='Fraction of the training data to be used as validation data')
-    # parser.add_argument('--evaluate', default=False, action='store_true',
-    #                     help='Evaluate the model after the training')
-    # parser.add_argument('--compare-generation', default=False, action='store_true',
-    #                     help='Compare generation after training')
-    # parser.add_argument('--generate', default=False, action='store_true',
-    #                     help='Generation after training')
-    # parser.add_argument('--replicate', default=False, action='store_true',
-    #                     help='Replication after training')
-    # parser.add_argument('--generate-fill', default=False, action='store_true',
-    #                     help='Fill the missing instrument')
-    # parser.add_argument('--replicate-fill', default=False, action='store_true',
-    #                     help='Fill the missing instrument')
-    # parser.add_argument('--no-duration', action='store_true', default=False,
-    #                     help='Generate only shortest notes possible')
-    # parser.add_argument('--check-batch', type=int, default=-1,
-    #                     help='Batch to check')
-    # ----------------
-    # load_group = parser.add_mutually_exclusive_group()
-    # load_group.add_argument('-m', '--model-id', type=str, default='',
-    #                         help='The model id modelName,modelParam,nbSteps')
-    # load_group.add_argument('-l', '--load', type=str, default='',
-    #                         help='The name of the trained model to load')
-    # ---------------- Hardware options ----------------
-    # parser.add_argument('--gpu', type=str, default='0',
-    #                     help='What GPU to use')
-    # parser.add_argument('--pc', action='store_true', default=False,
-    #                     help='To work on a small computer with a cpu')
-    # parser.add_argument('--debug', action='store_true', default=False,
-    #                     help='To set special parameters for a debug')
-    # parser.add_argument('--no-eager', default=False, action='store_true',
-    #                     help='Disable eager execution')
-
+    parser = Parser(argtype=ArgType.Train)
     args = parser.parse_args()
 
-    # ------------------------------------------------------------
-
     args = preprocess_args(args)
-
     main(args)

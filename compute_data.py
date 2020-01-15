@@ -1,4 +1,3 @@
-import argparse
 import os
 import pickle
 import numpy as np
@@ -10,6 +9,7 @@ from termcolor import colored, cprint
 import src.Midi as midi
 import src.global_variables as g
 import src.text.summary as summary
+from src.Args import Parser, ArgType
 
 
 def check_args(args):
@@ -49,30 +49,10 @@ def check_args(args):
     return args, Path(data_path), Path(data_transformed_path)
 
 
-def main():
+def main(args):
     """
         Entry point
     """
-
-    parser = argparse.ArgumentParser(description='Program to train a model over a Midi dataset',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('data', type=str, default='',
-                        help='The name of the data')
-    parser.add_argument('--pc', action='store_true', default=False,
-                        help='to work on a small computer with a cpu')
-    parser.add_argument('--length', type=str, default='',
-                        help='The length of the data')
-    parser.add_argument('--notes-range', type=str, default='0:88',
-                        help='The length of the data')
-    parser.add_argument('--instruments', type=str, default='Piano,Trombone',
-                        help='The instruments considered (for space in name, put _ instead : Acoustic_Bass)')
-    parser.add_argument('--bach', action='store_true', default=False,
-                        help='To compute the bach data')
-    parser.add_argument('--mono', action='store_true', default=False,
-                        help='To compute the data where there is only one note at the same time')
-
-    args = parser.parse_args()
-
     args, data_path, data_transformed_path = check_args(args)
 
     # --------------------------------------------------
@@ -197,4 +177,7 @@ def main():
 
 if __name__ == '__main__':
     # create a separate main function because original main function is too mainstream
-    main()
+    parser = Parser(argtype=ArgType.ComputeData)
+    args = parser.parse_args()
+    main(args)
+
