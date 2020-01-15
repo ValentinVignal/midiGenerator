@@ -195,9 +195,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     callbacks = []
     if mmodel_options['kld']:
         callbacks.append(Callbacks.Annealing(
-            kld_weight,
-            start_value=mmodel_options['kld_annealing_start'],
-            final_value=mmodel_options['kld_annealing_stop']
+            weight=kld_weight,
+            epoch_start=mmodel_options['kld_annealing_start'],
+            epoch_stop=mmodel_options['kld_annealing_stop']
         ))
 
     # ------------------------------ Compile ------------------------------
