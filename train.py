@@ -119,5 +119,5 @@ if __name__ == '__main__':
     parser = Parser(argtype=ArgType.Train)
     args = parser.parse_args()
 
-    args = preprocess_args(args)
+    args = Args.preprocess.train(args)
     main(args)

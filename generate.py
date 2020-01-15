@@ -2,6 +2,7 @@ import os
 from termcolor import cprint
 
 from src.MidiGenerator import MidiGenerator
+from src import Args
 from src.Args import Parser, ArgType
 
 
@@ -11,8 +12,6 @@ def main(args):
     """
     if args.pc:
         data_path = os.path.join('../Dataset', args.data)
-        args.length = 50
-        args.seed = 2
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
@@ -33,4 +32,5 @@ if __name__ == '__main__':
     # create a separate main function because original main function is too mainstream
     parser = Parser(argtype=ArgType.Generate)
     args = parser.parse_args()
+    args = Args.preprocess.generate(args)
     main(args)

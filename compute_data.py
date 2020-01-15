@@ -9,6 +9,7 @@ from termcolor import colored, cprint
 import src.Midi as midi
 import src.global_variables as g
 import src.text.summary as summary
+from src import Args
 from src.Args import Parser, ArgType
 
 
@@ -31,20 +32,6 @@ def check_args(args):
         shutil.rmtree(data_transformed_path)
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
-
-    if args.length == '':
-        args.length = None
-    else:
-        args.length = int(args.length)
-
-    s = args.notes_range.split(':')
-    args.notes_range = (int(s[0]), int(s[1]))
-
-    # Instruments :
-    args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
-                                args.instruments.split(',')))
-    if args.bach:
-        args.instruments = midi.inst.bach_instruments
 
     return args, Path(data_path), Path(data_transformed_path)
 
@@ -179,5 +166,6 @@ if __name__ == '__main__':
     # create a separate main function because original main function is too mainstream
     parser = Parser(argtype=ArgType.ComputeData)
     args = parser.parse_args()
+    args = Args.preprocess.compute_data(args)
     main(args)
 

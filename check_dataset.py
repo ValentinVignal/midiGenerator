@@ -8,6 +8,7 @@ import src.Midi.create as midi_create
 import src.Midi.common as midi_common
 import src.Midi.instruments as midi_inst
 import src.image.pianoroll as p
+from src import Args
 from src.Args import ArgType, Parser
 
 
@@ -24,19 +25,12 @@ def main(args):
     if data_checked_path.exists():  # Delete the folder of the transformed data
         shutil.rmtree(data_checked_path.as_posix())
     shutil.copytree(src=data_path.as_posix(), dst=data_checked_path)
-    s = args.notes_range.split(':')
-    args.notes_range = (int(s[0]), int(s[1]))
 
     # Stat
-    max_notes_range, min_notes_range = 0, int(s[1]) - int(s[0])
+    max_notes_range, min_notes_range = 0, int(args.notes_range[1]) - int(args.notes_range[0])
     nb_correct_files = 0
     nb_measures = 0
 
-    # Instruments :
-    args.instruments = list(map(lambda instrument: ' '.join(instrument.split('_')),
-                                args.instruments.split(',')))
-    if args.bach:
-        args.instruments = midi_inst.bach_instruments
     print('\t', colored('Check_dataset with instruments : ', 'cyan', 'on_white') +
           colored('{0}'.format(args.instruments), 'magenta', 'on_white'), '\n')
 
@@ -92,4 +86,5 @@ if __name__ == '__main__':
     parser = Parser(argtype=ArgType.CheckData)
     args = parser.parse_args()
 
+    args = Args.preprocess.check_dataset(args)
     main(args)
