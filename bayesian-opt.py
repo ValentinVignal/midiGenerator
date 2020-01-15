@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from pathlib import Path
 import matplotlib.pyplot as plt
+import gc
 
 from src import skopt_
 from src.skopt_.space import Real, Categorical
@@ -15,6 +16,7 @@ K = tf.keras.backend
 from src.MidiGenerator import MidiGenerator
 from src.NN.Callbacks import LossHistory
 import src.global_variables as g
+from src import Args
 from src.Args import ArgType, Parser
 
 
@@ -252,6 +254,8 @@ def main(args):
 
         midi_generator.keras_nn.clear_session()
         del midi_generator
+        del history
+        gc.collect()
 
         '''
         # To do quick tests
@@ -445,22 +449,10 @@ def get_folder_path():
     return folder_path
 
 
-def preprocess_args(args):
-    """
-
-    :param args:
-    :return:
-    """
-    if args.pc:
-        args.epochs = 2 if args.epochs == g.epochs else args.epochs
-        args.seed = 2
-    return args
-
-
 if __name__ == '__main__':
     parser = Parser(argtype=ArgType.HPSearch)
     args = parser.parse_args()
 
-    args = preprocess_args(args)
+    args = Args.preprocess.bayesian_opt(args)
 
     main(args)

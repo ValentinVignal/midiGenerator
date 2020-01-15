@@ -4,6 +4,7 @@ from termcolor import cprint
 from src.MidiGenerator import MidiGenerator
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 import src.global_variables as g
+from src import Args
 from src.Args import ArgType, Parser
 
 
