@@ -5,11 +5,22 @@ math = tf.math
 
 Lambda = tf.keras.layers.Lambda
 
-# ---------- Real output ----------
+
+def get_activation(x):
+    return Lambda(lambda x: tf.gather(x, axis=4, indices=0))(x)
 
 
-def custom_loss(lambda_a, lambda_d):
-    def loss_function(y_true, y_pred):
+def get_duration(x):
+    return Lambda(lambda x: tf.gather(x, axis=4, indices=1))(x)
+
+
+# --------------------------------------------------
+# -------------------- Real output --------------------
+# --------------------------------------------------
+
+
+def loss_common(lambda_a, lambda_d, *args, **kwargs):
+    def _loss_common(y_true, y_pred):
         """
 
         :param y_true: (batch, lenght, input_size, 2)
@@ -28,187 +39,101 @@ def custom_loss(lambda_a, lambda_d):
 
         return tf.reduce_mean(loss, axis=None)
 
-    return loss_function
+    return _loss_common
 
 
-def custom_loss_round(lambda_a, lambda_d):
-    def loss_function(y_true, y_pred):
-        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
-        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
-        y_pred_a_rounded = tf.round(y_pred_a)
-        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
-
-        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
-        loss_a_rounded = tf.keras.losses.mean_squared_error(y_true_a, y_pred_a_rounded)
-        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
-
-        loss = lambda_a * (loss_a + 5 * loss_a_rounded) + lambda_d * loss_d
-
-        return tf.reduce_mean(loss, axis=None)
-
-    return loss_function
-
-
-def custom_loss_smoothround(lambda_a, lambda_d):
-    def loss_function(y_true, y_pred):
-        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
-        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
-        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
-        # Calcul of "rounded"
-        a = 50
-        y_pred_a_rounded = 1 / (1 + tf.math.exp(-a * (y_pred_a - 0.5)))
-
-        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
-        loss_a_rounded = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a_rounded)
-        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
-
-        loss = lambda_a * (loss_a + loss_a_rounded) + lambda_d * loss_d
-
-        return tf.reduce_mean(loss, axis=None)
-
-    return loss_function
-
-
-def custom_loss_linearround(lambda_a, lambda_d):
-
-    def loss_function(y_true, y_pred):
-        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
-        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
-        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
-        # Calcul of "rounded"
-        a = 50
-        y_pred_a_rounded = (0.8 / (1 + tf.math.exp(-a * (y_pred_a - 0.5)))) + 0.2 * y_pred_a
-
-        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
-        loss_a_rounded = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a_rounded)
-        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
-
-        loss = lambda_a * (loss_a + loss_a_rounded) + lambda_d * loss_d
-
-        return tf.reduce_mean(loss, axis=None)
-
-    return loss_function
-
-
-def custom_loss_duration(lambda_a, lambda_d):
-
-    def filter_duration(inputs):
-        p_d = inputs[0]
-        t_a = inputs[1]
-        return tf.math.multiply(p_d, t_a)
-
-    def loss_dur(t_d, p_d):
-        diff = (t_d - p_d)
-        pow = tf.math.multiply(diff, diff)
-        return tf.reduce_sum(pow, axis=2)
-
-    def loss_function(y_true, y_pred):
-        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
-        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
-        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
-
-        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
-
-        y_pred_d = Lambda(filter_duration)([y_pred_d, y_true_a])
-        # loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
-        loss_d = loss_dur(y_true_d, y_pred_d)
-
-        loss = lambda_a * loss_a + lambda_d * loss_d
-
-        return tf.reduce_mean(loss, axis=None)
-
-    return loss_function
-
-
-def compare_losses_random(n=20):
-    yt = np.random.randint(2, size=(n, 2))       # Only activations
-    yp = np.random.randint(2, size=(n, 2))       # Only activations
-    for i in range(len(yt)):
-        yt_ = yt[np.newaxis, np.newaxis, np.newaxis, i]
-        yp_ = yp[np.newaxis, np.newaxis, np.newaxis, i]
-        F = custom_loss(1, 1)(K.variable(yt_), K.variable(yp_))
-        F_rounded = custom_loss_round(1, 1)(K.variable(yt_), K.variable(yp_))
-        F_smooth = custom_loss_smoothround(1, 1)(K.variable(yt_), K.variable(yp_))
-        print('Truth :{0}, Pred :{1} -- loss {2}, round {3}, smoothround {4}'.format(yt[i], yp[i], K.eval(F), K.eval(F_rounded), K.eval(F_smooth)))
-
-
-def compare_losses_auto(step=0.1):
-
-    yp_a = np.arange(0, 1+step, step)  # Only activations
-    yp = np.zeros((yp_a.shape[0], 2))
-    yp[:, 0] = yp_a
-    yt = np.array([[0, 0], [1, 0]])
-    for i in range(len(yp)):
-        yt_ = yt[np.newaxis, np.newaxis, np.newaxis, 0]
-        yp_ = yp[np.newaxis, np.newaxis, np.newaxis, i]
-        F = custom_loss(1, 1)(K.variable(yt_), K.variable(yp_))
-        F_rounded = custom_loss_round(1, 1)(K.variable(yt_), K.variable(yp_))
-        F_smooth = custom_loss_smoothround(1, 1)(K.variable(yt_), K.variable(yp_))
-        print('Truth :{0}, Pred :{1} -- loss {2}, round {3}, smoothround {4}'.format(yt[0], yp[i], K.eval(F),
-                                                                                     K.eval(F_rounded),
-                                                                                     K.eval(F_smooth)))
-    for i in range(len(yp)):
-        yt_ = yt[np.newaxis, np.newaxis, np.newaxis, 1]
-        yp_ = yp[np.newaxis, np.newaxis, np.newaxis, i]
-        F = custom_loss(1, 1)(K.variable(yt_), K.variable(yp_))
-        F_rounded = custom_loss_round(1, 1)(K.variable(yt_), K.variable(yp_))
-        F_smooth = custom_loss_smoothround(1, 1)(K.variable(yt_), K.variable(yp_))
-        print('Truth :{0}, Pred :{1} -- loss {2}, round {3}, smoothround {4}'.format(yt[1], yp[i], K.eval(F),
-                                                                                     K.eval(F_rounded),
-                                                                                     K.eval(F_smooth)))
-
-
-def choose_loss(type_loss):
-    if type_loss == 'no_round':
-        return custom_loss
-    elif type_loss == 'rounded':
-        return custom_loss_round
-    elif type_loss == 'smooth_round':
-        return custom_loss_smoothround
-    elif type_loss == 'linear_round':
-        return custom_loss_linearround
-    elif type_loss == 'dur':
-        return custom_loss_duration
-    else:
-        raise Exception('type_loss "{0}" not known'.format(type_loss))
-
-
-def loss_function_mono(y_true, y_pred):
+def choose_loss(loss_name):
     """
-    y_pred has np nan where we shouldn't compute the loss
 
-    :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
-    :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
+    :param loss_name:
+    :return: The corresponding loss function corresponding to the string loss_name
+    """
+    if loss_name == 'common':
+        return loss_common
+    elif loss_name == 'mono':
+        return loss_mono
+    elif loss_name == 'mono_scale':
+        return loss_mono_scale
+    else:
+        raise Exception(f'type_loss "{loss_name}" not known')
+
+
+def loss_mono(*args, **kwargs):
+    def _loss_mono(y_true, y_pred):
+        """
+        y_pred has np nan where we shouldn't compute the loss
+
+        :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :return:
+        """
+        y_true_a = get_activation(y_true)
+        y_pred_a = get_activation(y_pred)
+        y_true_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
+        y_pred_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_pred_a), y_pred_a)     # To apply loss only on non nan value in true Tensor
+
+        loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
+        loss = tf.where(math.is_nan(loss), tf.zeros_like(loss), loss)
+        return loss
+    return _loss_mono
+
+
+def loss_mono_scale(l_scale, l_rythm, *args, **kwargs):
+    def _loss_mono_scale(y_true, y_pred):
+        y_true_a = get_activation(y_true)
+        y_pred_a = get_activation(y_pred)
+
+        loss = loss_mono()(y_true, y_pred)
+        loss += l_scale * scale_loss(y_true_a, y_pred_a)
+        loss += l_rythm * rythm_loss(y_true_a, y_pred_a)
+        return loss
+    return _loss_mono_scale
+
+
+# --------------------------------------------------
+# ------------------- Cost function --------------------
+# --------------------------------------------------
+# (not usable directly in NN)
+
+
+def scale_loss(y_true_a, y_pred_a):
+    """
+
+    :param y_true_a: activation, no loss (batch, nb_steps, step_size, input_size)
+    :param y_pred_a: activation, no loss (batch, nb_steps, step_size, input_size)
     :return:
     """
-    y_true_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_true)
-    y_pred_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_pred)
-    y_true_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
-    y_pred_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_pred_a), y_pred_a)     # To apply loss only on non nan value in true Tensor
-
-    loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
-    loss = tf.where(math.is_nan(loss), tf.zeros_like(loss), loss)
-    return loss
-
-# ---------- LSTM ----------
-
-
-def custom_losslstm():
-    def loss_functionlstm(y_true, y_pred):
-        loss = tf.keras.losses.mean_squared_error(y_true, y_pred)
-        return loss
-    return loss_functionlstm
+    # projection
+    true_projection = tf.reduce_sum(y_true_a, axis=(1, 2), keepdims=True)      # (batch, 1, 1, input_size)
+    pred_projection = tf.reduce_sum(y_pred_a, axis=(1, 2), keepdims=True)      # (batch, 1, 1, input_size)
+    # Mean (of non zero)
+    true_sum = tf.reduce_sum(true_projection, axis=3, keep_dims=True)       # (batch, 1, 1, 1)
+    # Loss
+    loss = pred_projection * (1 - 2 * (true_projection / true_sum))     # (batch, 1, 1, input_size)
+    loss = tf.reduce_sum(loss, axis=(1, 2, 3))      # (batch,)
+    return tf.reduce_mean(loss)
 
 
-def choose_losslstm(type_loss_lstm):
-    return custom_losslstm
+def rythm_loss(y_true_a, y_pred_a):
+    """
+
+    :param y_true_a: activation, no loss (batch, nb_steps, step_size, input_size)
+    :param y_pred_a: activation, no loss (batch, nb_steps, step_size, input_size)
+    :return:
+    """
+    # projection
+    true_projection = tf.reduce_sum(y_true_a, axis=3)      # (batch, nb_steps, step_size)
+    pred_projection = tf.reduce_sum(y_pred_a, axis=3)      # (batch, nb_steps, step_size)
+    # Mean (of non zero)
+    true_sum = tf.reduce_sum(true_projection, axis=1)       # (batch,)
+    # Loss
+    loss = pred_projection * (2 * (true_projection / true_sum) - 1)     # (batch,)
+    return tf.reduce_sum(loss)
 
 
-# --------- KL Divergence ----------
+# --------------------------------------------------
+# ------------------- KL Divergence --------------------
+# --------------------------------------------------
 
 def kld(mean, std):
     """
