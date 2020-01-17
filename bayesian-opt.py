@@ -293,10 +293,13 @@ def main(args):
 
     print(s)
 
-    sorted_scores = sorted(zip(
-        search_result.func_vals,
-        [space.point_to_dict(x_) for x_ in search_result.x_iters]
-    ))
+    sorted_scores = sorted(
+        zip(
+            search_result.func_vals,
+            [space.point_to_dict(x_) for x_ in search_result.x_iters]
+        ),
+        key=lambda x: x[0]      # To sort only with the precision not the dictionaries
+    )
 
     # ------------------------------
     #           Save it
