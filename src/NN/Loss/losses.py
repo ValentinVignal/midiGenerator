@@ -1,0 +1,88 @@
+"""
+File containing all the usable cost function
+"""
+import tensorflow as tf
+
+from . import utils
+from . import cost
+
+K = tf.keras.backend
+math = tf.math
+Lambda = tf.keras.layers.Lambda
+
+
+def basic(lambda_a, lambda_d, *args, **kwargs):
+    def _basic(y_true, y_pred):
+        """
+
+        :param y_true: (batch, lenght, input_size, 2)
+        :param y_pred: (batch, lenght, input_size, 2)
+        :return:
+        """
+        """
+        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
+        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
+        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
+        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
+        """
+        y_true_a = utils.get_activation(y_true, activation_indice=4)
+        y_true_d = utils.get_duration(y_true, duration_indice=4)
+        y_pred_a = utils.get_activation(y_pred, activation_indice=4)
+        y_pred_d = utils.get_duration(y_pred, duration_indice=4)
+
+        loss_a = tf.keras.losses.binary_crossentropy(y_true_a, y_pred_a)
+        loss_d = tf.keras.losses.mean_squared_error(y_true_d, y_pred_d)
+
+        loss = lambda_a * loss_a + lambda_d * loss_d
+
+        return tf.reduce_mean(loss, axis=None)
+
+    return _basic
+
+
+def mono(*args, **kwargs):
+    """
+    Used for model which can predict only one note at the same time
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    def _mono(y_true, y_pred):
+        """
+        y_pred has np nan where we shouldn't compute the loss
+
+        :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :return:
+        """
+        y_true_a = utils.get_activation(y_true)
+        y_pred_a = utils.get_activation(y_pred)
+        y_pred_a_no_nan = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
+        y_true_a_no_nan = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
+
+        loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
+        loss = tf.where(math.is_nan(loss), tf.zeros_like(loss), loss)
+        return loss
+    return _mono
+
+
+def mono_scale(l_scale, l_rythm, *args, **kwargs):
+    """
+    Add the scale and rythm reward/cost
+    :param l_scale:
+    :param l_rythm:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    def _mono_scale(y_true, y_pred):
+        y_true_a = utils.get_activation(y_true)
+        y_pred_a = utils.get_activation(y_pred)
+        y_pred_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
+        y_true_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
+
+        loss = mono()(y_true, y_pred)
+        loss += l_scale * cost.scale_loss(y_true_a, y_pred_a)
+        loss += l_rythm * cost.rhythm_loss(y_true_a, y_pred_a)
+        return loss
+    return _mono_scale

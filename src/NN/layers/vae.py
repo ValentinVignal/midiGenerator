@@ -5,6 +5,8 @@ layers = tf.keras.layers
 K = tf.keras.backend
 math = tf.math
 
+from src.NN import Loss
+
 
 class ProductOfExpert(KerasLayer):
     """
@@ -156,9 +158,12 @@ class KLD(KerasLayer):
 
     def call(self, inputs):
         mean, std = inputs
+        """""
         return - self.weigth * 0.5 * tf.reduce_mean(
             2 * math.log(std) - math.square(mean) - math.square(std) + 1
         )
+        """
+        return self.weigth * Loss.cost.kld(mean, std)
 
     def compute_output_shape(self, input_shape):
         return 1,

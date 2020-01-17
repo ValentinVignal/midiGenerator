@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-import src.NN.losses as mlosses
-import src.NN.metrics as mmetrics
+#import src.NN.losses as mlosses
+#import src.NN.metrics as mmetrics
 import src.global_variables as g
 import src.NN.layers as mlayers
 from src.NN.Models.KerasModel import KerasModel
@@ -9,6 +9,7 @@ import src.NN.shapes.convolution as s_conv
 import src.NN.shapes.time as s_time
 from src.eval_string import eval_object
 from src.NN import Callbacks
+from src.NN import Loss
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -184,7 +185,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = mlosses.loss_mono()
+        losses[f'Output_{inst}'] = Loss.mono()
 
     # Define kld
     if mmodel_options['kld']:
@@ -204,7 +205,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
 
     model.compile(loss=losses,
                   optimizer=optimizer,
-                  metrics=[mmetrics.acc_mono()])
+                  metrics=[Loss.metrics.acc_mono()])
     if mmodel_options['kld']:
         model.add_metric(kld, name='kld', aggregation='mean')
 
