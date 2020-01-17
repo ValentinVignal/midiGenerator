@@ -184,7 +184,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = mlosses.loss_function_mono
+        losses[f'Output_{inst}'] = mlosses.loss_mono()
 
     # Define kld
     if mmodel_options['kld']:
