@@ -107,6 +107,9 @@ def create_dimensions(args):
     # kld annealing stop
     kld_annealing_stop_tuple = get_tuple(args.kld_annealing_stop)
     add_Real(kld_annealing_stop_tuple, name='kld_annealing_stop')
+    # kld sum
+    kld_sum_tuple = get_tuple(args.no_kld_sum, t=lambda x: not str2bool(x), separator=',')
+    add_Categorical(kld_tuple, name='kld')
 
     return dimensions, default_dim
 
@@ -171,7 +174,7 @@ def main(args):
     iteration = 0
 
     def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
-                     kld_annealing_start, kld_annealing_stop):
+                     kld_annealing_start, kld_annealing_stop, kld_sum):
         midi_generator = MidiGenerator(name=args.name)
         midi_generator.load_data(data_transformed_path=data_transformed_path, verbose=0)
 
@@ -191,7 +194,8 @@ def main(args):
             sampling=sampling,
             kld=kld,
             kld_annealing_start=kld_annealing_start,
-            kld_annealing_stop=kld_annealing_stop
+            kld_annealing_stop=kld_annealing_stop,
+            kld_sum=kld_sum
         )
 
         midi_generator.new_nn_model(
@@ -206,7 +210,7 @@ def main(args):
 
     @use_named_args(dimensions=dimensions)
     def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
-                kld_annealing_start, kld_annealing_stop):
+                kld_annealing_start, kld_annealing_stop, kld_sum):
         global iteration
         iteration += 1
 
@@ -222,6 +226,7 @@ def main(args):
         s += str_hp_to_print('all_sequence', all_sequence)
         s += str_hp_to_print('kld_annealing_start', kld_annealing_start, exp_format=True)
         s += str_hp_to_print('kld_annealing_stop', kld_annealing_stop, exp_format=True)
+        s += str_hp_to_print('kld_sum', kld_sum)
 
         print(s)
 
@@ -237,7 +242,8 @@ def main(args):
             model_param=model_param,
             nb_steps=nb_steps,
             kld_annealing_start=kld_annealing_start,
-            kld_annealing_stop=kld_annealing_stop
+            kld_annealing_stop=kld_annealing_stop,
+            kld_sum=kld_sum
         )
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
                                        validation=args.validation)

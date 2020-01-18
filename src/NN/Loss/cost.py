@@ -58,14 +58,18 @@ def rhythm_loss(y_true_a, y_pred_a):
 # ------------------- KL Divergence --------------------
 # --------------------------------------------------
 
-def kld(mean, std):
+def kld(mean, std, sum_axis=None):
     """
 
+    :param sum_axis: axis to sum, if None, there is no sum
     :param mean:
     :param std:
     :return:
     """
-    return - 0.5 * tf.reduce_mean(
-        2 * math.log(std) - math.square(mean) - math.square(std) + 1
-    )
+
+    res = - 0.5 * (2 * math.log(std) - math.square(mean) - math.square(std) + 1)
+    if sum_axis is not None:
+        res = tf.reduce_sum(res, axis=sum_axis)
+    res = tf.reduce_mean(res)
+    return res
 

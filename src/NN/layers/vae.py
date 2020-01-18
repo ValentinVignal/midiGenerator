@@ -152,9 +152,31 @@ class KLD(KerasLayer):
     """
 
     """
-    def __init__(self, weight=1, **kwargs):
+    def __init__(self, weight=1, sum_axis=None, **kwargs):
+        """
+
+        :param weight:
+        :param sum_axis: To sum through time. If is None, no summation is done
+        :param kwargs:
+        """
         super(KLD, self).__init__(**kwargs)
         self.weigth = weight
+        self.sum_axis_with_batch = self.compute_sum_axis_with_batch(sum_axis)
+
+    @staticmethod
+    def compute_sum_axis_with_batch(sum_axis):
+        if sum_axis is None:
+            return sum_axis
+        else:
+            if isinstance(sum_axis, int):
+                sum_axis = [sum_axis]
+            sum_axis_with_batch = []
+            for axis in sum_axis:
+                if axis >= 0:
+                    sum_axis_with_batch.append(axis + 1)
+                else:
+                    sum_axis_with_batch.append(axis)
+            return sum_axis_with_batch
 
     def call(self, inputs):
         mean, std = inputs
@@ -163,7 +185,7 @@ class KLD(KerasLayer):
             2 * math.log(std) - math.square(mean) - math.square(std) + 1
         )
         """
-        return self.weigth * Loss.cost.kld(mean, std)
+        return self.weigth * Loss.cost.kld(mean, std, sum_axis=self.sum_axis_with_batch)
 
     def compute_output_shape(self, input_shape):
         return 1,

@@ -41,7 +41,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'sampling': g.sampling,
         'kld': g.kld,
         'kld_annealing_start': g.kld_annealing_start,
-        'kld_annealing_stop': g.kld_annealing_stop
+        'kld_annealing_stop': g.kld_annealing_stop,
+        'kld_sum': g.kld_sum
     }
     mmodel_options.update(model_options)
 
@@ -141,7 +142,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     if mmodel_options['kld']:
         kld_weight = K.variable(0)
         kld_weight._trainable = False
-        kld = mlayers.vae.KLD(kld_weight)(poe)
+        sum_axis = 0 if mmodel_options['kld_sum'] else None
+        kld = mlayers.vae.KLD(kld_weight, sum_axis=sum_axis)(poe)          # (1,)
     if mmodel_options['sampling']:
         samples = mlayers.vae.SampleGaussian()(poe)
     else:

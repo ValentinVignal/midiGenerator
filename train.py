@@ -46,13 +46,11 @@ def main(args):
             'dropout': args.dropout,
             'all_sequence': args.all_sequence,
             'lstm_state': args.lstm_state,
-            'no_batch_norm': args.no_batch_norm,
-            'bn_momentum': args.bn_momentum,
-            'lambdas_loss': args.lambdas_loss,
             'sampling': not args.no_sampling,
             'kld': not args.no_kld,
             'kld_annealing_start': args.kld_annealing_start,
-            'kld_annealing_stop': args.kld_annealing_stop
+            'kld_annealing_stop': args.kld_annealing_stop,
+            'kld_sum': not args.no_kld_sum
         }
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,

@@ -199,6 +199,8 @@ class Parser(argparse.ArgumentParser):
                           help='Start of the annealing of the kld')
         self.add_argument('--kld-annealing-stop', type=self.get_type(argtype, float),
                           help='Stop of the annealing of the kld')
+        self.add_store_true(name='--no-kld-sum',
+                            help='To not sum through time for the KLD')
 
         self.set_defaults(
             epochs_drop=g.epochs_drop,
@@ -219,7 +221,8 @@ class Parser(argparse.ArgumentParser):
                 no_sampling=False,
                 no_kld=False,
                 kld_annealing_start=g.kld_annealing_start,
-                kld_annealing_stop=g.kld_annealing_stop
+                kld_annealing_stop=g.kld_annealing_stop,
+                no_kld_sum=False
             )
         else:
             self.set_defaults(
@@ -232,7 +235,8 @@ class Parser(argparse.ArgumentParser):
                 no_sampling='False',
                 no_kld='False',
                 kld_annealing_start='0:0.5',
-                kld_annealing_stop='0.5:1'
+                kld_annealing_stop='0.5:1',
+                no_kld_sum='False'
             )
 
         return self

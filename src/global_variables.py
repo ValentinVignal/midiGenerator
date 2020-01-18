@@ -84,6 +84,7 @@ sampling = True
 kld = True
 kld_annealing_start = 0.4
 kld_annealing_stop = 0.8
+kld_sum = True
 
 # ----- Training -----
 epochs = 200
