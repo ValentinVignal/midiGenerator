@@ -44,14 +44,13 @@ class KerasNeuralNetwork:
             log_dir=log_dir,
             write_graph=True,
             write_images=True,
-            #embedding_freq=0.5,
-            #write_grad=True
+            # embedding_freq=0.5,
+            # write_grad=True
         )
 
     def __del__(self):
         del self.tensorboard
         del self.model
-
 
     def new_model(self, model_id, input_param, opt_param, type_loss=None, step_length=1, model_options={}):
         """
@@ -146,9 +145,10 @@ class KerasNeuralNetwork:
 
         return dill.dumps(step_decay)
 
-    def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0):
+    def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0, sequence_to_numpy=False):
         """
 
+        :param sequence_to_numpy: To load all the generator into numpy files to train faster (only for small dataset)
         :param epochs:
         :param generator:
         :param callbacks:
@@ -162,16 +162,22 @@ class KerasNeuralNetwork:
             callback.update_with_fit_args(epochs=epochs)
         callback_list = self.callbacks + [self.tensorboard] + callbacks
 
-        if validation > 0:
-            generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
-                                                                                                   validation_split=validation)
+        if sequence_to_numpy:
+            print('Loading all the training data as numpy arrays...')
+            x, y = Sequences.sequence_to_numpy(sequence=generator)
+            history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
+                                     callbacks=callbacks)
+        else:
+            if validation > 0:
+                generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
+                                                                                                       validation_split=validation)
 
-            history = self.model.fit_generator(epochs=epochs, generator=generator_train,
-                                               validation_data=generator_valid,
-                                               shuffle=True, verbose=verbose, callbacks=callback_list)
-        else:  # So it won't print a lot of lines for nothing
-            history = self.model.fit_generator(epochs=epochs, generator=generator,
-                                               shuffle=True, verbose=verbose, callbacks=callback_list)
+                history = self.model.fit_generator(epochs=epochs, generator=generator_train,
+                                                   validation_data=generator_valid,
+                                                   shuffle=True, verbose=verbose, callbacks=callback_list)
+            else:  # So it won't print a lot of lines for nothing
+                history = self.model.fit_generator(epochs=epochs, generator=generator,
+                                                   shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return history.history
 

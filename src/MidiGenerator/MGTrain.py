@@ -7,9 +7,11 @@ from .MGInit import MGInit
 
 class MGTrain(MGInit):
 
-    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise, validation=0.0):
+    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise, validation=0.0,
+              sequence_to_numpy=False):
         """
 
+        :param sequence_to_numpy:
         :param epochs:
         :param batch:
         :param callbacks:
@@ -44,7 +46,8 @@ class MGTrain(MGInit):
         # Actual train
         print(colored('Training...', 'blue'))
         self.train_history = self.keras_nn.train_seq(epochs=epochs, generator=self.sequence, callbacks=callbacks,
-                                                     verbose=verbose, validation=validation)
+                                                     verbose=verbose, validation=validation,
+                                                     sequence_to_numpy=sequence_to_numpy)
 
         # Update parameters
         self.total_epochs += epochs
@@ -101,5 +104,3 @@ class MGTrain(MGInit):
         x, yt = self.sequence[i]
         yp = self.predict_on_batch(i, batch_size=batch_size)
         pianoroll.see_compare_on_batch(x, yt, yp)
-
-

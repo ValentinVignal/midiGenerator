@@ -3,6 +3,7 @@ from .AllInstSequence import AllInstSequence
 from .MissingInstSequence import MissingInstSequence
 from .TrainValSequence import ReducedSequence
 from . import TrainValSequence
+from .to_numpy import sequence_to_numpy
 
 from_name = dict(
     KerasSequence=KerasSequence,
