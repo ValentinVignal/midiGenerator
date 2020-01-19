@@ -63,10 +63,9 @@ lr = 0.01
 dropout = 0.2
 decay = 2e-1
 epochs_drop = 50
-decay_drop = 0.5
-bn_momentum = 0.99
+decay_drop = 0.1
 # ----- Loss -----
-type_loss = 'dur'
+loss_name = 'basic'
 lambdas_loss = '2,2'
 
 
@@ -76,6 +75,11 @@ def get_lambdas_loss(lambdas_loss):
 
 
 lambda_loss_activation, lambda_loss_duration = get_lambdas_loss(lambdas_loss)
+l_scale = 1
+l_rhythm = 1
+l_scale_cost = 1
+l_rhythm_cost = 1
+take_all_step_rhythm = False
 # ----- Architecture -----
 all_sequence = False
 lstm_state = False

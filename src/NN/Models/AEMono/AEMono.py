@@ -14,7 +14,7 @@ Lambda = tf.keras.layers.Lambda
 K = tf.keras.backend
 
 
-def create_model(input_param, model_param, nb_steps, step_length, optimizer, type_loss=g.type_loss,
+def create_model(input_param, model_param, nb_steps, step_length, optimizer,
                  model_options={}
                  ):
     """
@@ -28,7 +28,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     :param nb_steps: (Comes from the user)
     :param step_length: (Comes from the user)
     :param optimizer:
-    :param type_loss: (Comes from the user)
+    :param loss_name: (Comes from the user)
     :param model_options: (Comes from the user)
     :return: the neural network:
     """

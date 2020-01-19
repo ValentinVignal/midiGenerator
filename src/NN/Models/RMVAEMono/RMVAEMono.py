@@ -16,8 +16,7 @@ Lambda = tf.keras.layers.Lambda
 K = tf.keras.backend
 
 
-def create_model(input_param, model_param, nb_steps, step_length, optimizer, type_loss=g.type_loss,
-                 model_options={}
+def create_model(input_param, model_param, nb_steps, step_length, optimizer, model_options={}
                  ):
     """
 
@@ -30,7 +29,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     :param nb_steps: (Comes from the user)
     :param step_length: (Comes from the user)
     :param optimizer:
-    :param type_loss: (Comes from the user)
     :param model_options: (Comes from the user)
     :return: the neural network:
     """
@@ -42,9 +40,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
         'kld': g.kld,
         'kld_annealing_start': g.kld_annealing_start,
         'kld_annealing_stop': g.kld_annealing_stop,
-        'kld_sum': g.kld_sum
+        'kld_sum': g.kld_sum,
+        'loss_name': 'mono'
     }
     mmodel_options.update(model_options)
+    print('loss', mmodel_options['loss_name'])
 
     dropout = mmodel_options['dropout']
 
@@ -187,7 +187,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, typ
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = Loss.mono()
+        losses[f'Output_{inst}'] = Loss.from_names[mmodel_options['loss_name']]()
 
     # Define kld
     if mmodel_options['kld']:

@@ -14,3 +14,7 @@ def get_duration(x, duration_indice=4):
 
 def non_nan(with_nan, var_to_change):
     return tf.where(math.is_nan(with_nan), tf.zeros_like(var_to_change), var_to_change)
+
+
+def replace_value(tensor, old_value, new_value):
+    return tf.where(tf.equal(old_value, tensor), new_value * tf.ones_like(tensor), tensor)

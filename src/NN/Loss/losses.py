@@ -10,6 +10,8 @@ K = tf.keras.backend
 math = tf.math
 Lambda = tf.keras.layers.Lambda
 
+from src import global_variables as g
+
 
 def basic(lambda_a, lambda_d, *args, **kwargs):
     def _basic(y_true, y_pred):
@@ -18,12 +20,6 @@ def basic(lambda_a, lambda_d, *args, **kwargs):
         :param y_true: (batch, lenght, input_size, 2)
         :param y_pred: (batch, lenght, input_size, 2)
         :return:
-        """
-        """
-        y_true_a = Lambda(lambda x: x[:, :, :, 0])(y_true)
-        y_true_d = Lambda(lambda x: x[:, :, :, 1])(y_true)
-        y_pred_a = Lambda(lambda x: x[:, :, :, 0])(y_pred)
-        y_pred_d = Lambda(lambda x: x[:, :, :, 1])(y_pred)
         """
         y_true_a = utils.get_activation(y_true, activation_indice=4)
         y_true_d = utils.get_duration(y_true, duration_indice=4)
@@ -66,11 +62,16 @@ def mono(*args, **kwargs):
     return _mono
 
 
-def mono_scale(l_scale, l_rythm, *args, **kwargs):
+def mono_scale(l_scale=g.l_scale, l_rhythm=g.l_rhythm, l_scale_cost=g.l_scale_cost, l_rhythm_cost=g.l_rhythm_cost,
+               take_all_steps_rhythm=g.take_all_step_rhythm,
+               *args, **kwargs):
     """
     Add the scale and rythm reward/cost
+    :param take_all_steps_rhythm:
+    :param l_rhythm_cost:
+    :param l_scale_cost:
     :param l_scale:
-    :param l_rythm:
+    :param l_rhythm:
     :param args:
     :param kwargs:
     :return:
@@ -82,7 +83,10 @@ def mono_scale(l_scale, l_rythm, *args, **kwargs):
         y_true_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
 
         loss = mono()(y_true, y_pred)
-        loss += l_scale * cost.scale_loss(y_true_a, y_pred_a)
-        loss += l_rythm * cost.rhythm_loss(y_true_a, y_pred_a)
+        loss += l_scale * cost.scale_loss(y_true_a, y_pred_a,
+                                          cost_value=l_scale_cost)
+        loss += l_rhythm * cost.rhythm_loss(y_true_a, y_pred_a,
+                                            cost_value=l_rhythm_cost,
+                                            take_all_steps_rhythm=take_all_steps_rhythm)
         return loss
     return _mono_scale

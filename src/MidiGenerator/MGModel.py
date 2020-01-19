@@ -10,14 +10,13 @@ from .MGInit import MGInit
 
 class MGModel(MGInit):
 
-    def new_nn_model(self, model_id, work_on=None, opt_param=None, type_loss=g.type_loss, model_options=None,
+    def new_nn_model(self, model_id, work_on=None, opt_param=None, model_options=None,
                      print_model=True):
         """
 
         :param model_id: modelName;modelParam;nbSteps
         :param work_on:
         :param opt_param:
-        :param type_loss:
         :param model_options:
         :param print_model:
         :return: set up the neural network
@@ -45,7 +44,6 @@ class MGModel(MGInit):
                                 step_length=step_length,
                                 input_param=self.input_param,
                                 opt_param=opt_param,
-                                type_loss=type_loss,
                                 model_options=model_options)
         if print_model:
             self.print_model()

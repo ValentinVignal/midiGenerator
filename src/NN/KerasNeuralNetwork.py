@@ -30,7 +30,6 @@ class KerasNeuralNetwork:
         self.model = None
         self.opt_param = None
         self.decay = None
-        self.type_loss = None
         self.callbacks = []
 
         self.model_options = None
@@ -52,22 +51,17 @@ class KerasNeuralNetwork:
         del self.tensorboard
         del self.model
 
-    def new_model(self, model_id, input_param, opt_param, type_loss=None, step_length=1, model_options={}):
+    def new_model(self, model_id, input_param, opt_param, step_length=1, model_options={}):
         """
 
         :param model_id: model_name;model_param;nb_steps
         :param input_param:
         :param opt_param: {'lr', 'name'}
-        :param type_loss:
         :param step_length:
         :param model_options:
         :return: the neural network
         """
 
-        if type_loss is not None:
-            self.type_loss = type_loss
-        elif self.type_loss is None:
-            self.type_loss = g.type_loss
         self.step_length = step_length
 
         model_name, model_param_s, nb_steps = model_id.split(g.split_model_id)
@@ -93,7 +87,6 @@ class KerasNeuralNetwork:
             nb_steps=nb_steps,
             optimizer=optimizer,
             step_length=step_length,
-            type_loss=self.type_loss,
             model_options=model_options)
         self.model = model_dict.get('model')
         self.callbacks.extend(model_dict.get('callbacks', []))
@@ -206,7 +199,6 @@ class KerasNeuralNetwork:
                 'nb_steps': self.nb_steps,
                 'decay': string_decay,
                 'opt_param': self.opt_param,
-                'type_loss': self.type_loss,
                 'step_length': self.step_length,
                 'model_options': self.model_options,
             }, dump_file)

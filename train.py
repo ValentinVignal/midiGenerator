@@ -50,12 +50,12 @@ def main(args):
             'kld': not args.no_kld,
             'kld_annealing_start': args.kld_annealing_start,
             'kld_annealing_stop': args.kld_annealing_stop,
-            'kld_sum': not args.no_kld_sum
+            'kld_sum': not args.no_kld_sum,
+            'loss_name': args.loss_name
         }
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,
                                     work_on=args.work_on,
-                                    type_loss=args.type_loss,
                                     model_options=model_options)
     elif args.load != '':
         midi_generator.recreate_model(args.load)

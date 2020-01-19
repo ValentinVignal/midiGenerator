@@ -165,8 +165,8 @@ class Parser(argparse.ArgumentParser):
                           help='how long before a complete drop (decay)')
         self.add_argument('--decay-drop', type=float,
                           help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-        self.add_argument('--type-loss', type=str,
-                          help='Type of the loss')
+        self.add_argument('--loss-name', type=str,
+                          help='Name of the loss')
         # -------------------- Model Type --------------------
         self.add_argument('-n', '--name', type=str,
                           help='Name given to the model')
@@ -207,7 +207,7 @@ class Parser(argparse.ArgumentParser):
         self.set_defaults(
             epochs_drop=g.epochs_drop,
             decay_drop=g.decay_drop,
-            type_loss=g.type_loss,
+            loss_name=g.loss_name,
             name='name',
             work_on=g.work_on,
         )
