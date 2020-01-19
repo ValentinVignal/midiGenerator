@@ -41,7 +41,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
         'kld_annealing_start': g.kld_annealing_start,
         'kld_annealing_stop': g.kld_annealing_stop,
         'kld_sum': g.kld_sum,
-        'loss_name': 'mono'
+        'loss_name': 'mono',
+        'l_scale': g.l_scale,
+        'l_rhythm': g.l_rhythm,
+        'l_scale_cost': g.l_scale_cost,
+        'l_rhythm_cost': g.l_rhythm_cost,
+        'take_all_step_rhythm': g.take_all_step_rhythm
     }
     mmodel_options.update(model_options)
     print('loss', mmodel_options['loss_name'])
@@ -187,7 +192,10 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = Loss.from_names[mmodel_options['loss_name']]()
+        losses[f'Output_{inst}'] = Loss.from_names[mmodel_options['loss_name']](
+            # TODO: Put the subdict: loss option
+            **mmodel_options
+        )
 
     # Define kld
     if mmodel_options['kld']:

@@ -58,7 +58,8 @@ def mono(*args, **kwargs):
 
         loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
         loss = tf.where(math.is_nan(loss), tf.zeros_like(loss), loss)
-        return loss
+        loss = tf.reduce_sum(loss, axis=(1, 2))
+        return tf.reduce_mean(loss)
     return _mono
 
 
@@ -66,7 +67,7 @@ def mono_scale(l_scale=g.l_scale, l_rhythm=g.l_rhythm, l_scale_cost=g.l_scale_co
                take_all_steps_rhythm=g.take_all_step_rhythm,
                *args, **kwargs):
     """
-    Add the scale and rythm reward/cost
+    Add the scale and rhythm reward/cost
     :param take_all_steps_rhythm:
     :param l_rhythm_cost:
     :param l_scale_cost:

@@ -169,4 +169,3 @@ def kld(mean, std):
     return - 0.5 * tf.reduce_mean(
         2 * math.log(std) - math.square(mean) - math.square(std) + 1
     )
-

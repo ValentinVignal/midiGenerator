@@ -145,7 +145,45 @@ class Parser(argparse.ArgumentParser):
                           help='Evaluate the model after the training')
         self.add_argument('--check-batch', type=int, default=-1,
                           help='Batch to check')
-        return self
+
+    def add_loss_args(self, argtype=ArgType.ALL):
+        """
+
+        :param argtyp:
+        :return:
+        """
+        self.add_argument('--loss-name', type=str,
+                          help='Name of the loss')
+        self.add_argument('--l-scale', type=self.get_type(argtype, float),
+                          help='Lambda for scale loss')
+        self.add_argument('--l-rhythm', type=self.get_type(argtype, float),
+                          help='Lambda for the rhythm loss')
+        self.add_argument('--l-scale-cost', type=self.get_type(argtype, float),
+                          help='The cost for an out of scale note')
+        self.add_argument('--l-rhythm-cost', type=self.get_type(argtype, float),
+                          help='The cost for an out of rhythm note')
+        self.add_store_true(name='--no-all-step-rhythm', argtype=argtype,
+                            help='Not taking all the output steps for rhythm')
+
+        self.set_defaults(
+            loss_name=g.loss_name,
+        )
+
+        if argtype is not ArgType.HPSearch:
+            self.set_defaults(
+                l_scale=g.l_scale,
+                l_rhythm=g.l_rhythm,
+                l_scale_cost=g.l_scale_cost,
+                l_rhythm_cost=g.l_rhythm_cost
+            )
+        else:
+            self.set_defaults(
+                l_scale='0.01:1',
+                l_rhythm='0.01:1',
+                l_scale_cost='0.01:1',
+                l_rhythm_cost='0.01:1',
+                no_all_step_rhythm='False'
+            )
 
     def add_create_model_args(self, argtype=ArgType.ALL):
         """
@@ -165,8 +203,7 @@ class Parser(argparse.ArgumentParser):
                           help='how long before a complete drop (decay)')
         self.add_argument('--decay-drop', type=float,
                           help='0 < decay_drop < 1, every epochs_drop, lr will be multiply by decay_drop')
-        self.add_argument('--loss-name', type=str,
-                          help='Name of the loss')
+        self.add_loss_args(argtype=argtype)
         # -------------------- Model Type --------------------
         self.add_argument('-n', '--name', type=str,
                           help='Name given to the model')
@@ -240,8 +277,6 @@ class Parser(argparse.ArgumentParser):
                 kld_annealing_stop='0.5:1',
                 no_kld_sum='False'
             )
-
-        return self
 
     def add_generation_args(self, artype=ArgType.ALL):
         """

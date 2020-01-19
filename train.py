@@ -51,7 +51,12 @@ def main(args):
             'kld_annealing_start': args.kld_annealing_start,
             'kld_annealing_stop': args.kld_annealing_stop,
             'kld_sum': not args.no_kld_sum,
-            'loss_name': args.loss_name
+            'loss_name': args.loss_name,
+            'l_scale': args.l_scale,
+            'l_rhythm': args.l_rhythm,
+            'l_scale_cost': args.l_scale_cost,
+            'l_rhythm_cost': args.l_rhythm_cost,
+            'take_all_step_rhythm': not args.no_all_step_rhythm
         }
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,

@@ -73,25 +73,25 @@ def rhythm_loss(y_true_a, y_pred_a, cost_value=g.l_rhythm_cost, max_reward=None,
     :return:
     """
     # projection
-    sum_axis = (2, 3) if take_all_steps_rhythm else 3
+    sum_axis = (1, 3) if take_all_steps_rhythm else 3
     # (if take_all_steps_axis then nb_steps = 1 after these 2 lines)
     true_projection = tf.reduce_sum(y_true_a, axis=sum_axis, keepdims=True)  # (batch, nb_steps, step_size, 1)
     pred_projection = tf.reduce_sum(y_pred_a, axis=sum_axis, keepdims=True)  # (batch, nb_steps, step_size, 1)
     # on scale
     if max_reward is None:
-        w = 1 / tf.reduce_sum(true_projection, axis=3, keepdims=True)  # (batch, nb_steps, 1, 1) (can be nan)
+        w = 1 / tf.reduce_sum(true_projection, axis=2, keepdims=True)  # (batch, nb_steps, 1, 1) (can be nan)
     else:
-        w = max_reward / math.reduce_max(true_projection, axis=3,
+        w = max_reward / math.reduce_max(true_projection, axis=2,
                                          keepdims=True)  # (batch, nb_steps, 1, 1) (can be nan)
-    cost_reward = true_projection * w  # (batch, nb_steps, 1, 1)  (can be nan)
+    cost_reward = - true_projection * w  # (batch, nb_steps, 1, 1)  (can be nan)
     cost_reward = utils.replace_value(tensor=cost_reward,
                                       old_value=float(0),
-                                      new_value=float(-cost_value))  # (batch, nb_steps, 1, 1)  (can be nan)
+                                      new_value=float(cost_value))  # (batch, nb_steps, 1, 1)  (can be nan)
     # If w is nan, it means there were no notes in the step, then, there is no loss or reward to add for this step
     cost_reward = utils.non_nan(with_nan=cost_reward, var_to_change=cost_reward)
 
     # Los
-    loss = true_projection * cost_reward
+    loss = pred_projection * cost_reward
     loss = tf.reduce_sum(loss, axis=(1, 2, 3))  # (batch,)
     return tf.reduce_mean(loss)
 
