@@ -290,7 +290,7 @@ def main(args):
             take_all_step_rhythm=take_all_step_rhythm
         )
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
-                                       validation=args.validation)
+                                       validation=args.validation, sequence_to_numpy=args.seq2np)
         accuracy = get_history_acc(history)
 
         global best_accuracy

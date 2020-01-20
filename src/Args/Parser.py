@@ -265,7 +265,7 @@ class Parser(argparse.ArgumentParser):
             )
         else:
             self.set_defaults(
-                lr='1:5',
+                lr='1:4',
                 optimizer='adam',
                 decay='0.01:1',
                 dropout='0.1:0.3',
