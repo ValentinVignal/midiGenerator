@@ -226,19 +226,19 @@ class Parser(argparse.ArgumentParser):
         # -------------------- Architecture --------------------
         self.add_argument('--dropout', type=self.get_type(argtype, float),
                           help='Value of the dropout')
-        self.add_store_true(name='--all-sequence',
+        self.add_store_true(name='--all-sequence', argtype=argtype,
                             help='Use or not all the sequence in the RNN layer')
-        self.add_store_true(name='--lstm-state',
+        self.add_store_true(name='--lstm-state', argtype=argtype,
                             help='Use or not all the sequence in the RNN layer')
-        self.add_store_true(name='--no-sampling',
+        self.add_store_true(name='--no-sampling', argtype=argtype,
                             help='Gaussian Sampling')
-        self.add_store_true(name='--no-kld',
+        self.add_store_true(name='--no-kld', argtype=argtype,
                             help='No KL Divergence')
         self.add_argument('--kld-annealing-start', type=self.get_type(argtype, float),
                           help='Start of the annealing of the kld')
         self.add_argument('--kld-annealing-stop', type=self.get_type(argtype, float),
                           help='Stop of the annealing of the kld')
-        self.add_store_true(name='--no-kld-sum',
+        self.add_store_true(name='--no-kld-sum', argtype=argtype,
                             help='To not sum through time for the KLD')
 
         self.set_defaults(
