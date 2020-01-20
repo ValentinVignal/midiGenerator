@@ -51,9 +51,10 @@ class KerasNeuralNetwork:
         del self.tensorboard
         del self.model
 
-    def new_model(self, model_id, input_param, opt_param, step_length=1, model_options={}):
+    def new_model(self, model_id, input_param, opt_param, step_length=1, model_options={}, loss_options={}):
         """
 
+        :param loss_options:
         :param model_id: model_name;model_param;nb_steps
         :param input_param:
         :param opt_param: {'lr', 'name'}
@@ -87,7 +88,9 @@ class KerasNeuralNetwork:
             nb_steps=nb_steps,
             optimizer=optimizer,
             step_length=step_length,
-            model_options=model_options)
+            model_options=model_options,
+            loss_options=loss_options
+        )
         self.model = model_dict.get('model')
         self.callbacks.extend(model_dict.get('callbacks', []))
         self.model_id = model_id

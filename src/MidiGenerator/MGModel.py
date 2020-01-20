@@ -10,10 +10,11 @@ from .MGInit import MGInit
 
 class MGModel(MGInit):
 
-    def new_nn_model(self, model_id, work_on=None, opt_param=None, model_options=None,
+    def new_nn_model(self, model_id, work_on=None, opt_param=None, model_options=None, loss_options=None,
                      print_model=True):
         """
 
+        :param loss_options:
         :param model_id: modelName;modelParam;nbSteps
         :param work_on:
         :param opt_param:
@@ -40,11 +41,14 @@ class MGModel(MGInit):
         opt_param = {'lr': g.lr, 'name': 'adam'} if opt_param is None else opt_param
 
         self.keras_nn = KerasNeuralNetwork()
-        self.keras_nn.new_model(model_id=self.model_id,
-                                step_length=step_length,
-                                input_param=self.input_param,
-                                opt_param=opt_param,
-                                model_options=model_options)
+        self.keras_nn.new_model(
+            model_id=self.model_id,
+            step_length=step_length,
+            input_param=self.input_param,
+            opt_param=opt_param,
+            model_options=model_options,
+            loss_options=loss_options
+        )
         if print_model:
             self.print_model()
 

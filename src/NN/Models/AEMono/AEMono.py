@@ -1,13 +1,13 @@
 import tensorflow as tf
 
-import src.NN.losses as mlosses
-import src.NN.metrics as mmetrics
 import src.global_variables as g
 import src.NN.layers as mlayers
 from src.NN.Models.KerasModel import KerasModel
 import src.NN.shapes.convolution as s_conv
 import src.NN.shapes.time as s_time
 from src.eval_string import eval_object
+from src import dictionaries
+from src.NN import Loss
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
@@ -15,10 +15,11 @@ K = tf.keras.backend
 
 
 def create_model(input_param, model_param, nb_steps, step_length, optimizer,
-                 model_options={}
+                 model_options={}, loss_options={}
                  ):
     """
 
+    :param loss_options:
     :param input_param: {
                             nb_instruments,
                             input_size
@@ -34,13 +35,27 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
     """
 
     # ---------- Model options ----------
-    mmodel_options = {
-        'dropout': g.dropout,
-        'sampling': g.sampling
-    }
-    mmodel_options.update(model_options)
+    model_options_default = dict(
+        dropout=g.dropout,
+        sampling=g.sampling,
+        kld=g.kld,
+        kld_annealing_start=g.kld_annealing_start,
+        kld_annealing_stop=g.kld_annealing_stop,
+        kld_sum=g.kld_sum
+    )
+    dictionaries.set_default(model_options, model_options_default)
 
-    dropout = mmodel_options['dropout']
+    loss_options_default = dict(
+        loss_name='mono',
+        l_scale=g.l_scale,
+        l_rhythm=g.l_rhythm,
+        l_scale_cost=g.l_scale_cost,
+        l_rhythm_cost=g.l_rhythm_cost,
+        take_all_step_rhythm=g.take_all_step_rhythm
+    )
+    dictionaries.set_default(loss_options, loss_options_default)
+
+    dropout = model_options['dropout']
 
     print('Definition of the graph ...')
 
@@ -138,14 +153,16 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = mlosses.loss_function_mono
+        losses[f'Output_{inst}'] = Loss.from_names[loss_options['loss_name']](
+            **loss_options
+        )
     # ------------------ Metrics -----------------
 
     # ------------------------------ Compile ------------------------------
 
     model.compile(loss=losses,
                   optimizer=optimizer,
-                  metrics=[mmetrics.acc_mono()])
+                  metrics=[Loss.metrics.acc_mono()])
     model.build([(None, *midi_shape) for inst in range(nb_instruments)])
 
     return dict(

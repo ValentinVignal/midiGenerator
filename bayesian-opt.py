@@ -49,6 +49,10 @@ def str2bool(string):
     return string == 'True'
 
 
+def ten_power(x):
+    return 10 ** (-float(x))
+
+
 def create_dimensions(args):
     """
 
@@ -71,8 +75,7 @@ def create_dimensions(args):
         default_dim.append(m_tuple[0])
 
     # lr
-    lr_tuple = get_tuple(args.lr)
-    lr_tuple = tuple(map(lambda x: 10 ** (-x), lr_tuple))
+    lr_tuple = get_tuple(args.lr, t=ten_power)
     add_Real(lr_tuple, name='lr', prior='log-uniform')
     # optimizer
     opt_tuple = get_tuple(args.optimizer, t=str, separator=',')
@@ -109,7 +112,25 @@ def create_dimensions(args):
     add_Real(kld_annealing_stop_tuple, name='kld_annealing_stop')
     # kld sum
     kld_sum_tuple = get_tuple(args.no_kld_sum, t=lambda x: not str2bool(x), separator=',')
-    add_Categorical(kld_tuple, name='kld')
+    add_Categorical(kld_sum_tuple, name='kld_sum')
+    # loss name
+    loss_name_tuple = get_tuple(args.loss_name, t=str, separator=',')
+    add_Categorical(loss_name_tuple, name='loss_name')
+    # lambda scale
+    l_scale_tuple = get_tuple(args.l_scale, t=ten_power, separator=':')
+    add_Real(l_scale_tuple, 'l_scale', prior='log-uniform')
+    # lambda rhythm
+    l_rhythm_tuple = get_tuple(args.l_rhythm, t=ten_power, separator=':')
+    add_Real(l_rhythm_tuple, name='l_rhythm', prior='log-uniform')
+    # lambda scale cost
+    l_scale_cost_tuple = get_tuple(args.l_scale_cost, t=ten_power, separator=':')
+    add_Real(l_scale_cost_tuple, name='l_scale_cost', prior='log-uniform')
+    # lambda rhythm cost
+    l_rhythm_cost_tuple = get_tuple(args.l_rhythm_cost, t=ten_power, separator=':')
+    add_Real(l_rhythm_cost_tuple, name='l_rhythm_cost', prior='log-uniform')
+    # No all step rhythm
+    take_all_step_rhythm_tuple = get_tuple(args.no_all_step_rhythm, t=lambda x: not str2bool(x), separator=',')
+    add_Categorical(take_all_step_rhythm_tuple, name='take_all_step_rhythm')
 
     return dimensions, default_dim
 
@@ -174,7 +195,8 @@ def main(args):
     iteration = 0
 
     def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
-                     kld_annealing_start, kld_annealing_stop, kld_sum):
+                     kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm, l_scale_cost,
+                     l_rhythm_cost, take_all_step_rhythm):
         midi_generator = MidiGenerator(name=args.name)
         midi_generator.load_data(data_transformed_path=data_transformed_path, verbose=0)
 
@@ -198,19 +220,29 @@ def main(args):
             kld_sum=kld_sum
         )
 
+        loss_options = dict(
+            loss_name=loss_name,
+            l_scale=l_scale,
+            l_rhythm=l_rhythm,
+            l_scale_cost=l_scale_cost,
+            l_rhythm_cost=l_rhythm_cost,
+            take_all_step_rhythm=take_all_step_rhythm
+        )
+
         midi_generator.new_nn_model(
             model_id=model_id,
             opt_param=opt_params,
             work_on=args.work_on,
-            type_loss=args.type_loss,
             model_options=model_options,
+            loss_options=loss_options,
             print_model=False
         )
         return midi_generator
 
     @use_named_args(dimensions=dimensions)
     def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
-                kld_annealing_start, kld_annealing_stop, kld_sum):
+                kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm, l_scale_cost,
+                l_rhythm_cost, take_all_step_rhythm):
         global iteration
         iteration += 1
 
@@ -227,6 +259,12 @@ def main(args):
         s += str_hp_to_print('kld_annealing_start', kld_annealing_start, exp_format=True)
         s += str_hp_to_print('kld_annealing_stop', kld_annealing_stop, exp_format=True)
         s += str_hp_to_print('kld_sum', kld_sum)
+        s += str_hp_to_print('loss_name', loss_name)
+        s += str_hp_to_print('l_scale', l_scale, exp_format=True)
+        s += str_hp_to_print('l_rhythm', l_rhythm, exp_format=True)
+        s += str_hp_to_print('l_scale_cost', l_scale_cost, exp_format=True)
+        s += str_hp_to_print('l_rhythm_cost', l_rhythm_cost, exp_format=True)
+        s += str_hp_to_print('take_all_step_rhythm', take_all_step_rhythm)
 
         print(s)
 
@@ -243,7 +281,13 @@ def main(args):
             nb_steps=nb_steps,
             kld_annealing_start=kld_annealing_start,
             kld_annealing_stop=kld_annealing_stop,
-            kld_sum=kld_sum
+            kld_sum=kld_sum,
+            loss_name=loss_name,
+            l_scale=l_scale,
+            l_rhythm=l_rhythm,
+            l_scale_cost=l_scale_cost,
+            l_rhythm_cost=l_rhythm_cost,
+            take_all_step_rhythm=take_all_step_rhythm
         )
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
                                        validation=args.validation)

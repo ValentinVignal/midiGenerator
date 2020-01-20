@@ -178,11 +178,11 @@ class Parser(argparse.ArgumentParser):
             )
         else:
             self.set_defaults(
-                l_scale='0.01:1',
-                l_rhythm='0.01:1',
-                l_scale_cost='0.01:1',
-                l_rhythm_cost='0.01:1',
-                no_all_step_rhythm='False'
+                l_scale='0:4',
+                l_rhythm='0:4',
+                l_scale_cost='0:4',
+                l_rhythm_cost='0:4',
+                no_all_step_rhythm='False,True'
             )
 
     def add_create_model_args(self, argtype=ArgType.ALL):

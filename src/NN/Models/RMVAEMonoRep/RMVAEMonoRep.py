@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-import src.NN.losses as mlosses
-import src.NN.metrics as mmetrics
 import src.global_variables as g
 import src.NN.layers as mlayers
 from src.NN.Models.KerasModel import KerasModel
@@ -9,15 +7,18 @@ import src.NN.shapes.convolution as s_conv
 import src.NN.shapes.time as s_time
 from src.eval_string import eval_object
 from src.NN import Callbacks
+from src import dictionaries
+from src.NN import Loss
 
 layers = tf.keras.layers
 Lambda = tf.keras.layers.Lambda
 K = tf.keras.backend
 
 
-def create_model(input_param, model_param, nb_steps, step_length, optimizer, model_options={}):
+def create_model(input_param, model_param, nb_steps, step_length, optimizer, model_options={}, loss_options={}):
     """
 
+    :param loss_options:
     :param input_param: {
                             nb_instruments,
                             input_size
@@ -32,14 +33,27 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
     """
 
     # ---------- Model options ----------
-    mmodel_options = {
-        'dropout': g.dropout,
-        'sampling': g.sampling,
-        'kld': g.kld
-    }
-    mmodel_options.update(model_options)
+    model_options_default = dict(
+        dropout=g.dropout,
+        sampling=g.sampling,
+        kld=g.kld,
+        kld_annealing_start=g.kld_annealing_start,
+        kld_annealing_stop=g.kld_annealing_stop,
+        kld_sum=g.kld_sum
+    )
+    dictionaries.set_default(model_options, model_options_default)
 
-    dropout = mmodel_options['dropout']
+    loss_options_default = dict(
+        loss_name='mono',
+        l_scale=g.l_scale,
+        l_rhythm=g.l_rhythm,
+        l_scale_cost=g.l_scale_cost,
+        l_rhythm_cost=g.l_rhythm_cost,
+        take_all_step_rhythm=g.take_all_step_rhythm
+    )
+    dictionaries.set_default(loss_options, loss_options_default)
+
+    dropout = model_options['dropout']
 
     print('Definition of the graph ...')
 
@@ -131,11 +145,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
     stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)        # (batch, nb_instruments, nb_steps, size)
 
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])    # List(2)[(batch, nb_steps, size)]
-    if mmodel_options['kld']:
+    if model_options['kld']:
         kld_weight = K.variable(0)
         kld_weight._trainable = False
-        kld = mlayers.vae.KLD(kld_weight)(poe)
-    if mmodel_options['sampling']:
+        sum_axis = 0 if model_options['kld_sum'] else None
+        kld = mlayers.vae.KLD(kld_weight, sum_axis=sum_axis)(poe)  # (1,)
+    if model_options['sampling']:
         samples = mlayers.vae.SampleGaussian()(poe)
     else:
         samples = layers.Concatenate(axis=-1)(poe)      # (batch, nb_steps, size)
@@ -182,25 +197,31 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
     # Define losses dict for outputs
     losses = {}
     for inst in range(nb_instruments):
-        losses[f'Output_{inst}'] = mlosses.loss_function_mono
+        losses[f'Output_{inst}'] = Loss.from_names[loss_options['loss_name']](
+            **loss_options
+        )
 
     # Define kld
-    if mmodel_options['kld']:
+    if model_options['kld']:
         model.add_loss(kld)
 
     # ------------------ Metrics -----------------
 
     # -------------------- Callbacks --------------------
     callbacks = []
-    if mmodel_options['kld']:
-        callbacks.append(Callbacks.Annealing(kld_weight, start_value=0, final_value=1))
+    if model_options['kld']:
+        callbacks.append(Callbacks.Annealing(
+            weight=kld_weight,
+            epoch_start=model_options['kld_annealing_start'],
+            epoch_stop=model_options['kld_annealing_stop']
+        ))
 
     # ------------------------------ Compile ------------------------------
 
     model.compile(loss=losses,
                   optimizer=optimizer,
-                  metrics=[mmetrics.acc_mono()])
-    if mmodel_options['kld']:
+                  metrics=[Loss.metrics.acc_mono()])
+    if model_options['kld']:
         model.add_metric(kld, name='kld', aggregation='mean')
 
     return dict(
