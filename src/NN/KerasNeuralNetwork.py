@@ -162,7 +162,7 @@ class KerasNeuralNetwork:
             print('Loading all the training data as numpy arrays...')
             x, y = Sequences.sequence_to_numpy(sequence=generator)
             history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
-                                     callbacks=callbacks, batch_size=generator.batch_size)
+                                     callbacks=callback_list, batch_size=generator.batch_size)
         else:
             if validation > 0:
                 generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
