@@ -15,8 +15,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
     """
 
-    def generate_fom_data(self, nb_seeds=10, new_data_path=None, length=None, new_save_path=None, save_images=False,
-                          no_duration=False, verbose=1):
+    def generate_from_data(self, nb_seeds=10, new_data_path=None, length=None, new_save_path=None, save_images=False,
+                           no_duration=False, verbose=1):
         """
         Generate Midi file from the seed and the trained model
         :param nb_seeds: number of seeds for the generation

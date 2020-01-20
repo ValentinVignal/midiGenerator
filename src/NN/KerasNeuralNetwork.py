@@ -161,7 +161,6 @@ class KerasNeuralNetwork:
         if sequence_to_numpy:
             print('Loading all the training data as numpy arrays...')
             x, y = Sequences.sequence_to_numpy(sequence=generator)
-            print('batch size', generator.batch_size)
             history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
                                      callbacks=callbacks, batch_size=generator.batch_size)
         else:

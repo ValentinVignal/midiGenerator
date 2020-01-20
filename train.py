@@ -83,7 +83,7 @@ def main(args):
 
     # -------------------- Generate --------------------
     if args.generate:
-        midi_generator.generate_fom_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
+        midi_generator.generate_from_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
 
     # -------------------- Replicate --------------------
     if args.replicate:

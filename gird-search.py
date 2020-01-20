@@ -208,11 +208,11 @@ def main():
                                         verbose=1)
 
         if args.generate:
-            my_model.generate_fom_data(length=args.length,
-                                       nb_seeds=args.seed,
-                                       save_images=True,
-                                       no_duration=args.no_duration,
-                                       verbose=args.verbose_generation)
+            my_model.generate_from_data(length=args.length,
+                                        nb_seeds=args.seed,
+                                        save_images=True,
+                                        no_duration=args.no_duration,
+                                        verbose=args.verbose_generation)
         K.clear_session()
         del my_model.my_sequence
         del my_model.keras_nn

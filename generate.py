@@ -20,10 +20,10 @@ def main(args):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     my_model = MidiGenerator.with_model(id=args.load)  # Load the model
-    my_model.generate_fom_data(length=args.length,
-                               nb_seeds=args.nb_seeds,
-                               save_images=args.images,
-                               no_duration=args.no_duration)
+    my_model.generate_from_data(length=args.length,
+                                nb_seeds=args.nb_seeds,
+                                save_images=args.images,
+                                no_duration=args.no_duration)
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 
