@@ -1,6 +1,7 @@
 from pathlib import Path
 import pickle
 from termcolor import cprint, colored
+import shutil
 
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 import src.global_variables as g
@@ -52,7 +53,7 @@ class MGModel(MGInit):
         if print_model:
             self.print_model()
 
-    def recreate_model(self, id, with_weigths=True, print_model=True):
+    def recreate_model(self, id, with_weights=True, print_model=True):
         """
         create a new model witht the same options as the saved model and then load the weights (if with_weights==True)
         :param id:
@@ -60,27 +61,29 @@ class MGModel(MGInit):
         :param print_model:
         :return:
         """
-        self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
-        self.work_on = g.letter2work_on(work_on_letter)
-        self.get_full_name(indice)
+        name, model_id, work_on_letter, total_epochs, indice = id.split('-')
         path_to_load = Path('saved_models',
-                            '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, total_epochs,
-                                                                     indice, work_on_letter))
+                            f'{name}-m({model_id})-wo({work_on_letter})-e({total_epochs})-({indice})')
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
-            self.input_param = d['nn']['input_param']
+            # Model
+            self.model_id = d['model_id']
+            self.work_on = d['work_on']
+            self.input_param = d['input_param']
+            # Data
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
-            self.work_on = d['work_on']
+            self.mono = d['mono']
             self.data_transformed_path = d['data_transformed_path']
+            # Logistic
+            self.total_epochs = d['epochs'] if with_weights else 0
+            self.full_name = d['full_name'] if with_weights else self.get_full_name(indice)
 
         self.keras_nn = KerasNeuralNetwork()
         self.keras_nn.recreate((path_to_load / 'MyNN').as_posix())
 
-        if with_weigths:
-            self.keras_nn.load_weights((path_to_load / 'MyNN').as_posix())
-            self.total_epochs = int(total_epochs)
-            self.get_full_name(indice)
+        if with_weights:
+            self.keras_nn.load_weights(path_to_load / 'MyNN')
         if print_model:
             self.print_model()
 
@@ -99,11 +102,10 @@ class MGModel(MGInit):
         else:
             self.get_new_full_name()
         path_to_load = Path('saved_models',
-                            '{0}-m({1})-wo({4})-e({2})-({3})'.format(self.name, self.model_id, self.total_epochs,
-                                                                     indice, work_on_letter))
-        self.keras_nn.load_weights(str(path_to_load / 'MyNN.h5'))
+                            f'{self.name}-m({self.model_id})-wo({work_on_letter})-e({self.total_epochs})-({indice})')
+        self.keras_nn.load_weights(str(path_to_load / 'MyNN'))
         self.print_model()
-        print('Weights of the', colored('id', 'white', 'on_blue'), 'model loaded')
+        print('Weights of the', colored(f'{id}', 'white', 'on_blue'), 'model loaded')
 
     # --------------------------------------------------
 
@@ -113,28 +115,32 @@ class MGModel(MGInit):
     def save_model(self, path=None):
         """
 
-        :param path: path were to save the model, if Nonem it will be at self.saved_model_path
+        :param path: path were to save the model, if None it will be at self.saved_model_path
         :return:
         """
+        # Where to save the model
         path_to_save = self.saved_model_path if path is None else Path(path)
+        # Clean the folder if already in use
+        shutil.rmtree(path_to_save.as_posix(), ignore_errors=True)     # Delete it if it exists
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
-        self.saved_model_path.mkdir(parents=True, exist_ok=True)
         self.keras_nn.save(str(path_to_save / 'MyNN'))
         with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
-            pickle.dump({
-                'name': self.name,
-                'model_id': self.model_id,
-                'full_name': self.full_name,
-                'nn': {
-                    'epochs': self.total_epochs,
-                    'input_param': self.input_param,
-                },
-                'instruments': self.instruments,
-                'notes_range': self.notes_range,
-                'work_on': self.work_on,
-                'data_transformed_path': self.data_transformed_path,
-                'mono': self.mono
-            }, dump_file)
+            pickle.dump(
+                dict(
+                    # For new_nn_model
+                    model_id=self.model_id,
+                    work_on=self.work_on,
+                    input_param=self.input_param,
+                    # data
+                    instruments=self.instruments,
+                    notes_range=self.notes_range,
+                    mono=self.mono,
+                    data_transformed_path=self.data_transformed_path,
+                    # logistic
+                    epochs=self.total_epochs,
+                    full_name=self.full_name
+                ), dump_file)
+        """
         summary.summarize_train(path_to_save, **{
             'full_name': self.full_name,
             'epochs': self.total_epochs,
@@ -143,6 +149,7 @@ class MGModel(MGInit):
             'notes_range': self.notes_range,
             'work_on': self.work_on
         })
+        """
 
         # TODO: Uncomment and make it work when there is a accuracy
         """
@@ -163,6 +170,6 @@ class MGModel(MGInit):
         :return:
         """
         for layer in self.keras_nn.model.layers:
-            lstm_weights = layer.get_weights()  # list of numpy arrays
-            print('Lstm weights:', lstm_weights)
+            weights = layer.get_weights()  # list of numpy arrays
+            print('Weights:', weights)
 

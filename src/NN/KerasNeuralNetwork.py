@@ -6,13 +6,12 @@ import dill
 import json
 import math
 from time import time
-import progressbar
-import numpy as np
 import gc
 
 import src.global_variables as g
 from src.NN import Sequences
 from . import Models
+from src import tb
 
 K = tf.keras.backend
 
@@ -30,6 +29,7 @@ class KerasNeuralNetwork:
         # --- TF ---
         self.model = None
         self.opt_param = None
+        self.loss_options = None
         self.decay = None
         self.callbacks = []
 
@@ -54,6 +54,7 @@ class KerasNeuralNetwork:
         del self.callbacks
         del self.model_options
         del self.opt_param
+        del self.loss_options
 
     def new_model(self, model_id, input_param, opt_param, step_length=1, model_options={}, loss_options={}):
         """
@@ -68,6 +69,7 @@ class KerasNeuralNetwork:
         """
 
         self.step_length = step_length
+        self.loss_options = loss_options
 
         model_name, model_param_s, nb_steps = model_id.split(g.split_model_id)
         nb_steps = int(nb_steps)
@@ -137,6 +139,7 @@ class KerasNeuralNetwork:
 
         return optimizer, step_decay
 
+    # TODO: Make it work (not working for now)
     @staticmethod
     def decay_func(lr_init, **kwargs):
         def step_decay(epoch):
@@ -195,25 +198,46 @@ class KerasNeuralNetwork:
         :return:
         """
         path = Path(path)
+        # shutil.rmtree(path.as_posix(), ignore_errors=True)
         path.mkdir(exist_ok=True, parents=True)
-        string_decay = dill.dumps(self.decay)
-        with open(str(path / 'weights.p'), 'wb') as dump_file:
-            pickle.dump({
-                'weights': self.model.get_weights()
-            }, dump_file)
+        with open(path / 'MyNN.p', 'wb') as dump_file:
+            pickle.dump(
+                dict(
+                    model_id=self.model_id,
+                    input_param=self.input_param,
+                    opt_param=self.opt_param,
+                    step_length=self.step_length,
+                    model_options=self.model_options,
+                    loss_options=self.loss_options
+                ), dump_file
+            )
+        self.save_weights(path=path)
 
-        with open(str(path / 'MyNN.p'), 'wb') as dump_file:
-            pickle.dump({
-                'model_id': self.model_id,
-                'input_param': self.input_param,
-                'nb_steps': self.nb_steps,
-                'decay': string_decay,
-                'opt_param': self.opt_param,
-                'step_length': self.step_length,
-                'model_options': self.model_options,
-            }, dump_file)
+        if self.tensorboard is not None:
+            # Get the folder where all the Tensorboard information are stored
+            log_dir = self.tensorboard.log_dir
+            # Get the training data
+            train_data = tb.get_tensorboard_data(path=log_dir)
+            # Save the plot images
+            tb.save_tensorboard_plots(data=train_data, path=path / 'plots')
 
-    def recreate(self, path):
+
+    def save_weights(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        path = Path(path)
+        path.mkdir(exist_ok=True, parents=True)
+        with open(path / 'weights.p', 'wb') as dump_file:
+            pickle.dump(
+                dict(
+                    weights=self.model.get_weights()
+                ), dump_file
+            )
+
+    def recreate(self, path, with_weights=True):
         """
 
         :param path:
@@ -224,13 +248,15 @@ class KerasNeuralNetwork:
             d = pickle.load(dump_file)
             model_id = d['model_id']
             input_param = d['input_param']
-            opt_param = d['input_param']
-            type_loss = d['type_loss']
+            opt_param = d['opt_param']
             step_length = d['step_length']
             model_options = d['model_options']
+            loss_options = d['loss_options']
 
-        self.new_model(model_id=model_id, input_param=input_param, opt_param=opt_param, type_loss=type_loss,
-                       step_length=step_length, model_options=model_options)
+        self.new_model(model_id=model_id, input_param=input_param, opt_param=opt_param, step_length=step_length,
+                       model_options=model_options, loss_options=loss_options)
+        if with_weights:
+            self.load_weights(path=path)
 
     def load_weights(self, path):
         """
@@ -250,6 +276,10 @@ class KerasNeuralNetwork:
         :return:
         """
         return self.model.predict(input, verbose=0)
+
+    # ------------------------------------------------------------
+    #                       Static methods
+    # ------------------------------------------------------------
 
     @staticmethod
     def allow_growth():
@@ -281,3 +311,4 @@ class KerasNeuralNetwork:
     @staticmethod
     def disable_eager_exection():
         tf.compat.v1.disable_eager_execution()
+

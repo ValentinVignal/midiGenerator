@@ -14,7 +14,7 @@ tests_hp
 hp_search
 
 # TensorFlow
-tensorboard
+/tensorboard/
 
 # Python
 **/__pycache__/
