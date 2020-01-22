@@ -140,24 +140,20 @@ class MGModel(MGInit):
                     epochs=self.total_epochs,
                     full_name=self.full_name
                 ), dump_file)
-        """
-        summary.summarize_train(path_to_save, **{
-            'full_name': self.full_name,
-            'epochs': self.total_epochs,
-            'input_param': self.input_param,
-            'instruments': self.instruments,
-            'notes_range': self.notes_range,
-            'work_on': self.work_on
-        })
-        """
+        self.keras_nn.save_tensorboard_plots(path_to_save / 'plots')
 
-        # TODO: Uncomment and make it work when there is a accuracy
-        """
-        if self.mono:
-            summary.save_train_history_mono(self.train_history, len(self.instruments), path_to_save)
-        else:
-            summary.save_train_history(self.train_history, len(self.instruments), path_to_save)
-        """
+        summary.summarize(
+            # Function params
+            path=path_to_save,
+            title=self.full_name,
+            # Summary params
+            epochs=self.total_epochs,
+            input_param=self.input_param,
+            instruments=self.instruments,
+            notes_range=self.notes_range,
+            work_on=self.work_on,
+            mono=self.mono
+        )
 
         print(colored(f'Model saved in {path_to_save}', 'green'))
         return path_to_save

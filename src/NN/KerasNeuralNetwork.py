@@ -7,6 +7,7 @@ import json
 import math
 from time import time
 import gc
+from termcolor import colored, cprint
 
 import src.global_variables as g
 from src.NN import Sequences
@@ -213,6 +214,7 @@ class KerasNeuralNetwork:
             )
         self.save_weights(path=path)
 
+        """
         if self.tensorboard is not None:
             # Get the folder where all the Tensorboard information are stored
             log_dir = self.tensorboard.log_dir
@@ -220,7 +222,28 @@ class KerasNeuralNetwork:
             train_data = tb.get_tensorboard_data(path=log_dir)
             # Save the plot images
             tb.save_tensorboard_plots(data=train_data, path=path / 'plots')
+        """
 
+    @property
+    def tensorboard_log_dir(self):
+        if self.tensorboard is None:
+            return None
+        else:
+            # Get the folder where all the Tensorboard information are stored
+            return self.tensorboard.log_dir
+
+    def save_tensorboard_plots(self, path):
+        if self.tensorboard_log_dir is not None:
+            self.create_tensorboard_plots(log_dir=self.tensorboard_log_dir, path=path)
+        else:
+            cprint('No tensorboard found', 'red')
+
+    @staticmethod
+    def create_tensorboard_plots(log_dir, path):
+        # Get the training data
+        train_data = tb.get_tensorboard_data(path=log_dir)
+        # Save the plot images
+        tb.save_tensorboard_plots(data=train_data, path=path)
 
     def save_weights(self, path):
         """

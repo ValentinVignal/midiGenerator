@@ -148,15 +148,17 @@ def main(args):
             'nb_files_per_npy': g.nb_files_per_npy
         }, dump_file)
 
-    summary.summarize_compute_data(data_transformed_path,
-                                   **{
-                                       'data_name': args.data,
-                                       'nb_files': nb_valid_files,
-                                       'nb_instruments': len(args.instruments),
-                                       'instruments': args.instruments,
-                                       'input_size': all_shapes[0][0][2],
-                                       'notes_range': args.notes_range
-                                   })
+    summary.summarize(
+        # Function params
+        path=data_transformed_path,
+        title=args.data,
+        # Summary params
+        nb_files=nb_valid_files,
+        nb_instruments=len(args.instrument),
+        instruments=args.instruments,
+        input_size=all_shapes[0][0][2],
+        notes_range=args.notes_range
+    )
 
     print('Number of songs :', colored('{0}'.format(nb_valid_files), 'blue'))
     print(colored('---------- Done ----------', 'grey', 'on_green'))

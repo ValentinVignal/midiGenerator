@@ -101,13 +101,16 @@ class MGReplicate(MGComputeGeneration, MGInit):
         if self.batch is not None:
             self.sequence.change_batch_size(self.batch)
 
-        summary.summarize_generation(str(self.save_midis_path), **{
-            'full_name': self.full_name,
-            'epochs': self.total_epochs,
-            'input_param': self.input_param,
-            'instruments': self.instruments,
-            'notes_range': self.notes_range
-        })
+        summary.summarize(
+            # Function params
+            path=self.save_midis_path,
+            title=self.full_name,
+            # Summary params
+            epochs=self.total_epochs,
+            input_params=self.input_param,
+            instruments=self.instruments,
+            notes_range=self.notes_range
+        )
 
         cprint('Done replicating', 'green')
 
@@ -217,13 +220,16 @@ class MGReplicate(MGComputeGeneration, MGInit):
         if self.batch is not None:
             self.sequence.change_batch_size(self.batch)
 
-        summary.summarize_generation(str(self.save_midis_path), **{
-            'full_name': self.full_name,
-            'epochs': self.total_epochs,
-            'input_param': self.input_param,
-            'instruments': self.instruments,
-            'notes_range': self.notes_range
-        })
+        summary.summarize(
+            # Function params
+            path=self.save_midis_path,
+            title=self.full_name,
+            # Summary params
+            epochs=self.total_epochs,
+            input_params=self.input_param,
+            instruments=self.instruments,
+            notes_range=self.notes_range
+        )
 
         cprint('Done replicating (fill)', 'green')
 
