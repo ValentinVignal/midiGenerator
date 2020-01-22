@@ -9,7 +9,6 @@ from time import time
 import progressbar
 import numpy as np
 import gc
-from pympler import asizeof
 
 import src.global_variables as g
 from src.NN import Sequences

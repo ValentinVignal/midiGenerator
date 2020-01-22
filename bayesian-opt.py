@@ -15,7 +15,6 @@ K = tf.keras.backend
 
 from src.MidiGenerator import MidiGenerator
 from src.NN.Callbacks import LossHistory
-import src.global_variables as g
 from src import Args
 from src.Args import ArgType, Parser
 
