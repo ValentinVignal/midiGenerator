@@ -8,6 +8,8 @@ import math
 from time import time
 import progressbar
 import numpy as np
+import gc
+from pympler import asizeof
 
 import src.global_variables as g
 from src.NN import Sequences
@@ -50,6 +52,9 @@ class KerasNeuralNetwork:
     def __del__(self):
         del self.tensorboard
         del self.model
+        del self.callbacks
+        del self.model_options
+        del self.opt_param
 
     def new_model(self, model_id, input_param, opt_param, step_length=1, model_options={}, loss_options={}):
         """
@@ -163,6 +168,9 @@ class KerasNeuralNetwork:
             x, y = Sequences.sequence_to_numpy(sequence=generator)
             history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
                                      callbacks=callback_list, batch_size=generator.batch_size)
+            del x, y
+            gc.collect()
+
         else:
             if validation > 0:
                 generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,

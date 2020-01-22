@@ -180,3 +180,8 @@ class KerasSequence(tf.keras.utils.Sequence):
 
         return all_len
 
+    def __del__(self, *args, **kwargs):
+        del self.npy_loaded
+
+
+

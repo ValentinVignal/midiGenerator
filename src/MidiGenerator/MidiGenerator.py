@@ -55,3 +55,6 @@ class MidiGenerator(MGGenerate, MGReplicate, MGComputeGeneration, MGData, MGTrai
         my_model.recreate_model(id=id, with_weigths=with_weights)
         return my_model
 
+    def __del__(self, *args, **kwargs):
+        MGInit.__del__(self, *args, **kwargs)
+

@@ -268,6 +268,7 @@ def main(args):
 
         print(s)
 
+
         midi_generator = create_model(
             lr=lr,
             optimizer=optimizer,
@@ -289,8 +290,10 @@ def main(args):
             l_rhythm_cost=l_rhythm_cost,
             take_all_step_rhythm=take_all_step_rhythm
         )
+        cprint(f'Size of midi_generator before train: {asizeof.asizeof(midi_generator)}', 'red')
         history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
                                        validation=args.validation, sequence_to_numpy=args.seq2np)
+        cprint(f'Size of midi_generator after train: {asizeof.asizeof(midi_generator)}', 'red')
         accuracy = get_history_acc(history)
 
         global best_accuracy
@@ -327,6 +330,7 @@ def main(args):
         n_calls=args.n_calls,
         x0=default_dim
     )
+    cprint(f'Size of search_result: {asizeof.asizeof(search_result)}', 'red')
     space = search_result.space
 
     best_param_dict = space.point_to_dict(search_result.x)
