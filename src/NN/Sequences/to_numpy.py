@@ -1,4 +1,5 @@
 import numpy as np
+import gc
 
 
 def sequence_to_numpy(sequence):
@@ -35,6 +36,8 @@ def sequence_to_numpy(sequence):
         y = [np.concatenate(y_, axis=0) for y_ in y_list]
     else:
         y = np.concatenate(y_list, axis=0)
+    del x_list, y_list
+    gc.collect()
 
     return x, y
 
