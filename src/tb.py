@@ -130,10 +130,6 @@ def save_tensorboard_plots(data, path):
     plt.savefig((path / 'Loss_KLD').with_suffix('.png'))
 
 
-# data = get_tensorboard_data('../tensorboard/1579681879.6861353')
-# save_tensorboard_plots(data, 'test_plot')
-
-
 
 
 
