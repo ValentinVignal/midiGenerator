@@ -13,6 +13,7 @@ import src.global_variables as g
 from src.NN import Sequences
 from . import Models
 from src import tb
+from . import Callbacks
 
 K = tf.keras.backend
 
@@ -22,7 +23,7 @@ class KerasNeuralNetwork:
 
     """
 
-    def __init__(self):
+    def __init__(self, checkpoint=True):
         self.model_id = None
         self.input_param = None
         self.nb_steps = None
@@ -48,6 +49,30 @@ class KerasNeuralNetwork:
             # embedding_freq=0.5,
             # write_grad=True
         )
+        if checkpoint:
+            self.checkpoint_path = self.get_checkpoint_path()
+            self.callbacks.append(Callbacks.CheckPoint(
+                filepath=self.checkpoint_path.as_posix()
+            ))
+        else:
+            self.checkpoint_path = None
+
+    @staticmethod
+    def get_checkpoint_path():
+        """
+
+        :return:
+        """
+        checkpoint_path = Path('temp')
+        checkpoint_path.mkdir(exist_ok=True, parents=True)
+        i = 0
+        while (checkpoint_path / f'token_checkpoint_weights_{i}.txt').exists()\
+                or (checkpoint_path / f'checkpoint_weights_{i}.h5').exists():
+            i += 1
+        token_path = checkpoint_path / f'token_checkpoint_weights_{i}.txt'
+        with open(token_path.as_posix(), 'w') as f:
+            f.write('token file')
+        return checkpoint_path / f'checkpoint_weights_{i}.h5'
 
     def __del__(self):
         del self.tensorboard
@@ -162,19 +187,20 @@ class KerasNeuralNetwork:
         """
         # TODO: To do custom decay: make it work with LSTM and non eager execution
         # callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
-        for callback in self.callbacks:
-            callback.update_with_fit_args(epochs=epochs)
-        callback_list = self.callbacks + [self.tensorboard] + callbacks
 
         if sequence_to_numpy:
             print('Loading all the training data as numpy arrays...')
             x, y = Sequences.sequence_to_numpy(sequence=generator)
-            history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
-                                     callbacks=callback_list, batch_size=generator.batch_size)
+            history = self.train(x=x, y=y, epochs=epochs, verbose=verbose, callbacks=callbacks,
+                                 batch_size=generator.batch_size, validation=validation)
             del x, y
             gc.collect()
 
         else:
+            for callback in self.callbacks:
+                callback.update_with_fit_args(epochs=epochs)
+            callback_list = self.callbacks + [self.tensorboard] + callbacks
+
             if validation > 0:
                 generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
                                                                                                        validation_split=validation)
@@ -187,6 +213,25 @@ class KerasNeuralNetwork:
                                                    shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return history.history
+
+    def train(self, epochs, x, y, callbacks=[], verbose=1, validation=0.0, batch_size=None):
+        """
+
+        :param epochs:
+        :param x:
+        :param y:
+        :param callbacks:
+        :param verbose:
+        :param validation:
+        :return:
+        """
+        for callback in self.callbacks:
+            callback.update_with_fit_args(epochs=epochs)
+        callback_list = self.callbacks + [self.tensorboard] + callbacks
+
+        history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
+                                 callbacks=callback_list, batch_size=batch_size, verbose=verbose)
+        return history
 
     def evaluate(self, generator, verbose=1):
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
