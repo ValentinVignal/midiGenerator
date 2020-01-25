@@ -10,17 +10,28 @@ layers = tf.keras.layers
 
 
 class DenseBlock(KerasLayer):
-    def __init__(self, units: int, dropout: float = g.dropout):
+    def __init__(self, units: int, dropout: float = g.dropout, *args, **kwargs):
         """
 
         :param units: int
         :param dropout:
         """
-        super(DenseBlock, self).__init__()
+        super(DenseBlock, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.units = units,
+        self.dropout = dropout
+
         self.dense = layers.Dense(units)
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
-        self.dropout = layers.Dropout(dropout)
+        self.dropout_layer = layers.Dropout(dropout)
+
+    def get_config(self):
+        config = super(DenseBlock, self).get_config()
+        config.update(dict(
+            units=self.units,
+            dropout=self.dropout
+        ))
 
     def build(self, input_shape):
         """
@@ -32,7 +43,7 @@ class DenseBlock(KerasLayer):
         new_shape = self.dense.compute_output_shape(input_shape)
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
-        self.dropout.build(new_shape)
+        self.dropout_layer.build(new_shape)
         self.set_weights_variables(self.dense, self.batch_norm)
         super(DenseBlock, self).build(input_shape)
 
@@ -40,7 +51,7 @@ class DenseBlock(KerasLayer):
         x = self.dense(inputs)
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
-        return self.dropout(x)
+        return self.dropout_layer(x)
 
     def compute_output_shape(self, input_shape):
         return self.dense.compute_output_shape(input_shape)
@@ -50,19 +61,31 @@ class DenseCoder(KerasLayer):
 
     type_size_list = t.List[int]
 
-    def __init__(self, size_list: type_size_list, dropout: float = g.dropout):
+    def __init__(self, size_list: type_size_list, dropout: float = g.dropout, *args, **kwargs):
         """
 
         :param size_list: list<int>, (nb_blocks,)
         :param dropout: float
         """
-        super(DenseCoder, self).__init__()
+        super(DenseCoder, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.size_list = size_list
+        self.dropout =dropout
+
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
 
     def init_dense_blocks(self, size_list: t.List, dropout: float = g.dropout):
         for size in size_list:
             self.dense_blocks.append(DenseBlock(size, dropout=dropout))
+
+    def get_config(self):
+        config = super(DenseCoder, self).get_config()
+        config.update(dict(
+            size_list=self.size_list,
+            dropout=self.dropout
+        ))
+        return config
 
     def build(self, input_shape):
         """
@@ -95,12 +118,17 @@ class DenseSameShape(KerasLayer):
     """
     Return a Dense layer which has the same shape as the inputs
     """
-    def __init__(self, **kwargs):
-        super(DenseSameShape, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(DenseSameShape, self).__init__(*args, **kwargs)
         self.kwargs = kwargs
         self.dense = None
         self.already_built = False
         self.units = None
+
+    def get_config(self):
+        config = super(DenseSameShape, self).get_config()
+        config.update(self.kwargs)
+        return config
 
     def build(self, input_shape):
         """
@@ -128,8 +156,11 @@ class NDense(KerasLayer):
     """
     Return a list of N tensor from Denses layers
     """
-    def __init__(self, units, n=2,**kwargs):
-        super(NDense, self).__init__(**kwargs)
+    def __init__(self, units, n=2, *args, **kwargs):
+        super(NDense, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.units = units
+        self.n = n
 
         self.units, self.n = self.verify_attributs(units, n)
         self.denses = [layers.Dense(self.units[u]) for u in units]
@@ -149,6 +180,14 @@ class NDense(KerasLayer):
             units = [units for i in range(n)]
             return units, n
 
+    def get_config(self):
+        config = super(NDense, self).get_config()
+        config.update(dict(
+            units=self.units,
+            n=self.n
+        ))
+        return config
+
     def build(self, input_shape):
         for dense in self.denses:
             dense.build(input_shape)
@@ -165,10 +204,19 @@ class DenseForMean(KerasLayer):
     """
        Used to compute the mean of something using a Dense Layer
     """
-    def __init__(self, units):
-        super(DenseForMean, self).__init__()
+    def __init__(self, units, *args, **kwargs):
+        super(DenseForMean, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.units = units
+
         self.dense = layers.Dense(units)
+
+    def get_config(self):
+        config = super(DenseForMean, self).get_config()
+        config.update(dict(
+            units=self.units
+        ))
+        return config
 
     def build(self, input_shape):
         self.dense.build(input_shape)
@@ -186,10 +234,19 @@ class DenseForSTD(KerasLayer):
        Used to compute the mean of something using a Dense Layer
     """
 
-    def __init__(self, units):
-        super(DenseForSTD, self).__init__()
+    def __init__(self, units, *args, **kwargs):
+        super(DenseForSTD, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.units = units
+
         self.dense = layers.Dense(units)
+
+    def get_config(self):
+        config = super(DenseForSTD, self).get_config()
+        config.update(dict(
+            units=self.units
+        ))
+        return config
 
     def build(self, input_shape):
         self.dense.build(input_shape)

@@ -14,29 +14,41 @@ layers = tf.keras.layers
 # ------------------------------------------------------------
 
 class ConvBlock3D(KerasLayer):
-    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout):
+    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout, *args, **kwargs):
         """
 
         :param filters: int: the size of the filters
         :param strides: tuple<int>: (3,):
         :param dropout: float:
         """
-        super(ConvBlock3D, self).__init__()
+        super(ConvBlock3D, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.filters = filters
         self.strides = strides
+        self.dropout = dropout
+
         self.conv = layers.Conv3D(filters=filters,
                                   kernel_size=(1, 5, 5),
                                   strides=strides,
                                   padding='same')
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
-        self.dropout = layers.Dropout(dropout)
+        self.dropout_layer = layers.Dropout(dropout)
+
+    def get_config(self):
+        config = super(ConvBlock3D, self).get_config()
+        config.update(dict(
+            filters=self.filters,
+            strides=self.strides,
+            dropout=self.dropout
+        ))
 
     def build(self, input_shape: t.bshape):
         self.conv.build(input_shape)
         new_shape = self.conv.compute_output_shape(input_shape)
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
-        self.dropout.build(new_shape)
+        self.dropout_layer.build(new_shape)
         self.set_weights_variables(self.conv, self.batch_norm)
         super(ConvBlock3D, self).build(input_shape)
 
@@ -44,7 +56,7 @@ class ConvBlock3D(KerasLayer):
         x = self.conv(inputs)
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
-        return self.dropout(x)
+        return self.dropout_layer(x)
 
     def compute_output_shape(self, input_shape):
         return self.conv.compute_output_shape(input_shape)
@@ -52,7 +64,7 @@ class ConvBlock3D(KerasLayer):
 
 class ConvTransposedBlock3D(KerasLayer):
     def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.dropout,
-                 final_shape: t.anyshape_ = None):
+                 final_shape: t.anyshape_ = None, *args, **kwargs):
         """
 
         :param filters: int:
@@ -61,9 +73,12 @@ class ConvTransposedBlock3D(KerasLayer):
         :param final_shape: Optional[Tuple[int]]
             ⚠ Batch dim in the axis0 : (?, a, b, c, d) ⚠
         """
-        super(ConvTransposedBlock3D, self).__init__()
-
+        super(ConvTransposedBlock3D, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.filters = filters
+        self.strides = strides,
+        self.dropout = dropout,
+        self.final_shape: t.bshape_ = ConvTransposedBlock3D.check_final_shape(final_shape)
 
         self.conv_transposed = layers.Conv3DTranspose(filters=filters,
                                                       kernel_size=(1, 5, 5),
@@ -71,9 +86,17 @@ class ConvTransposedBlock3D(KerasLayer):
                                                       strides=strides)
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
-        self.dropout = layers.Dropout(dropout)
+        self.dropout_layer = layers.Dropout(dropout)
 
-        self.final_shape: t.bshape_ = ConvTransposedBlock3D.check_final_shape(final_shape)
+    def get_config(self):
+        config = super(ConvTransposedBlock3D, self).get_config()
+        config.update(dict(
+            filters=self.filters,
+            strides=self.strides,
+            dropout=self.dropout,
+            final_shape=self.final_shape
+        ))
+        return config
 
     @staticmethod
     def check_final_shape(final_shape: t.anyshape_) -> t.bshape_:
@@ -96,7 +119,7 @@ class ConvTransposedBlock3D(KerasLayer):
             new_shape = self.final_shape
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
-        self.dropout.build(new_shape)
+        self.dropout_layer.build(new_shape)
         self.set_weights_variables(self.conv_transposed, self.batch_norm)
         super(ConvTransposedBlock3D, self).build(input_shape)
 
@@ -109,7 +132,7 @@ class ConvTransposedBlock3D(KerasLayer):
                 x = x[:, :, :-1]
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
-        return self.dropout(x)
+        return self.dropout_layer(x)
 
     def compute_output_shape(self, input_shape):
         if self.final_shape is not None:
@@ -123,29 +146,42 @@ class ConvTransposedBlock3D(KerasLayer):
 # ------------------------------------------------------------
 
 class ConvBlock2D(KerasLayer):
-    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.dropout):
+    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.dropout, *args, **kwargs):
         """
 
         :param filters: int: the size of the filters
         :param strides: tuple<int>: (2,):
         :param dropout: float:
         """
-        super(ConvBlock2D, self).__init__()
+        super(ConvBlock2D, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.filters = filters
         self.strides = strides
+        self.dropout = dropout
+
         self.conv = layers.Conv2D(filters=filters,
                                   kernel_size=(5, 5),
                                   strides=strides,
                                   padding='same')
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
-        self.dropout = layers.Dropout(dropout)
+        self.dropout_layer = layers.Dropout(dropout)
+
+    def get_config(self):
+        config = super(ConvBlock2D, self).get_config()
+        config.update(dict(
+            fitlers=self.filters,
+            strides=self.strides,
+            dropout=self.dropout
+        ))
+        return config
 
     def build(self, input_shape: t.bshape):
         self.conv.build(input_shape)
         new_shape = self.conv.compute_output_shape(input_shape)
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
-        self.dropout.build(new_shape)
+        self.dropout_layer.build(new_shape)
         self.set_weights_variables(self.conv, self.batch_norm)
         super(ConvBlock2D, self).build(input_shape)
 
@@ -153,7 +189,7 @@ class ConvBlock2D(KerasLayer):
         x = self.conv(inputs)
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
-        return self.dropout(x)
+        return self.dropout_layer(x)
 
     def compute_output_shape(self, input_shape):
         return self.conv.compute_output_shape(input_shape)
@@ -161,7 +197,7 @@ class ConvBlock2D(KerasLayer):
 
 class ConvTransposedBlock2D(KerasLayer):
     def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.dropout,
-                 final_shape: t.anyshape_ = None):
+                 final_shape: t.anyshape_ = None, *args, **kwargs):
         """
 
         :param filters: int:
@@ -170,9 +206,12 @@ class ConvTransposedBlock2D(KerasLayer):
         :param final_shape: Optional[Tuple[int]]
             ⚠ Batch dim in the axis0 : (?, a, b, c, d) ⚠
         """
-        super(ConvTransposedBlock2D, self).__init__()
-
+        super(ConvTransposedBlock2D, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.filters = filters
+        self.strides = strides
+        self.dropout = dropout
+        self.final_shape = final_shape
 
         self.conv_transposed = layers.Conv2DTranspose(filters=filters,
                                                       kernel_size=(5, 5),
@@ -180,7 +219,7 @@ class ConvTransposedBlock2D(KerasLayer):
                                                       strides=strides)
         self.batch_norm = layers.BatchNormalization()
         self.leaky_relu = layers.LeakyReLU()
-        self.dropout = layers.Dropout(dropout)
+        self.dropout_layer = layers.Dropout(dropout)
 
         self.final_shape: t.bshape_ = ConvTransposedBlock2D.check_final_shape(final_shape)
 
@@ -197,6 +236,16 @@ class ConvTransposedBlock2D(KerasLayer):
         else:
             return (None, *final_shape)
 
+    def get_config(self):
+        config = super(ConvTransposedBlock2D, self).get_config()
+        config.update(dict(
+            filters=self.filters,
+            strides=self.strides,
+            dropout=self.dropout,
+            final_shape=self.final_shape
+        ))
+        return config
+
     def build(self, input_shape):
         self.conv_transposed.build(input_shape)
         if self.final_shape is None:
@@ -205,7 +254,7 @@ class ConvTransposedBlock2D(KerasLayer):
             new_shape = self.final_shape
         self.batch_norm.build(new_shape)
         self.leaky_relu.build(new_shape)
-        self.dropout.build(new_shape)
+        self.dropout_layer.build(new_shape)
         self.set_weights_variables(self.conv_transposed, self.batch_norm)
         super(ConvTransposedBlock2D, self).build(input_shape)
 
@@ -218,7 +267,7 @@ class ConvTransposedBlock2D(KerasLayer):
                 x = x[:, :, :-1]
         x = self.batch_norm(x)
         x = self.leaky_relu(x)
-        return self.dropout(x)
+        return self.dropout_layer(x)
 
     def compute_output_shape(self, input_shape):
         if self.final_shape is not None:

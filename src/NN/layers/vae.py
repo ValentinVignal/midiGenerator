@@ -13,16 +13,25 @@ class ProductOfExpert(KerasLayer):
 
     """
 
-    def __init__(self, axis=0, eps=1e-8):
+    def __init__(self, axis=0, eps=1e-8, *args, **kwargs):
         """
 
         :param axis: (not batch in it)
         """
-        super(ProductOfExpert, self).__init__()
-
+        super(ProductOfExpert, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.axis = axis
-        self.axis_with_batch = axis + 1
         self.eps = eps
+
+        self.axis_with_batch = axis + 1
+
+    def get_config(self):
+        config = super(ProductOfExpert, self).get_config()
+        config.update(dict(
+            axis=self.axis,
+            eps=self.eps
+        ))
+        return config
 
     def build(self, input_shape):
         super(ProductOfExpert, self).build(input_shape)
@@ -63,16 +72,25 @@ class ProductOfExpertMask(KerasLayer):
 
     """
 
-    def __init__(self, axis=0, eps=1e-8):
+    def __init__(self, axis=0, eps=1e-8, *args, **kwargs):
         """
 
         :param axis: (not batch in it) : Axis of the modalities
         """
-        super(ProductOfExpertMask, self).__init__()
-
+        super(ProductOfExpertMask, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.axis = axis
-        self.axis_with_batch = axis + 1
         self.eps = eps
+
+        self.axis_with_batch = axis + 1
+
+    def get_config(self):
+        config = super(ProductOfExpertMask, self).get_config()
+        config.update(dict(
+            axis=self.axis,
+            eps=self.eps
+        ))
+        return config
 
     def build(self, input_shape):
         super(ProductOfExpertMask, self).build(input_shape)
@@ -116,8 +134,12 @@ class NaNToZeros(KerasLayer):
 
     """
 
-    def __init__(self):
-        super(NaNToZeros, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(NaNToZeros, self).__init__(*args, **kwargs)
+
+    def get_config(self):
+        config = super(NaNToZeros, self).get_config()
+        return config
 
     def build(self, input_shape):
         """
@@ -152,15 +174,18 @@ class KLD(KerasLayer):
     """
 
     """
-    def __init__(self, weight=1, sum_axis=None, **kwargs):
+    def __init__(self, weight=1, sum_axis=None, *args, **kwargs):
         """
 
         :param weight:
         :param sum_axis: To sum through time. If is None, no summation is done
         :param kwargs:
         """
-        super(KLD, self).__init__(**kwargs)
+        super(KLD, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.weigth = weight
+        self.sum_axis = sum_axis
+
         self.sum_axis_with_batch = self.compute_sum_axis_with_batch(sum_axis)
 
     @staticmethod
@@ -178,13 +203,16 @@ class KLD(KerasLayer):
                     sum_axis_with_batch.append(axis)
             return sum_axis_with_batch
 
+    def get_config(self):
+        config = super(KLD, self).get_config()
+        config.update(dict(
+            weight=self.weigth,
+            sum_axis=self.sum_axis
+        ))
+        return config
+
     def call(self, inputs):
         mean, std = inputs
-        """""
-        return - self.weigth * 0.5 * tf.reduce_mean(
-            2 * math.log(std) - math.square(mean) - math.square(std) + 1
-        )
-        """
         return self.weigth * Loss.cost.kld(mean, std, sum_axis=self.sum_axis_with_batch)
 
     def compute_output_shape(self, input_shape):

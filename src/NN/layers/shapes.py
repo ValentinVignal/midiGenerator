@@ -24,14 +24,23 @@ class SwitchListAxis(KerasLayer):
 
     """
 
-    def __init__(self, axis=0):
+    def __init__(self, axis=0, *args, **kwargs):
         """
 
         :param axis: Batch axis is not included
         """
-        super(SwitchListAxis, self).__init__()
+        super(SwitchListAxis, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.axis =axis
+
         self.perms = None
+
+    def get_config(self):
+        config = super(SwitchListAxis, self).get_config()
+        config.update(dict(
+            axis=self.axis
+        ))
+        return config
 
     def build(self, input_shape):
         self.verify_shapes(input_shape)
@@ -78,12 +87,16 @@ class SwitchListAxis(KerasLayer):
 
 
 class Stack(KerasLayer):
-    def __init__(self, axis: t.Any = 0, axis_reversed=False):
+    def __init__(self, axis: t.Any = 0, axis_reversed=False, *args, **kwargs):
         """
 
         :param axis: No batch in axis
         """
-        super(Stack, self).__init__()
+        super(Stack, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.param_axis = axis
+        self.param_axis_reversed = axis_reversed
+
         self.axis = None
         self.axis_with_batch = None
         self.compute_axis(axis)
@@ -96,6 +109,14 @@ class Stack(KerasLayer):
             axis = list(axis)
         assert isinstance(axis, list)
         self.axis = axis
+
+    def get_config(self):
+        config = super(Stack, self).get_config()
+        config.update(dict(
+            axis=self.param_axis,
+            axis_reversed=self.param_axis_reversed
+        ))
+        return config
 
     def build(self, input_shape):
         for ax in self.axis:
@@ -162,13 +183,17 @@ def is_equal_tuple(t1, t2, warn=False):
 
 class Unstack(KerasLayer):
 
-    def __init__(self, axis: t.Any = 0, axis_reversed=False):
+    def __init__(self, axis: t.Any = 0, axis_reversed=False, *args, **kwargs):
         """
 
         :param axis:
         :param axis_reversed:
         """
-        super(Unstack, self).__init__()
+        super(Unstack, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.param_axis = axis
+        self.param_axis_reversed = axis_reversed
+
         self.axis = None,
         self.axis_with_batch = None
         self.compute_axis(axis)
@@ -181,6 +206,14 @@ class Unstack(KerasLayer):
             axis = list(axis)
         assert isinstance(axis, list)
         self.axis = axis
+
+    def get_config(self):
+        config = super(Unstack, self).get_config()
+        config.update(dict(
+            axis=self.param_axis,
+            axis_reversed=self.param_axis_reversed
+        ))
+        return config
 
     def build(self, input_shape):
         self.compute_axis_with_batch(input_shape)
@@ -229,10 +262,19 @@ class Unstack(KerasLayer):
 
 
 class ExpandDims(KerasLayer):
-    def __init__(self, axis=0):
-        super(ExpandDims, self).__init__()
+    def __init__(self, axis=0, *args, **kwargs):
+        super(ExpandDims, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.axis = axis
+
         self.axis_with_batch = axis + 1 if axis >= 0 else axis
+
+    def get_config(self):
+        config = super(ExpandDims, self).get_config()
+        config.update(dict(
+            axis=self.axis
+        ))
+        return config
 
     def compute_output_shape(self, input_shape):
         return (*input_shape[:self.axis_with_batch], 1, *input_shape[self.axis_with_batch:])

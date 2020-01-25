@@ -10,6 +10,13 @@ class KerasLayer(layers.Layer):
     def __init__(self, *args, **kwargs):
         super(KerasLayer, self).__init__(*args, **kwargs)
 
+    @classmethod
+    def from_config(cls, *args, **kwargs):
+        print('args', args)
+        print('kwargs', kwargs)
+        return super(KerasLayer, cls).from_config(*args, **kwargs)
+
+
     def reset_weights_variables(self):
         """
         Used to reset the weights of a sublayers in a layers

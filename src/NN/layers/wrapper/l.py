@@ -10,7 +10,15 @@ class ApplySameOnList(KerasLayer):
         :param kwargs:
         """
         super(ApplySameOnList, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.layer = layer
+
+    def get_config(self):
+        config = super(ApplySameOnList, self).get_config()
+        config.update(dict(
+            layer=self.layer
+        ))
+        return config
 
     def build(self, input_shape):
         self.layer.build(input_shape[0])
@@ -33,7 +41,15 @@ class ApplyDifferentOnList(KerasLayer):
         :param kwargs:
         """
         super(ApplyDifferentOnList, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.layers = layers
+
+    def get_config(self):
+        config = super(ApplyDifferentOnList, self).get_config()
+        config.update(dict(
+            layers=self.layers
+        ))
+        return config
 
     def build(self, input_shape):
         if len(input_shape) != len(self.layers):
@@ -61,7 +77,15 @@ class ApplyDifferentLayers(KerasLayer):
         :param kwargs:
         """
         super(ApplyDifferentLayers, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.layers = layers
+
+    def get_config(self):
+        config = super(ApplyDifferentLayers, self).get_config()
+        config.update(dict(
+            layers=self.layers
+        ))
+        return config
 
     def build(self, input_shape):
         for i in range(len(input_shape)):

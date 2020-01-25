@@ -28,8 +28,17 @@ class Split(KerasLayer):
             ⚠ axis=0 correspond to the batch axis ⚠
         """
         super(Split, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
         self.num_or_size_to_split = num_or_size_to_split
         self.axis = axis
+
+    def get_config(self):
+        config = super(Split, self).get_config()
+        config.update(dict(
+            num_or_size_to_split=self.num_or_size_to_split,
+            axis=self.axis
+        ))
+        return config
 
     def build(self, input_shape):
         super(Split, self).build(input_shape)
@@ -69,12 +78,13 @@ class LastInstMono(KerasLayer):
     Last layer for a model
     """
 
-    def __init__(self, softmax_axis: int, **kwargs):
+    def __init__(self, softmax_axis: int, *args, **kwargs):
         """
 
         :param softmax_axis: int:
         """
-        super(LastInstMono, self).__init__(**kwargs)
+        super(LastInstMono, self).__init__(*args, **kwargs)
+        # --------- Raw parameters ----------
         self.softmax_axis = softmax_axis
 
         self.already_built = False
@@ -83,6 +93,13 @@ class LastInstMono(KerasLayer):
         self.dense = l_dense.DenseSameShape()
         self.reshape = None
         self.softmax = layers.Softmax(axis=softmax_axis)
+
+    def get_config(self):
+        config = super(LastInstMono, self).get_config()
+        config.update(dict(
+            softmax_axis=self.softmax_axis
+        ))
+        return config
 
     def build(self, input_shape):
         self.flatten.build(input_shape)
@@ -111,14 +128,15 @@ class LastInstMono(KerasLayer):
 
 
 class LastMono(KerasLayer):
-    def __init__(self, softmax_axis: int, names: t.Optional[str] = None, **kwargs):
+    def __init__(self, softmax_axis: int, names: t.Optional[str] = None, *args,  **kwargs):
         """
 
         :param softmax_axis:
         :param names:
         """
-        super(LastMono, self).__init__(**kwargs)
-        self.sofmax_axis = softmax_axis
+        super(LastMono, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.softmax_axis = softmax_axis
         self.names = 'last_mono' if names is None else names
 
         self.split = None
@@ -126,13 +144,21 @@ class LastMono(KerasLayer):
         self.already_build = False
         self.nb_instruments = None
 
+    def get_config(self):
+        config = super(LastMono, self).get_config()
+        config.update(dict(
+            softmax_axis=self.softmax_axis,
+            names=self.names
+        ))
+        return config
+
     def build(self, input_shape):
         if not self.already_build:
             self.nb_instruments = int(input_shape[-1])
             self.split = Split(num_or_size_to_split=self.nb_instruments, axis=-1)
             for inst in range(self.nb_instruments):
                 self.last_inst_mono_list.append(
-                    LastInstMono(softmax_axis=self.sofmax_axis))
+                    LastInstMono(softmax_axis=self.softmax_axis))
             self.already_build = True
         self.split.build(input_shape)
         new_shapes = self.split.compute_output_shape(input_shape)
@@ -149,3 +175,5 @@ class LastMono(KerasLayer):
 
     def compute_output_shape(self, input_shape):
         return self.split.compute_output_shape(input_shape)
+
+
