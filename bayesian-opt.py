@@ -17,6 +17,7 @@ from src.MidiGenerator import MidiGenerator
 from src.NN.Callbacks import LossHistory
 from src import Args
 from src.Args import ArgType, Parser
+from src.NN import Sequences
 
 
 def create_list(string):
@@ -193,6 +194,10 @@ def main(args):
     global iteration
     iteration = 0
 
+    # get x and y if args.seq2np
+    if args.seq2np:
+        x_dict, y_dict = {}, {}
+
     def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
                      kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm, l_scale_cost,
                      l_rhythm_cost, take_all_step_rhythm):
@@ -267,7 +272,6 @@ def main(args):
 
         print(s)
 
-
         midi_generator = create_model(
             lr=lr,
             optimizer=optimizer,
@@ -289,8 +293,26 @@ def main(args):
             l_rhythm_cost=l_rhythm_cost,
             take_all_step_rhythm=take_all_step_rhythm
         )
-        history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
-                                       validation=args.validation, sequence_to_numpy=args.seq2np)
+        if args.seq2np:
+            # get x and y
+            if nb_steps not in x_dict or nb_steps not in y_dict:
+                midi_generator.get_sequence(
+                    path=midi_generator.data_transformed_path.as_posix(),
+                    nb_steps=midi_generator.nb_steps,
+                    batch_size=args.batch,
+                    work_on=midi_generator.work_on
+                )
+                x, y = Sequences.sequence_to_numpy(midi_generator.sequence)
+                x_dict[nb_steps] = x
+                y_dict[nb_steps] = y
+                del x, y
+            # Train
+            history = midi_generator.keras_nn.train(epochs=args.epochs, x=x_dict[nb_steps], y=y_dict[nb_steps],
+                                                    verbose=1, validation=args.validation, callbacks=[],
+                                                    batch_size=args.batch)
+        else:
+            history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
+                                           validation=args.validation)
         accuracy = get_history_acc(history)
 
         global best_accuracy
@@ -348,7 +370,7 @@ def main(args):
             search_result.func_vals,
             [space.point_to_dict(x_) for x_ in search_result.x_iters]
         ),
-        key=lambda x: x[0]      # To sort only with the precision not the dictionaries
+        key=lambda x: x[0]  # To sort only with the precision not the dictionaries
     )
 
     # ------------------------------

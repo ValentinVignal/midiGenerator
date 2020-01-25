@@ -242,7 +242,7 @@ class KerasNeuralNetwork:
 
         history = self.model.fit(x=x, y=y, epochs=epochs, validation_split=validation, shuffle=True,
                                  callbacks=callback_list, batch_size=batch_size, verbose=verbose)
-        return history
+        return history.history
 
     def evaluate(self, generator, verbose=1):
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
