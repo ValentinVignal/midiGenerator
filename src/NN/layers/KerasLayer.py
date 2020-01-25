@@ -16,7 +16,6 @@ class KerasLayer(layers.Layer):
         print('kwargs', kwargs)
         return super(KerasLayer, cls).from_config(*args, **kwargs)
 
-
     def reset_weights_variables(self):
         """
         Used to reset the weights of a sublayers in a layers
@@ -66,3 +65,22 @@ class KerasLayer(layers.Layer):
     def build(self, inputs_shape):
         super(KerasLayer, self).build(inputs_shape)
         # print(self.__class__.__name__, 'is built with shape', inputs_shape)
+
+    def update_with_fit_args(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def on_epoch_begin(self, *ags, **kwags):
+        """
+
+        :param ags:
+        :param kwags:
+        :return:
+        """
+        pass
+
+

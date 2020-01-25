@@ -31,9 +31,9 @@ class CheckPoint(KerasCallback):
         if self.greater_result(logs):
             self.best_acc = self.get_val_acc_mean(logs)
             self.best_loss = self.get_val_loss(logs)
-            # self.model.save_weights(self.filepath, overwrite=True)
             if self.filepath.exists():
                 self.filepath.unlink()
+            # self.model.save_weights(self.filepath.as_posix(), overwrite=True)
             tf.keras.experimental.export_saved_model(self.model, self.filepath.as_posix())
 
     def greater_result(self, logs):

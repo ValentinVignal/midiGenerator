@@ -33,7 +33,9 @@ class KerasNeuralNetwork:
         self.opt_param = None
         self.loss_options = None
         self.decay = None
-        self.callbacks = []
+        self.callbacks = [
+            Callbacks.UpdateLayers()
+        ]
 
         self.model_options = None
 
