@@ -347,7 +347,11 @@ class KerasNeuralNetwork:
         :return:
         """
         path = Path(path)
-        with open((path / 'weights.p'), 'rb') as dump_file:
+        if (path / 'checkpoint_weights.p').exists():
+            file_path = path / 'checkpoint_weights.p'
+        else:
+            file_path = path / 'weights.p'
+        with open(file_path, 'rb') as dump_file:
             d = pickle.load(dump_file)
             self.model.set_weights(d['weights'])
 

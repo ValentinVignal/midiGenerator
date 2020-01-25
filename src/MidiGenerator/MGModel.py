@@ -80,10 +80,8 @@ class MGModel(MGInit):
             self.full_name = d['full_name'] if with_weights else self.get_full_name(indice)
 
         self.keras_nn = KerasNeuralNetwork()
-        self.keras_nn.recreate((path_to_load / 'MyNN').as_posix())
+        self.keras_nn.recreate((path_to_load / 'MyNN').as_posix(), with_weights=with_weights)
 
-        if with_weights:
-            self.keras_nn.load_weights(path_to_load / 'MyNN')
         if print_model:
             self.print_model()
 
