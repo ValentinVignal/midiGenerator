@@ -1,6 +1,4 @@
 from pathlib import Path
-from termcolor import cprint
-import matplotlib.pyplot as plt
 
 
 def summarize(path, title=None, file_name='Summary', **d):

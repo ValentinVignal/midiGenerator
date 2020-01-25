@@ -78,4 +78,4 @@ class CheckPoint(KerasCallback):
         :param logs:
         :return:
         """
-        return logs.get('loss_val')
+        return logs.get('val_loss')

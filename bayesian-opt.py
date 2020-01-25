@@ -10,6 +10,7 @@ from src import skopt_
 from src.skopt_.space import Real, Categorical
 from src.skopt_.utils import use_named_args
 from src.skopt_ import gp_minimize
+from src.text import summary
 
 K = tf.keras.backend
 
@@ -407,6 +408,14 @@ def main(args):
     save_objective(
         search_result=search_result,
         folder_path=folder_path
+    )
+
+    summary.summarize(
+        # Function parameters
+        path=folder_path,
+        title='Args of bayesia optimization',
+        # Summary params
+        **vars(args)
     )
 
     print('Results saved in', colored(folder_path.as_posix(), 'green'))
