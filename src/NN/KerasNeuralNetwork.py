@@ -69,12 +69,12 @@ class KerasNeuralNetwork:
         checkpoint_path.mkdir(exist_ok=True, parents=True)
         i = 0
         while (checkpoint_path / f'token_checkpoint_weights_{i}.txt').exists()\
-                or (checkpoint_path / f'checkpoint_weights_{i}.h5').exists():
+                or (checkpoint_path / f'checkpoint_weights_{i}.p').exists():
             i += 1
         token_path = checkpoint_path / f'token_checkpoint_weights_{i}.txt'
         with open(token_path.as_posix(), 'w') as f:
             f.write('token file')
-        return checkpoint_path / f'checkpoint_weights_{i}.h5'
+        return checkpoint_path / f'checkpoint_weights_{i}.p'
 
     def __del__(self):
         del self.tensorboard
@@ -83,6 +83,15 @@ class KerasNeuralNetwork:
         del self.model_options
         del self.opt_param
         del self.loss_options
+        # Delete the checkpoint temporary file
+        if self.checkpoint_path.exists():
+            self.checkpoint_path.unlink()
+        # Find back the token name
+        folder, name = self.checkpoint_path.parent, Path('token_' + self.checkpoint_path.name).with_suffix('.txt')
+        token_path = folder / name
+        # Delete the token checkpoint temporary file
+        if token_path.exists():
+            token_path.unlink()
 
     def new_model(self, model_id, input_param, opt_param, step_length=1, model_options={}, loss_options={}):
         """
@@ -260,16 +269,8 @@ class KerasNeuralNetwork:
                 ), dump_file
             )
         self.save_weights(path=path)
+        self.save_checkpoint_weights(path=path)
 
-        """
-        if self.tensorboard is not None:
-            # Get the folder where all the Tensorboard information are stored
-            log_dir = self.tensorboard.log_dir
-            # Get the training data
-            train_data = tb.get_tensorboard_data(path=log_dir)
-            # Save the plot images
-            tb.save_tensorboard_plots(data=train_data, path=path / 'plots')
-        """
 
     @property
     def tensorboard_log_dir(self):
@@ -307,9 +308,20 @@ class KerasNeuralNetwork:
                 ), dump_file
             )
 
+    def save_checkpoint_weights(self, path):
+        """
+
+        :param path:
+        :return:
+        """
+        # Find the check point weights back
+        if self.checkpoint_path is not None and self.checkpoint_path.exists():
+            self.checkpoint_path.rename(path / 'checkpoint_weights.p')
+
     def recreate(self, path, with_weights=True):
         """
 
+        :param with_weights:
         :param path:
         :return:
         """

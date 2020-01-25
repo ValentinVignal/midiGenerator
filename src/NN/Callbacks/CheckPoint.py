@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from pathlib import Path
+import pickle
 
 from .KerasCallback import KerasCallback
 
@@ -9,6 +10,7 @@ class CheckPoint(KerasCallback):
     """
 
     """
+
     def __init__(self, filepath):
         """
 
@@ -34,7 +36,11 @@ class CheckPoint(KerasCallback):
             if self.filepath.exists():
                 self.filepath.unlink()
             # self.model.save_weights(self.filepath.as_posix(), overwrite=True)
-            tf.keras.experimental.export_saved_model(self.model, self.filepath.as_posix())
+            # tf.keras.experimental.export_saved_model(self.model, self.filepath.as_posix())
+            with open(self.filepath, 'wb') as dump_file:
+                pickle.dump(dict(
+                    weights=self.model.get_weights()
+                ), dump_file)
 
     def greater_result(self, logs):
         """
@@ -46,10 +52,10 @@ class CheckPoint(KerasCallback):
         return np.greater(
             acc, self.best_acc
         ) or (
-                np.equal(acc, self.best_acc)
-                and
-                np.less(self.get_val_loss(logs), self.best_loss)
-        )
+                       np.equal(acc, self.best_acc)
+                       and
+                       np.less(self.get_val_loss(logs), self.best_loss)
+               )
 
     @staticmethod
     def get_val_acc_mean(logs):
@@ -73,6 +79,3 @@ class CheckPoint(KerasCallback):
         :return:
         """
         return logs.get('loss_val')
-
-
-

@@ -228,7 +228,7 @@ class KLDAnnealing(KerasLayer):
     """
 
     def __init__(self, sum_axis=None, epoch_start=g.kld_annealing_start, epoch_stop=g.kld_annealing_stop,
-                 start_value=0.0, stop_value=1.0, nb_epochs_already_trained=0, *args, **kwargs):
+                 start_value=0.0, final_value=1.0, nb_epochs_already_trained=0, *args, **kwargs):
         """
 
         :param weight:
@@ -241,12 +241,13 @@ class KLDAnnealing(KerasLayer):
         self.epoch_start = epoch_start
         self.epoch_stop = epoch_stop
         self.start_value = start_value
-        self.stop_value = stop_value
+        self.final_value = final_value
         self.nb_epochs_already_trained = nb_epochs_already_trained
 
         self.delta = None
         self.sum_axis_with_batch = self.compute_sum_axis_with_batch(sum_axis)
-        self.weight = K.variable(start_value)
+        self.weight = tf.Variable(start_value, trainable=False)
+        #self.weight._trainable = False
         self.current_weight_value = start_value
 
     @staticmethod
@@ -265,20 +266,20 @@ class KLDAnnealing(KerasLayer):
             return sum_axis_with_batch
 
     def get_config(self):
-        config = super(KLD, self).get_config()
+        config = super(KLDAnnealing, self).get_config()
         config.update(dict(
             sum_axis=self.sum_axis,
             epoch_start=self.epoch_start,
             epoch_stop=self.epoch_stop,
             start_value=self.current_weight_value,
-            stop_value=self.stop_value,
+            final_value=self.final_value,
             nb_epochs_already_trained=self.nb_epochs_already_trained
         ))
         return config
 
     def call(self, inputs):
         mean, std = inputs
-        return self.weigth * Loss.cost.kld(mean, std, sum_axis=self.sum_axis_with_batch)
+        return self.weight * Loss.cost.kld(mean, std, sum_axis=self.sum_axis_with_batch)
 
     def compute_output_shape(self, input_shape):
         return 1,
@@ -301,19 +302,17 @@ class KLDAnnealing(KerasLayer):
         else:
             self.delta = 0
 
-    def on_epoch_begin(self, epoch, *args, **kwargs):
+    def on_epoch_begin(self, *args, **kwargs):
         """
 
-        :param epoch:
-        :param logs:
         :return:
         """
-        self.nb_epochs_already_trained += 1
-        if self.nb_epochs_already_trained < self.epoch_start:
+        if self.nb_epochs_already_trained <= self.epoch_start:
             self.current_weight_value = self.start_value
-        elif self.epoch_start <= self.nb_epochs_already_trained <= self.epoch_stop:
+        elif self.epoch_start < self.nb_epochs_already_trained < self.epoch_stop:
             self.current_weight_value = self.start_value + (
                         self.nb_epochs_already_trained - self.epoch_start) * self.delta
-        elif self.nb_epochs_already_trained > self.epoch_stop:
-            self.current_weight_value = self.stop_value
+        elif self.nb_epochs_already_trained >= self.epoch_stop:
+            self.current_weight_value = self.final_value
+        self.nb_epochs_already_trained += 1
         K.set_value(self.weight, self.current_weight_value)

@@ -147,10 +147,12 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
 
     poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
     if model_options['kld']:
-        kld_weight = K.variable(0)
-        kld_weight._trainable = False
         sum_axis = 0 if model_options['kld_sum'] else None
-        kld = mlayers.vae.KLD(kld_weight, sum_axis=sum_axis)(poe)          # (1,)
+        kld = mlayers.vae.KLDAnnealing(
+            sum_axis=sum_axis,
+            epoch_start=model_options['kld_annealing_start'],
+            epoch_stop=model_options['kld_annealing_stop']
+        )(poe)
     if model_options['sampling']:
         samples = mlayers.vae.SampleGaussian()(poe)
     else:
@@ -205,13 +207,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
 
     # -------------------- Callbacks --------------------
     callbacks = []
-    if model_options['kld']:
-        callbacks.append(Callbacks.Annealing(
-            weight=kld_weight,
-            epoch_start=model_options['kld_annealing_start'],
-            epoch_stop=model_options['kld_annealing_stop']
-        ))
-
     # ------------------------------ Compile ------------------------------
 
     model.compile(loss=losses,
