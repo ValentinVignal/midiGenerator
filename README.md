@@ -1,38 +1,41 @@
-# midiGenerator
-Generate midi file with deep neural network :notes:
+# Midi Generator
 
-# Dataset 
+## Introduction
 
-## One note Dataset
+This project aim to train different neural networks on midi dataset to
+generate music
 
-| Dataset | Can use `mono` :musical_note: |
-| :---: | :---: |
-| Bach(...) | :heavy_check_mark: |
-| SimpleDataset | :x: |
+## Files
 
-## Informations
-### Simple Dataset
+### `bayesian-opt.py`
 
-| Name | Number of songs | Piano | Trombone | Flute | Violin | All | Mono |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **(1)** | 1 | 43:54 | 20:35 | 46:59 | 43:54 | 20:59 | :x: |
-| **2** | 3 | 42:56 | 20:44 | 46:63 | 36:54 | 20:63 | :x: |
+```
+python bayesian-opt.py
+```
 
+It is used to find the best hyper parameters to train a model
 
-### BachChorale
+### `compute_data.py`
 
-Use the option `--bach`
+```
+python compute_data.py
+```
 
-| | nb songs | nb accepted songs :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| **Small** | 3 | 2 | 22:54 | 23 | :heavy_check_mark: |
-| **Medium** | 15 | 11 | 19:58 | 155 | :heavy_check_mark: |
-| **Medium2** | 30 | 21 | 18:61 | 322 | :heavy_check_mark: |
+It is used to compute the `.mid` files of the dataset and create the
+*numpy* arrays used to train a model.
 
-# Other Dataset
+### `generate.py`
 
-| Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 32 | :heavy_check_mark: |
+```
+python generate.py
+```
 
+Loads a trained model and generate music from it.
 
+### `train.py`
+
+```
+python train.py
+```
+
+Creates or loads a model, train it, and also generate music at the end.
