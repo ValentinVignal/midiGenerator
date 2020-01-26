@@ -244,7 +244,7 @@ class Decoder2D(KerasLayer):
     ]]
     type_shapes_after_upsize = t.Optional[t.List[t.bshape]]
 
-    def __init__(self, decoder_param: type_decoder_param, shape_before_conv: t.shape, dropout: float = g.dropout,
+    def __init__(self, decoder_param: type_decoder_param, shape_before_conv: t.shape, dropout: float = g.nn.dropout,
                  time_stride: int = 1, shapes_after_upsize: type_shapes_after_upsize = None,
                  first_upsize: bool = False, *args, **kwargs):
         """

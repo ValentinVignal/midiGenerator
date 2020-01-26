@@ -24,7 +24,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         self.npy_path = self.path / 'npy'
         self.nb_steps = nb_steps
         self.work_on = work_on
-        self.step_size = g.work_on2nb(work_on)
+        self.step_size = g.mg.work_on2nb(work_on)
         self.noise = noise
         self.batch_size = batch_size
         self.replicate = replicate

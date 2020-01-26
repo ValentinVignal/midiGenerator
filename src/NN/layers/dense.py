@@ -75,7 +75,7 @@ class DenseCoder(KerasLayer):
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
 
-    def init_dense_blocks(self, size_list: t.List, dropout: float = g.dropout):
+    def init_dense_blocks(self, size_list: t.List, dropout: float = g.nn.dropout):
         for size in size_list:
             self.dense_blocks.append(DenseBlock(size, dropout=dropout))
 
