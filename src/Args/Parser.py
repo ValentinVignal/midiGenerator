@@ -380,5 +380,9 @@ class Parser(argparse.ArgumentParser):
         """
         self.add_argument('--n-calls', type=int, default=20,
                           help='Number of point for the bayesian search')
+        self.add_argument('--nb-inter-threads', type=int, default=1,
+                          help='Number of inter thread in tensorflow')
+        self.add_argument('--nb-intra-threads', type=int, default=1,
+                          help='Number of intra thread in tensorflow')
 
 

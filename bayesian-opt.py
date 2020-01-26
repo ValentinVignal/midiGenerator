@@ -19,6 +19,7 @@ from src.NN.Callbacks import LossHistory
 from src import Args
 from src.Args import ArgType, Parser
 from src.NN import Sequences
+from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 
 
 def create_list(string):
@@ -189,6 +190,12 @@ def main(args):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     dimensions, default_dim = create_dimensions(args)
+
+    if args.seq2np:
+        KerasNeuralNetwork.slow_down_cpu(
+            nb_inter=args.nb_inter_threads,
+            nb_intra=args.nb_intra_threads
+        )
 
     global best_accuracy
     best_accuracy = 0
