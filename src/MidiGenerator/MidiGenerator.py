@@ -1,4 +1,4 @@
-import src.global_variables as g
+from src import GlobalVariables as g
 from .MGGenerate import MGGenerate
 from .MGData import MGData
 from .MGTrain import MGTrain
@@ -28,7 +28,7 @@ class MidiGenerator(MGGenerate, MGReplicate, MGComputeGeneration, MGData, MGTrai
         return my_model
 
     @classmethod
-    def with_new_model(cls, model_infos, name='name', work_on=g.work_on, data=None):
+    def with_new_model(cls, model_infos, name='name', work_on=g.mg.work_on, data=None):
         my_model = cls(name=name, data=data)
 
         def get_value(key):

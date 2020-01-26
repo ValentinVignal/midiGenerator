@@ -4,7 +4,7 @@ from termcolor import cprint, colored
 import shutil
 
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
-import src.global_variables as g
+from src import GlobalVariables as g
 import src.text.summary as summary
 from .MGInit import MGInit
 
@@ -32,14 +32,14 @@ class MGModel(MGInit):
         self.model_id = model_id
         self.total_epochs = 0
         if work_on is None:
-            self.work_on = g.work_on if self.work_on is None else self.work_on
+            self.work_on = g.mg.work_on if self.work_on is None else self.work_on
         else:
             self.work_on = work_on
 
-        step_length = g.work_on2nb(self.work_on)
+        step_length = g.mg.work_on2nb(self.work_on)
         self.get_new_full_name()
 
-        opt_param = {'lr': g.lr, 'name': 'adam'} if opt_param is None else opt_param
+        opt_param = {'lr': g.nn.lr, 'name': 'adam'} if opt_param is None else opt_param
 
         self.keras_nn = KerasNeuralNetwork()
         self.keras_nn.new_model(

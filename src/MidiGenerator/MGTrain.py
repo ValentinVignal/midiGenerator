@@ -1,14 +1,14 @@
 
 from termcolor import colored, cprint
 
-import src.global_variables as g
+from src import GlobalVariables as g
 import src.image.pianoroll as pianoroll
 from .MGInit import MGInit
 
 
 class MGTrain(MGInit):
 
-    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.noise, validation=0.0,
+    def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.train.noise, validation=0.0,
               sequence_to_numpy=False):
         """
 

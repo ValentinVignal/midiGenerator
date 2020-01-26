@@ -1,4 +1,3 @@
-import src.global_variables as g
 import numpy as np
 import music21
 import functools
@@ -7,6 +6,7 @@ import math
 import os
 
 from . import instruments as midi_inst
+from src import GlobalVariables as g
 
 
 def no_silence(matrix):
@@ -21,8 +21,8 @@ def no_silence(matrix):
     while start < end and np.all(matrix[:, :, end - 1, 0] == 0):
         end -= 1
     # To have all the mesures
-    start = math.floor(start / (4 * g.step_per_beat)) * 4 * g.step_per_beat
-    end = math.ceil(end / (4 * g.step_per_beat)) * 4 * g.step_per_beat + 1
+    start = math.floor(start / (4 * g.midi.step_per_beat)) * 4 * g.midi.step_per_beat
+    end = math.ceil(end / (4 * g.midi.step_per_beat)) * 4 * g.midi.step_per_beat + 1
     return matrix[:, :, start:end, :]  # (nb_instruments, input_size, nb_steps, 2)
 
 
@@ -42,14 +42,14 @@ def notes_to_matrix(notes, durations, offsets):
     total_offset_axis = last_offset * 4 + (
             8 * 4)  # nb times * 4 because quarter note + 2 measures (max length of a note)
     our_matrix = np.zeros(
-        (128, math.ceil(total_offset_axis / (4 * g.step_per_beat)) * 4 * g.step_per_beat, 2))  # (128, nb_times, 2)
+        (128, math.ceil(total_offset_axis / (4 * g.midi.step_per_beat)) * 4 * g.midi.step_per_beat, 2))  # (128, nb_times, 2)
 
     for (note, duration, offset) in zip(notes, durations, offsets):
         # how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
         start = int(offset * 4)
         if '.' not in str(note):  # it is not chord. Single note.
             our_matrix[note, start, 0] = 1
-            our_matrix[note, start, 1] = float(duration) / g.max_length_note_music21
+            our_matrix[note, start, 1] = float(duration) / g.midi.max_length_note_music21
 
         else:  # For chord
             chord_notes_str = [note for note in note.split('.')]

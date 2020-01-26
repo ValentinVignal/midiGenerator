@@ -9,7 +9,7 @@ from time import time
 import gc
 from termcolor import colored, cprint
 
-import src.global_variables as g
+from src import GlobalVariables as g
 from src.NN import Sequences
 from . import Models
 from src import tb
@@ -108,7 +108,7 @@ class KerasNeuralNetwork:
         self.step_length = step_length
         self.loss_options = loss_options
 
-        model_name, model_param_s, nb_steps = model_id.split(g.split_model_id)
+        model_name, model_param_s, nb_steps = model_id.split(g.mg.split_model_id)
         nb_steps = int(nb_steps)
 
         nn_model = Models.from_name[model_name]
@@ -151,10 +151,10 @@ class KerasNeuralNetwork:
         # ----- Default values -----
         opt_param = {
             'name': 'adam',
-            'lr': g.lr,
-            'decay_drop': g.decay_drop,
-            'epochs_drop': g.epochs_drop,
-            'decay': g.decay
+            'lr': g.nn.lr,
+            'decay_drop': g.nn.decay_drop,
+            'epochs_drop': g.nn.epochs_drop,
+            'decay': g.nn.decay
         }
         opt_param.update(kwargs)
 
@@ -397,4 +397,9 @@ class KerasNeuralNetwork:
     @staticmethod
     def disable_eager_exection():
         tf.compat.v1.disable_eager_execution()
+
+    @staticmethod
+    def slow_down_cpu(nb_inter=1, nb_intra=1):
+        tf.config.threading.set_inter_op_parallelism_threads(nb_inter)
+        tf.config.threading.set_intra_op_parallelism_threads(nb_intra)
 

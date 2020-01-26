@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-import src.global_variables as g
+from src import GlobalVariables as g
 import src.NN.layers as mlayers
 from src.NN.Models.KerasModel import KerasModel
 import src.NN.shapes.convolution as s_conv
@@ -36,22 +36,22 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
 
     # ---------- Model options ----------
     model_options_default = dict(
-        dropout=g.dropout,
-        sampling=g.sampling,
-        kld=g.kld,
-        kld_annealing_start=g.kld_annealing_start,
-        kld_annealing_stop=g.kld_annealing_stop,
-        kld_sum=g.kld_sum
+        dropout=g.nn.dropout,
+        sampling=g.nn.sampling,
+        kld=g.nn.kld,
+        kld_annealing_start=g.nn.kld_annealing_start,
+        kld_annealing_stop=g.nn.kld_annealing_stop,
+        kld_sum=g.nn.kld_sum
     )
     dictionaries.set_default(model_options, model_options_default)
 
     loss_options_default = dict(
         loss_name='mono',
-        l_scale=g.l_scale,
-        l_rhythm=g.l_rhythm,
-        l_scale_cost=g.l_scale_cost,
-        l_rhythm_cost=g.l_rhythm_cost,
-        take_all_step_rhythm=g.take_all_step_rhythm
+        l_scale=g.loss.l_scale,
+        l_rhythm=g.loss.l_rhythm,
+        l_scale_cost=g.loss.l_scale_cost,
+        l_rhythm_cost=g.loss.l_rhythm_cost,
+        take_all_step_rhythm=g.loss.take_all_step_rhythm
     )
     dictionaries.set_default(loss_options, loss_options_default)
 

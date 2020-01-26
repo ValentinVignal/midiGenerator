@@ -1,7 +1,6 @@
 from typing import TypeVar, Tuple, Dict, Sequence, Union, Optional, Any, List
 import typing
 import typeguard
-import tensorflow as tf
 
 # -------------------- Basics --------------------
 

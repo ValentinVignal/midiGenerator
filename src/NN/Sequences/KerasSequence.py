@@ -4,14 +4,14 @@ import pickle
 import functools
 import numpy as np
 
-import src.global_variables as g
+from src import GlobalVariables as g
 
 
 class KerasSequence(tf.keras.utils.Sequence):
     """
 
     """
-    def __init__(self, path, nb_steps, batch_size=4, work_on=g.work_on, noise=0, replicate=False):
+    def __init__(self, path, nb_steps, batch_size=4, work_on=g.mg.work_on, noise=0, replicate=False):
         """
 
         :param path:
@@ -40,7 +40,7 @@ class KerasSequence(tf.keras.utils.Sequence):
 
         self.i_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded
-        self.nb_file_per_npy = g.nb_files_per_npy
+        self.nb_file_per_npy = g.midi.nb_files_per_npy
 
         self.nb_elements = KerasSequence.return_nb_elements(
             l=self.all_shapes,

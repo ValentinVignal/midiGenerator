@@ -7,7 +7,7 @@ import shutil
 from termcolor import colored, cprint
 
 import src.Midi as midi
-import src.global_variables as g
+from src import GlobalVariables as g
 import src.text.summary as summary
 from src import Args
 from src.Args import Parser, ArgType
@@ -107,8 +107,8 @@ def main(args):
 
         i += 1
         # ---------- Save it ----------
-        if i % g.nb_files_per_npy == 0:  # Save 1 npy file with 100 songs in it
-            np.save(str(npy_path / '{0}.npy'.format(int(i / g.nb_files_per_npy) - 1)), {
+        if i % g.midi.nb_files_per_npy == 0:  # Save 1 npy file with 100 songs in it
+            np.save(str(npy_path / '{0}.npy'.format(int(i / g.midi.nb_files_per_npy) - 1)), {
                 'list': matrix_of_all_midis,
                 'shapes': all_shapes_npy
             })
@@ -118,7 +118,7 @@ def main(args):
 
     # ---------- If we didn't save at the end ----------
     if len(all_shapes_npy) > 0:  # If some songs are missing
-        np.save(str(npy_path / '{0}.npy'.format(int(i / g.nb_files_per_npy))), {
+        np.save(str(npy_path / '{0}.npy'.format(int(i / g.midi.nb_files_per_npy))), {
             'list': matrix_of_all_midis,
             'shapes': all_shapes_npy
         })
@@ -145,7 +145,7 @@ def main(args):
             'input_size': all_shapes[0][0][2],  # The number of notes
             'notes_range': args.notes_range,
             'mono': args.mono,
-            'nb_files_per_npy': g.nb_files_per_npy
+            'nb_files_per_npy': g.midi.nb_files_per_npy
         }, dump_file)
 
     summary.summarize(

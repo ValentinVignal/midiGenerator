@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-import src.global_variables as g
+from src import GlobalVariables as g
 
 
 def range_notes_in_matrix(matrix):
@@ -25,6 +25,6 @@ def nb_measures(matrix):
     :return:
     """
     nb_steps = matrix.shape[2]
-    nb_m = math.floor(nb_steps / (4 * g.step_per_beat))
+    nb_m = math.floor(nb_steps / (4 * g.midi.step_per_beat))
     return nb_m
 

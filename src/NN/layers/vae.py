@@ -6,7 +6,7 @@ K = tf.keras.backend
 math = tf.math
 
 from src.NN import Loss
-from src import global_variables as g
+from src import GlobalVariables as g
 
 
 class ProductOfExpert(KerasLayer):
@@ -227,7 +227,7 @@ class KLDAnnealing(KerasLayer):
 
     """
 
-    def __init__(self, sum_axis=None, epoch_start=g.kld_annealing_start, epoch_stop=g.kld_annealing_stop,
+    def __init__(self, sum_axis=None, epoch_start=g.nn.kld_annealing_start, epoch_stop=g.nn.kld_annealing_stop,
                  start_value=0.0, final_value=1.0, nb_epochs_already_trained=0, *args, **kwargs):
         """
 
@@ -247,7 +247,6 @@ class KLDAnnealing(KerasLayer):
         self.delta = None
         self.sum_axis_with_batch = self.compute_sum_axis_with_batch(sum_axis)
         self.weight = tf.Variable(start_value, trainable=False)
-        #self.weight._trainable = False
         self.current_weight_value = start_value
 
     @staticmethod

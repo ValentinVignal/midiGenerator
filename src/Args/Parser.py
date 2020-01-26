@@ -1,6 +1,6 @@
 import argparse
 
-from src import global_variables as g
+from src import GlobalVariables as g
 
 from .ArgType import ArgType
 
@@ -128,10 +128,10 @@ class Parser(argparse.ArgumentParser):
 
         # ---------- Default values ----------
         self.set_defaults(
-            epochs=g.epochs,
-            batch=g.batch,
-            noise=g.noise,
-            validation=g.validation
+            epochs=g.train.epochs,
+            batch=g.train.batch,
+            noise=g.train.noise,
+            validation=g.train.validation
         )
 
     def add_evaluate_model_args(self, argtype=ArgType.ALL):
@@ -166,15 +166,15 @@ class Parser(argparse.ArgumentParser):
                             help='Not taking all the output steps for rhythm')
 
         self.set_defaults(
-            loss_name=g.loss_name,
+            loss_name=g.loss.loss_name,
         )
 
         if argtype is not ArgType.HPSearch:
             self.set_defaults(
-                l_scale=g.l_scale,
-                l_rhythm=g.l_rhythm,
-                l_scale_cost=g.l_scale_cost,
-                l_rhythm_cost=g.l_rhythm_cost
+                l_scale=g.loss.l_scale,
+                l_rhythm=g.loss.l_rhythm,
+                l_scale_cost=g.loss.l_scale_cost,
+                l_rhythm_cost=g.loss.l_rhythm_cost
             )
         else:
             self.set_defaults(
@@ -242,25 +242,25 @@ class Parser(argparse.ArgumentParser):
                             help='To not sum through time for the KLD')
 
         self.set_defaults(
-            epochs_drop=g.epochs_drop,
-            decay_drop=g.decay_drop,
-            loss_name=g.loss_name,
+            epochs_drop=g.nn.epochs_drop,
+            decay_drop=g.nn.decay_drop,
+            loss_name=g.loss.loss_name,
             name='name',
-            work_on=g.work_on,
+            work_on=g.mg.work_on,
         )
 
         if argtype is not ArgType.HPSearch:
             self.set_defaults(
-                lr=g.lr,
+                lr=g.nn.lr,
                 optimizer='adam',
-                decay=g.decay,
-                dropout=g.dropout,
-                all_sequence=g.all_sequence,
-                lstm_state=g.lstm_state,
+                decay=g.nn.decay,
+                dropout=g.nn.dropout,
+                all_sequence=g.nn.all_sequence,
+                lstm_state=g.nn.lstm_state,
                 no_sampling=False,
                 no_kld=False,
-                kld_annealing_start=g.kld_annealing_start,
-                kld_annealing_stop=g.kld_annealing_stop,
+                kld_annealing_start=g.nn.kld_annealing_start,
+                kld_annealing_stop=g.nn.kld_annealing_stop,
                 no_kld_sum=False
             )
         else:
@@ -380,3 +380,5 @@ class Parser(argparse.ArgumentParser):
         """
         self.add_argument('--n-calls', type=int, default=20,
                           help='Number of point for the bayesian search')
+
+

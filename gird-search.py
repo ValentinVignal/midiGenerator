@@ -7,8 +7,7 @@ K = tf.keras.backend
 
 from MidiGenerator.MidiGenerator import MidiGenerator
 from Callbacks.LossHistory import LossHistory
-import src.global_variables as g
-
+from src import GlobalVariables as g
 
 
 def main():
@@ -42,7 +41,7 @@ def main():
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
     parser.add_argument('--lstm-state', type=str, default='False',
                         help='Use or not all the sequence in the RNN layer (separated with ,)')
-    parser.add_argument('--work-on', type=str, default=g.work_on,
+    parser.add_argument('--work-on', type=str, default=g.mg.work_on,
                         help='note, beat or measure')
     # ----------------
     parser.add_argument('-n', '--name', type=str, default='name',

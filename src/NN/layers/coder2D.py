@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from . import conv as conv
 from . import dense as dense
-import src.global_variables as g
+from src import GlobalVariables as g
 import src.mtypes as t
 from .KerasLayer import KerasLayer
 
@@ -13,7 +13,7 @@ layers = tf.keras.layers
 class ConvEncoder2D(KerasLayer):
     type_filters_list = t.List[t.List[int]]
 
-    def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
+    def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1,
                  last_pool: bool = False, *args, **kwargs):
         """
         :param filters_list: List[List[int]]:
@@ -31,7 +31,7 @@ class ConvEncoder2D(KerasLayer):
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride)
         super(ConvEncoder2D, self).__init__()
 
-    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1):
+    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1):
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):
                 if index == len(size_list) - 1:
@@ -83,7 +83,7 @@ class Encoder2D(KerasLayer):
         t.List[int]  # dense
     ]]
 
-    def __init__(self, encoder_param: type_encoder_param, dropout: float = g.dropout, time_stride: int = 1,
+    def __init__(self, encoder_param: type_encoder_param, dropout: float = g.nn.dropout, time_stride: int = 1,
                  time_distributed: bool = True, last_pool: bool = False, *args, **kwargs):
         """
 
@@ -163,7 +163,7 @@ class ConvDecoder2D(KerasLayer):
 
     nb_instance = 0
 
-    def __init__(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
+    def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1,
                  shapes_after_upsize: type_shapes_after_upsize = None, first_pool: bool = False, *args, **kwargs):
         """
 
@@ -184,7 +184,7 @@ class ConvDecoder2D(KerasLayer):
         self.conv_blocks = []
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride, final_shapes=shapes_after_upsize)
 
-    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.dropout, time_stride: int = 1,
+    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1,
                          final_shapes: type_shapes_after_upsize = None, first_pool: bool = False):
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):

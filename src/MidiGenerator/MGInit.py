@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from src import global_variables as g
+from src import GlobalVariables as g
 
 
 class MGInit:
@@ -58,7 +58,7 @@ class MGInit:
 
     @property
     def step_length(self):
-        return g.work_on2nb(self.work_on)
+        return g.mg.work_on2nb(self.work_on)
 
     @property
     def model_name(self):

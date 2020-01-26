@@ -1,9 +1,9 @@
-import src.global_variables as g
 import numpy as np
 import music21
 from termcolor import colored, cprint
 
 from . import instruments as midi_inst
+from src import GlobalVariables as g
 
 
 def normalize_activation(arr, threshold=0.5, mono=False):
@@ -48,7 +48,7 @@ def converter_func_poly(arr, no_duration=False):
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
 
-    durations = np.ceil(durations * g.max_length_note_array)
+    durations = np.ceil(durations * g.midi.max_length_note_array)
     durations = np.maximum(durations, 1)
 
     # If no duration then no nee to compute duration and return activation (all durations = 1)
@@ -180,7 +180,7 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False
                 if length_note > 0:  # This is a new note !!
                     new_note = music21.note.Note(pitch=(note + 21 + notes_range[0]),
                                                  duration=music21.duration.Duration(length_note / g.step_per_beat))
-                    new_note.offset = step / g.step_per_beat
+                    new_note.offset = step / g.midi.step_per_beat
                     new_note.storedInstrument = midi_inst.string2instrument(instruments[inst])()
                     output_notes.append(new_note)
         output_notes_instruments.append(output_notes)
@@ -224,7 +224,7 @@ def print_informations(nb_steps, matrix, notes_list, verbose):
     nb_notes_generated = [0 for i in range(nb_instruments)]
     for index, instrument_notes in enumerate(notes_list):
         for n in instrument_notes:
-            if n.offset <= nb_steps / g.step_per_beat:
+            if n.offset <= nb_steps / g.midi.step_per_beat:
                 nb_notes_seed[index] += 1
             else:
                 nb_notes_generated[index] += 1

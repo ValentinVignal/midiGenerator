@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-import src.global_variables as g
+from src import GlobalVariables as g
 import src.mtypes as t
 from .KerasLayer import KerasLayer
 
@@ -9,7 +9,7 @@ layers = tf.keras.layers
 
 
 class LstmBlock(KerasLayer):
-    def __init__(self, size: int, dropout: float = g.dropout, return_sequence: bool = False, *args, **kwargs):
+    def __init__(self, size: int, dropout: float = g.nn.dropout, return_sequence: bool = False, *args, **kwargs):
         super(LstmBlock, self).__init__(*args, **kwargs)
         # ---------- Raw parameters ----------
         self.size = size
@@ -56,7 +56,7 @@ class LstmBlock(KerasLayer):
 class LstmRNN(KerasLayer):
     type_size_list = t.List[int]
 
-    def __init__(self, size_list: type_size_list, dropout: float = g.dropout, return_sequence: bool = False, *args,
+    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout, return_sequence: bool = False, *args,
                  **kwargs):
         super(LstmRNN, self).__init__(*args, **kwargs)
         # ---------- Raw parameters ----------
@@ -67,7 +67,7 @@ class LstmRNN(KerasLayer):
         self.lstm_blocks = []
         self.init_lstm_blocks(size_list, dropout)
 
-    def init_lstm_blocks(self, size_list, dropout=g.dropout):
+    def init_lstm_blocks(self, size_list, dropout=g.nn.dropout):
         for index, size in enumerate(size_list):
             return_sequence = index < len(size_list) - 1 or self.return_sequence
             self.lstm_blocks.append(LstmBlock(size=size, dropout=dropout, return_sequence=return_sequence))

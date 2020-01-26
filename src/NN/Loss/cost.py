@@ -7,10 +7,10 @@ math = tf.math
 K = tf.keras.backend
 
 from . import utils
-from src import global_variables as g
+from src import GlobalVariables as g
 
 
-def scale_loss(y_true_a, y_pred_a, cost_value=g.l_scale_cost, max_reward=None):
+def scale_loss(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None):
     """
 
     :param max_reward:
@@ -61,8 +61,8 @@ def scale_loss(y_true_a, y_pred_a, cost_value=g.l_scale_cost, max_reward=None):
     return tf.reduce_mean(loss)
 
 
-def rhythm_loss(y_true_a, y_pred_a, cost_value=g.l_rhythm_cost, max_reward=None,
-                take_all_steps_rhythm=g.take_all_step_rhythm):
+def rhythm_loss(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
+                take_all_steps_rhythm=g.loss.take_all_step_rhythm):
     """
 
     :param take_all_steps_rhythm:
