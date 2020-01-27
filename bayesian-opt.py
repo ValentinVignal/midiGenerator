@@ -5,6 +5,7 @@ import tensorflow as tf
 from pathlib import Path
 import matplotlib.pyplot as plt
 import gc
+import csv
 
 from src import skopt_
 from src.skopt_.space import Real, Categorical
@@ -495,16 +496,22 @@ def save_sorted_results(folder_path, sorted_scores):
     :param sorted_scores:
     :return:
     """
+    # Text File
     text = '\t\tSorted scores and parameters:\n\n'
+    # CSV File
+    keys = sorted_scores[0][1].keys()
+    text_csv = 'Accuracy;' + ';'.join(keys) + '\n'
     for score, param_dict in sorted_scores:
-        text += f'{score:%}\t->\t{param_dict}\n'
-        """
-        for k in range(len(dim_names)):
-            text += f'{dim_names[i]}: {param_list[i]} - '
-        text += '\n'
-        """
+        # Text File
+        text += f'{-score:%}\t->\t{param_dict}\n'
+        # CSV File
+        text_csv += (f'{-score:%};' + ';'.join([str(param_dict[k]) for k in keys]) + '\n').replace('.', ',')
+    # Text File
     with open(folder_path / 'sorted_scores.txt', 'w') as f:
         f.write(text)
+    # CSV file
+    with open(folder_path / 'sorted_scores.csv', 'w') as f:
+        f.write(text_csv)
 
 
 def save_best_result(folder_path, best_accuracy, param_dict):
