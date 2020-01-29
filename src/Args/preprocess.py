@@ -81,4 +81,12 @@ def generate(args):
     return args
 
 
+def clean(args):
+    """
+
+    :param args:
+    :return:
+    """
+    return args
+
 

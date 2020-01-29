@@ -58,6 +58,9 @@ class Parser(argparse.ArgumentParser):
         # HP Search
         if argtype in [ArgType.ALL, ArgType.HPSearch]:
             self.add_hp_search_args(argtype)
+        # Clean
+        if argtype in [ArgType.ALL, ArgType.Clean]:
+            self.add_clean_args(argtype)
 
     @staticmethod
     def description_msg(argtype=None):
@@ -77,6 +80,8 @@ class Parser(argparse.ArgumentParser):
             description = 'To compute the data'
         elif argtype is ArgType.CheckData:
             description = 'To Check the data'
+        elif argtype is ArgType.Clean:
+            description = 'To clean the environment'
         return description
 
     @staticmethod
@@ -388,5 +393,24 @@ class Parser(argparse.ArgumentParser):
                           help='Number of inter thread in tensorflow')
         self.add_argument('--nb-intra-threads', type=int, default=1,
                           help='Number of intra thread in tensorflow')
+
+    def add_clean_args(self, argtype=ArgType.ALL):
+        """
+
+        :param argtype:
+        :return:
+        """
+        self.add_argument('--midi', default=False, action='store_true',
+                          help='Don t delete generated_midis folder')
+        self.add_argument('--hp', default=False, action='store_true',
+                          help='Don t delete hp_search folder')
+        self.add_argument('--models', default=False, action='store_true',
+                          help='Don t delete saved_models folder')
+        self.add_argument('--tensorboard', default=False, action='store_true',
+                          help='Don t delete tensorboard folder')
+        self.add_argument('--temp', default=False, action='store_true',
+                          help='Don t delete temp folder')
+        self.add_argument('--data-temp', default=False, action='store_true',
+                          help='Don t delete temp folder in dataset folder')
 
 

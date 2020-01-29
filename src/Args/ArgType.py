@@ -13,3 +13,6 @@ class ArgType(Enum):
 
     ComputeData = 10
     CheckData = 11
+
+    Clean = 20
+    Zip = 21
