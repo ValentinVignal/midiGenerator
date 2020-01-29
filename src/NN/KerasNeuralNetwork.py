@@ -202,7 +202,6 @@ class KerasNeuralNetwork:
         if fast_seq:
             sequence_to_numpy = False
         if sequence_to_numpy:
-            print('Loading all the training data as numpy arrays...')
             x, y = Sequences.sequence_to_numpy(sequence=generator)
             history = self.train(x=x, y=y, epochs=epochs, verbose=verbose, callbacks=callbacks,
                                  batch_size=generator.batch_size, validation=validation)
@@ -225,10 +224,12 @@ class KerasNeuralNetwork:
 
                 history = self.model.fit_generator(epochs=epochs, generator=generator_train,
                                                    validation_data=generator_valid,
-                                                   shuffle=True, verbose=verbose, callbacks=callback_list)
+                                                   shuffle=True, verbose=verbose, callbacks=callback_list,
+                                                   use_multiprocessing=True, workers=4)
             else:  # So it won't print a lot of lines for nothing
                 history = self.model.fit_generator(epochs=epochs, generator=generator_to_train_on,
-                                                   shuffle=True, verbose=verbose, callbacks=callback_list)
+                                                   shuffle=True, verbose=verbose, callbacks=callback_list,
+                                                   use_multiprocessing=True, workers=4)
 
         return history.history
 

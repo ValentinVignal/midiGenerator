@@ -84,6 +84,7 @@ class FastSequence(tf.keras.utils.Sequence):
         return temp_folder / name.format(i), temp_folder / token_name.format(i)
 
     def replicate_dataset(self, sequence):
+        print('Replicate dataset for FastSequence instance')
         old_batch_size = sequence.batch_size
         sequence.change_batch_size(1)
         nb_inputs, nb_outputs = len(sequence[0][0]), len(sequence[0][1])
@@ -130,6 +131,7 @@ class FastSequence(tf.keras.utils.Sequence):
     def __getitem__(self, item):
         np_index = self.batch_size * item
         # If we don't have the correct file, we load if
+        print('item', item, 'np_index', np_index, 'npy loaded', self.npy_loaded)
         if np_index // self.nb_steps_per_file != self.npy_loaded:
             self.load(np_index // self.nb_steps_per_file)
         # Check if with need to load 2 files
