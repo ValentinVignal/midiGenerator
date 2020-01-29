@@ -230,11 +230,11 @@ class KerasNeuralNetwork:
                 history = self.model.fit_generator(epochs=epochs, generator=generator_train,
                                                    validation_data=generator_valid,
                                                    shuffle=True, verbose=verbose, callbacks=callback_list,
-                                                   workers=4, max_queue_size=16)
+                                                   max_queue_size=16)
             else:  # So it won't print a lot of lines for nothing
                 history = self.model.fit_generator(epochs=epochs, generator=generator,
-                                                   shuffle=True, verbose=verbose, callbacks=callback_list,
-                                                   workers=4, max_queue_size=16)
+                                                   shuffle=True, verbose=verbose, callbacks=callback_list
+                                                   , max_queue_size=16)
 
         return history.history
 
