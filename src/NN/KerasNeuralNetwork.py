@@ -186,9 +186,11 @@ class KerasNeuralNetwork:
         return dill.dumps(step_decay)
 
     def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0, sequence_to_numpy=False,
-                  fast_seq=False):
+                  fast_seq=False, memory_seq=False):
         """
 
+        :param fast_seq:
+        :param memory_seq:
         :param sequence_to_numpy: To load all the generator into numpy files to train faster (only for small dataset)
         :param epochs:
         :param generator:
@@ -200,6 +202,8 @@ class KerasNeuralNetwork:
         # TODO: To do custom decay: make it work with LSTM and non eager execution
         # callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
         if fast_seq:
+            memory_seq = False
+        if fast_seq or memory_seq:
             sequence_to_numpy = False
         if sequence_to_numpy:
             x, y = Sequences.sequence_to_numpy(sequence=generator)
@@ -214,22 +218,23 @@ class KerasNeuralNetwork:
                 callback.update_with_fit_args(epochs=epochs)
             callback_list = self.callbacks + [self.tensorboard] + callbacks
 
-            generator_to_train_on = Sequences.FastSequence(generator) if fast_seq else generator
+            generator = Sequences.FastSequence(generator) if fast_seq else generator
+            generator = Sequences.AllInMemorySequence(generator) if memory_seq else generator
 
             if validation > 0:
                 generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(
-                    generator_to_train_on,
+                    my_sequence=generator,
                     validation_split=validation
                 )
 
                 history = self.model.fit_generator(epochs=epochs, generator=generator_train,
                                                    validation_data=generator_valid,
                                                    shuffle=True, verbose=verbose, callbacks=callback_list,
-                                                   use_multiprocessing=True, workers=4)
+                                                   workers=4, max_queue_size=16)
             else:  # So it won't print a lot of lines for nothing
-                history = self.model.fit_generator(epochs=epochs, generator=generator_to_train_on,
+                history = self.model.fit_generator(epochs=epochs, generator=generator,
                                                    shuffle=True, verbose=verbose, callbacks=callback_list,
-                                                   use_multiprocessing=True, workers=4)
+                                                   workers=4, max_queue_size=16)
 
         return history.history
 

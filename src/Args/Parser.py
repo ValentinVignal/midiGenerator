@@ -125,6 +125,8 @@ class Parser(argparse.ArgumentParser):
                           help='For small dataset, store all the data in a numpy array to train faster')
         self.add_argument('--fast-seq', default=False, action='store_true',
                           help='Create a FastSequence instance before training')
+        self.add_argument('--memory-seq', default=False, action='store_true',
+                          help='Store all the data in memory but for a sequence')
         self.add_argument('--validation', type=float,
                           help='Fraction of the training data to be used as validation data')
 

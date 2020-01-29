@@ -69,7 +69,7 @@ def main(args):
 
     # -------------------- Train --------------------
     midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation,
-                         sequence_to_numpy=args.seq2np, fast_sequence=args.fast_seq)
+                         sequence_to_numpy=args.seq2np, fast_sequence=args.fast_seq, memory_sequence=args.memory_seq)
 
     # -------------------- Test --------------------
     if args.evaluate:
@@ -98,7 +98,7 @@ def main(args):
 
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
-        for i in range(len(midi_generator.my_sequence)):
+        for i in range(len(midi_generator.sequence)):
             midi_generator.compare_test_predict_on_batch(i)
 
     # -------------------- Save the model --------------------

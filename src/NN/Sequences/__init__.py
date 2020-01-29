@@ -8,6 +8,7 @@ from .TrainValSequence import ReducedSequence
 from . import TrainValSequence
 from .to_numpy import sequence_to_numpy
 from .FastSequence import FastSequence
+from .AllInMemorySequence import AllInMemorySequence
 
 from_name = dict(
     KerasSequence=KerasSequence,
