@@ -123,6 +123,8 @@ class Parser(argparse.ArgumentParser):
                           help='If not 0, add noise to the input for training')
         self.add_argument('--seq2np', default=False, action='store_true',
                           help='For small dataset, store all the data in a numpy array to train faster')
+        self.add_argument('--fast-seq', default=False, action='store_true',
+                          help='Create a FastSequence instance before training')
         self.add_argument('--validation', type=float,
                           help='Fraction of the training data to be used as validation data')
 

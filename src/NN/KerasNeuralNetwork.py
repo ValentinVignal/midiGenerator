@@ -68,7 +68,7 @@ class KerasNeuralNetwork:
         checkpoint_path = Path('temp')
         checkpoint_path.mkdir(exist_ok=True, parents=True)
         i = 0
-        while (checkpoint_path / f'token_checkpoint_weights_{i}.txt').exists()\
+        while (checkpoint_path / f'token_checkpoint_weights_{i}.txt').exists() \
                 or (checkpoint_path / f'checkpoint_weights_{i}.p').exists():
             i += 1
         token_path = checkpoint_path / f'token_checkpoint_weights_{i}.txt'
@@ -185,7 +185,8 @@ class KerasNeuralNetwork:
 
         return dill.dumps(step_decay)
 
-    def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0, sequence_to_numpy=False):
+    def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0, sequence_to_numpy=False,
+                  fast_seq=False):
         """
 
         :param sequence_to_numpy: To load all the generator into numpy files to train faster (only for small dataset)
@@ -198,7 +199,8 @@ class KerasNeuralNetwork:
         """
         # TODO: To do custom decay: make it work with LSTM and non eager execution
         # callback_list = [tf.keras.callbacks.LearningRateScheduler(self.decay), self.tensorboard] + callbacks
-
+        if fast_seq:
+            sequence_to_numpy = False
         if sequence_to_numpy:
             print('Loading all the training data as numpy arrays...')
             x, y = Sequences.sequence_to_numpy(sequence=generator)
@@ -206,21 +208,26 @@ class KerasNeuralNetwork:
                                  batch_size=generator.batch_size, validation=validation)
             del x, y
             gc.collect()
+            return history
 
         else:
             for callback in self.callbacks:
                 callback.update_with_fit_args(epochs=epochs)
             callback_list = self.callbacks + [self.tensorboard] + callbacks
 
+            generator_to_train_on = Sequences.FastSequence(generator) if fast_seq else generator
+
             if validation > 0:
-                generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(generator,
-                                                                                                       validation_split=validation)
+                generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(
+                    generator_to_train_on,
+                    validation_split=validation
+                )
 
                 history = self.model.fit_generator(epochs=epochs, generator=generator_train,
                                                    validation_data=generator_valid,
                                                    shuffle=True, verbose=verbose, callbacks=callback_list)
             else:  # So it won't print a lot of lines for nothing
-                history = self.model.fit_generator(epochs=epochs, generator=generator,
+                history = self.model.fit_generator(epochs=epochs, generator=generator_to_train_on,
                                                    shuffle=True, verbose=verbose, callbacks=callback_list)
 
         return history.history
@@ -270,7 +277,6 @@ class KerasNeuralNetwork:
             )
         self.save_weights(path=path)
         self.save_checkpoint_weights(path=path)
-
 
     @property
     def tensorboard_log_dir(self):
@@ -402,4 +408,3 @@ class KerasNeuralNetwork:
     def slow_down_cpu(nb_inter=1, nb_intra=1):
         tf.config.threading.set_inter_op_parallelism_threads(nb_inter)
         tf.config.threading.set_intra_op_parallelism_threads(nb_intra)
-

@@ -46,7 +46,6 @@ class MissingInstSequence(KerasSequence):
         return list(x) + [mask], list(y)
 
     def change_batch_size(self, batch_size):
-        self.batch_size = batch_size
         super(MissingInstSequence, self).change_batch_size(batch_size)
 
     @staticmethod

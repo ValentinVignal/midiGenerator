@@ -179,7 +179,7 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False
                 length_note = matrix_norm[inst, note, step]
                 if length_note > 0:  # This is a new note !!
                     new_note = music21.note.Note(pitch=(note + 21 + notes_range[0]),
-                                                 duration=music21.duration.Duration(length_note / g.step_per_beat))
+                                                 duration=music21.duration.Duration(length_note / g.midi.step_per_beat))
                     new_note.offset = step / g.midi.step_per_beat
                     new_note.storedInstrument = midi_inst.string2instrument(instruments[inst])()
                     output_notes.append(new_note)

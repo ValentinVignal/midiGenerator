@@ -9,9 +9,10 @@ from .MGInit import MGInit
 class MGTrain(MGInit):
 
     def train(self, epochs=None, batch=None, callbacks=[], verbose=1, noise=g.train.noise, validation=0.0,
-              sequence_to_numpy=False):
+              sequence_to_numpy=False, fast_sequence=False):
         """
 
+        :param fast_sequence:
         :param sequence_to_numpy:
         :param epochs:
         :param batch:
@@ -48,7 +49,7 @@ class MGTrain(MGInit):
         print(colored('Training...', 'blue'))
         self.train_history = self.keras_nn.train_seq(epochs=epochs, generator=self.sequence, callbacks=callbacks,
                                                      verbose=verbose, validation=validation,
-                                                     sequence_to_numpy=sequence_to_numpy)
+                                                     sequence_to_numpy=sequence_to_numpy, fast_seq=fast_sequence)
 
         # Update parameters
         self.total_epochs += epochs
