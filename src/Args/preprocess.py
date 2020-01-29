@@ -90,3 +90,16 @@ def clean(args):
     return args
 
 
+def zip(args):
+    """
+
+    :param args:
+    :return:
+    """
+    if not args.midi and not args.hp and not args.model:
+        args.all = True
+    else:
+        args.all = False
+    return args
+
+

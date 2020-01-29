@@ -19,7 +19,7 @@ def main(args):
         shutil.rmtree(path='generated_midis', ignore_errors=True)
     if not args.hp:
         shutil.rmtree(path='hp_search', ignore_errors=True)
-    if not args.models:
+    if not args.model:
         shutil.rmtree(path='saved_models', ignore_errors=True)
     if not args.tensorboard:
         shutil.rmtree(path='tensorboard', ignore_errors=True)

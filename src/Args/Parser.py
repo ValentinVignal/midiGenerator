@@ -61,6 +61,9 @@ class Parser(argparse.ArgumentParser):
         # Clean
         if argtype in [ArgType.ALL, ArgType.Clean]:
             self.add_clean_args(argtype)
+        # Zip
+        if argtype in [ArgType.ALL, ArgType.Zip]:
+            self.add_zip_args(argtype)
 
     @staticmethod
     def description_msg(argtype=None):
@@ -82,6 +85,8 @@ class Parser(argparse.ArgumentParser):
             description = 'To Check the data'
         elif argtype is ArgType.Clean:
             description = 'To clean the environment'
+        elif argtype is ArgType.Zip:
+            description = 'To zip the files'
         return description
 
     @staticmethod
@@ -404,7 +409,7 @@ class Parser(argparse.ArgumentParser):
                           help='Don t delete generated_midis folder')
         self.add_argument('--hp', default=False, action='store_true',
                           help='Don t delete hp_search folder')
-        self.add_argument('--models', default=False, action='store_true',
+        self.add_argument('--model', default=False, action='store_true',
                           help='Don t delete saved_models folder')
         self.add_argument('--tensorboard', default=False, action='store_true',
                           help='Don t delete tensorboard folder')
@@ -413,4 +418,21 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--data-temp', default=False, action='store_true',
                           help='Don t delete temp folder in dataset folder')
 
+    def add_zip_args(self, argtype=ArgType.ALL):
+        """
 
+        :param argtype:
+        :return:
+        """
+        self.add_argument('--midi', default=False, action='store_true',
+                          help='To include generated_midis folder')
+        self.add_argument('--no-midi', default=False, action='store_true',
+                          help='To exclude generated_midis folder')
+        self.add_argument('--hp', default=False, action='store_true',
+                          help='To include hp_search folder')
+        self.add_argument('--no-hp', default=False, action='store_true',
+                          help='To exclude hp_search folder')
+        self.add_argument('--model', default=False, action='store_true',
+                          help='To include saved_models folder')
+        self.add_argument('--no-model', default=False, action='store_true',
+                          help='To exclude saved_models folder')
