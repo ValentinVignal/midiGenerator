@@ -14,6 +14,7 @@ from src.NN import Sequences
 from . import Models
 from src import tb
 from . import Callbacks
+from src.text import summary
 
 K = tf.keras.backend
 
@@ -283,6 +284,16 @@ class KerasNeuralNetwork:
             )
         self.save_weights(path=path)
         self.save_checkpoint_weights(path=path)
+        summary.summarize(
+            # Function parameters
+            path=path,
+            title='My NN',
+            # Summary parameters
+            model_id=self.model_id,
+            **self.model_options,
+            **self.opt_param,
+            **self.loss_options
+        )
 
     @property
     def tensorboard_log_dir(self):

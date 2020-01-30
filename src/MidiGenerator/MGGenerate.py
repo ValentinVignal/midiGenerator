@@ -45,7 +45,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
         seeds_indexes = random.sample(range(len(self.sequence)), nb_seeds)
 
         # -- Length --
-        length = length if length is not None else 20
+        length = length if length is not None else 10
         # -- For save Midi path --
         if type(new_save_path) is str or (
                 type(new_save_path) is bool and new_save_path) or (
@@ -212,6 +212,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
             noise=0
         )
         max_length = len(self.sequence) if max_length is None else min(max_length, len(self.sequence))
+        max_length = min(max_length, 10)
 
         # -------------------- Construct seeds --------------------
         generated = np.array(self.sequence[0][0])  # (nb_instrument, 1, nb_steps, step_size, input_size, 2) (1=batch)

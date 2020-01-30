@@ -417,6 +417,8 @@ class Parser(argparse.ArgumentParser):
                           help='Don t delete temp folder')
         self.add_argument('--data-temp', default=False, action='store_true',
                           help='Don t delete temp folder in dataset folder')
+        self.add_argument('--zip', default=False, action='store_true',
+                          help='Delete the file my_zip.zip')
 
     def add_zip_args(self, argtype=ArgType.ALL):
         """

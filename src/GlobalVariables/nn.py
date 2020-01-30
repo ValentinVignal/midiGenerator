@@ -1,6 +1,6 @@
 # ----- Optimizer -----
 lr = 5e-2
-dropout = 2e-1
+dropout = 1e-2
 decay = 1e-1
 epochs_drop = 50
 decay_drop = 0.1
