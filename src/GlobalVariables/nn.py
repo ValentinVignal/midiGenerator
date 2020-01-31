@@ -14,3 +14,4 @@ kld = True
 kld_annealing_start = 4e-1
 kld_annealing_stop = 7.5e-0
 kld_sum = True
+sah=False

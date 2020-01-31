@@ -1,3 +1,4 @@
+from . import attention
 from . import coder2D
 from . import coder3D
 from . import conv

@@ -254,6 +254,8 @@ class Parser(argparse.ArgumentParser):
                           help='Stop of the annealing of the kld')
         self.add_store_true(name='--no-kld-sum', argtype=argtype,
                             help='To not sum through time for the KLD')
+        self.add_store_true(name='--sah', argtype=argtype,
+                            help='use an attention head after the first layer of LSTM')
 
         self.set_defaults(
             epochs_drop=g.nn.epochs_drop,
@@ -275,7 +277,8 @@ class Parser(argparse.ArgumentParser):
                 no_kld=False,
                 kld_annealing_start=g.nn.kld_annealing_start,
                 kld_annealing_stop=g.nn.kld_annealing_stop,
-                no_kld_sum=False
+                no_kld_sum=False,
+                sah=g.nn.sah
             )
         else:
             self.set_defaults(
@@ -289,7 +292,8 @@ class Parser(argparse.ArgumentParser):
                 no_kld='False',
                 kld_annealing_start='0:0.5',
                 kld_annealing_stop='0.5:1',
-                no_kld_sum='False'
+                no_kld_sum='False',
+                sah='False'
             )
 
     def add_generation_args(self, artype=ArgType.ALL):

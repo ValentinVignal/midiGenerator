@@ -38,7 +38,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
         kld=g.nn.kld,
         kld_annealing_start=g.nn.kld_annealing_start,
         kld_annealing_stop=g.nn.kld_annealing_stop,
-        kld_sum=g.nn.kld_sum
+        kld_sum=g.nn.kld_sum,
+        sah=g.nn.sah
     )
     dictionaries.set_default(model_options, model_options_default)
 
@@ -161,7 +162,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
 
     rnn_output = mlayers.rnn.LstmRNN(
         size_list=model_param['lstm'],
-        return_sequence=False
+        return_sequence=False,
+        use_sah=model_options['sah']
     )(samples)  # (batch, size)
 
     # ------------------------------ Decoding ------------------------------

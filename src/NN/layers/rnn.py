@@ -3,6 +3,7 @@ import tensorflow as tf
 from src import GlobalVariables as g
 import src.mtypes as t
 from .KerasLayer import KerasLayer
+from .attention import SAH
 
 K = tf.keras.backend
 layers = tf.keras.layers
@@ -56,13 +57,14 @@ class LstmBlock(KerasLayer):
 class LstmRNN(KerasLayer):
     type_size_list = t.List[int]
 
-    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout, return_sequence: bool = False, *args,
-                 **kwargs):
+    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout, return_sequence: bool = False,
+                 use_sah=False, *args, **kwargs):
         super(LstmRNN, self).__init__(*args, **kwargs)
         # ---------- Raw parameters ----------
         self.size_list = size_list
         self.dropout = dropout
         self.return_sequence = return_sequence
+        self.use_sah = use_sah
 
         self.lstm_blocks = []
         self.init_lstm_blocks(size_list, dropout)
@@ -71,13 +73,16 @@ class LstmRNN(KerasLayer):
         for index, size in enumerate(size_list):
             return_sequence = index < len(size_list) - 1 or self.return_sequence
             self.lstm_blocks.append(LstmBlock(size=size, dropout=dropout, return_sequence=return_sequence))
+            if index == 0 and self.use_sah and (len(size_list) > 1 or self.return_sequence):
+                self.lstm_blocks.append(SAH(latent_size=size))
 
     def get_config(self):
         config = super(LstmRNN, self).get_config()
         config.update(dict(
             size_list=self.size_list,
             dropout=self.dropout,
-            return_sequence=self.return_sequence
+            return_sequence=self.return_sequence,
+            use_sah=self.use_sah
         ))
         return config
 
@@ -87,7 +92,7 @@ class LstmRNN(KerasLayer):
         for lstm in self.lstm_blocks:
             lstm.build(new_shape)
             new_shape = lstm.compute_output_shape(new_shape)
-            self.add_weights_variables(lstm)
+            # self.add_weights_variables(lstm)
         super(LstmRNN, self).build(input_shape)
 
     def call(self, inputs):
