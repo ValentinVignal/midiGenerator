@@ -5,7 +5,6 @@ import tensorflow as tf
 from pathlib import Path
 import matplotlib.pyplot as plt
 import gc
-import csv
 
 from src import skopt_
 from src.skopt_.space import Real, Categorical
@@ -16,7 +15,6 @@ from src.text import summary
 K = tf.keras.backend
 
 from src.MidiGenerator import MidiGenerator
-from src.NN.Callbacks import LossHistory
 from src import Args
 from src.Args import ArgType, Parser
 from src.NN import Sequences
@@ -25,6 +23,8 @@ from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 
 def create_list(string):
     """
+    Create a list from the tupple
+    '0:10:2' -> [0, 2, 4, 6, 8]
 
     :param string:
     :return:
@@ -49,10 +49,20 @@ def get_tuple(string, t=float, separator=':'):
 
 
 def str2bool(string):
+    """
+    Used to evaluate the boolean written in the string
+    :param string:
+    :return:
+    """
     return string == 'True'
 
 
 def ten_power(x):
+    """
+
+    :param x:
+    :return: 10 ** (-x)
+    """
     return 10 ** (-float(x))
 
 
@@ -86,9 +96,15 @@ def create_dimensions(args):
     # decay
     decay_tuple = get_tuple(args.decay)
     add_Real(decay_tuple, name='decay')
-    # dropout
-    dropout_tuple = get_tuple(args.dropout)
-    add_Real(dropout_tuple, name='dropout')
+    # dropout d
+    dropout_d_tuple = get_tuple(args.dropout_d)
+    add_Real(dropout_d_tuple, name='dropout_d')
+    # dropout c
+    dropout_c_tuple = get_tuple(args.dropout_c)
+    add_Real(dropout_c_tuple, name='dropout_c')
+    # dropout r
+    dropout_r_tuple = get_tuple(args.dropout_r)
+    add_Real(dropout_r_tuple, name='dropout_r')
     # sampling
     sampling_tuple = get_tuple(args.no_sampling, t=lambda x: not str2bool(x), separator=',')
     add_Categorical(sampling_tuple, name='sampling')
@@ -139,6 +155,11 @@ def create_dimensions(args):
 
 
 def get_history_acc(history):
+    """
+
+    :param history:
+    :return: The total validation accuracy
+    """
     accuracy = 0
     i = 0
     while f'val_Output_{i}_acc' in history:
@@ -207,9 +228,9 @@ def main(args):
     if args.seq2np:
         x_dict, y_dict = {}, {}
 
-    def create_model(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
-                     kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm, l_scale_cost,
-                     l_rhythm_cost, take_all_step_rhythm):
+    def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
+                     model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
+                     l_rhythm, l_scale_cost, l_rhythm_cost, take_all_step_rhythm):
         midi_generator = MidiGenerator(name=args.name)
         midi_generator.load_data(data_transformed_path=data_transformed_path, verbose=0)
 
@@ -223,7 +244,9 @@ def main(args):
             decay=decay
         )
         model_options = dict(
-            dropout=dropout,
+            dropout_d=dropout_d,
+            dropout_c=dropout_c,
+            dropout_r=dropout_r,
             all_sequence=all_sequence,
             lstm_state=args.lstm_state,
             sampling=sampling,
@@ -253,9 +276,9 @@ def main(args):
         return midi_generator
 
     @use_named_args(dimensions=dimensions)
-    def fitness(lr, optimizer, decay, dropout, sampling, kld, all_sequence, model_name, model_param, nb_steps,
-                kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm, l_scale_cost,
-                l_rhythm_cost, take_all_step_rhythm):
+    def fitness(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
+                model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm,
+                l_scale_cost, l_rhythm_cost, take_all_step_rhythm):
         global iteration
         iteration += 1
 
@@ -265,7 +288,9 @@ def main(args):
         s += str_hp_to_print('lr', lr, exp_format=True)
         s += str_hp_to_print('opt', optimizer)
         s += str_hp_to_print('decay', decay, exp_format=True)
-        s += str_hp_to_print('dropout', dropout, exp_format=True)
+        s += str_hp_to_print('dropout_d', dropout_d, exp_format=True)
+        s += str_hp_to_print('dropout_c', dropout_c, exp_format=True)
+        s += str_hp_to_print('dropout_r', dropout_r, exp_format=True)
         s += str_hp_to_print('sampling', sampling)
         s += str_hp_to_print('kld', kld)
         s += str_hp_to_print('all_sequence', all_sequence)
@@ -285,7 +310,9 @@ def main(args):
             lr=lr,
             optimizer=optimizer,
             decay=decay,
-            dropout=dropout,
+            dropout_d=dropout_d,
+            dropout_c=dropout_c,
+            dropout_r=dropout_r,
             sampling=sampling,
             kld=kld,
             all_sequence=all_sequence,
