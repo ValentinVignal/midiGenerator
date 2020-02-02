@@ -36,7 +36,9 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
 
     # ---------- Model options ----------
     model_options_default = dict(
-        dropout=g.nn.dropout,
+        dropout_d=g.nn.dropout_d,
+        dropout_c=g.nn.dropout_c,
+        dropout_r=g.nn.dropout_r,
         sampling=g.nn.sampling,
         kld=g.nn.kld,
         kld_annealing_start=g.nn.kld_annealing_start,
@@ -54,8 +56,6 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
         take_all_step_rhythm=g.loss.take_all_step_rhythm
     )
     dictionaries.set_default(loss_options, loss_options_default)
-
-    dropout = model_options['dropout']
 
     print('Definition of the graph ...')
 
@@ -114,7 +114,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
 
     encoders = [mlayers.coder2D.Encoder2D(
         encoder_param=model_param,
-        dropout=dropout,
+        dropout_d=model_options['dropout_d'],
+        dropout_c=model_options['dropout_c'],
         time_stride=time_stride,
         time_distributed=False
     ) for inst in range(nb_instruments)]
@@ -135,7 +136,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
     decoders = [mlayers.coder2D.Decoder2D(
         decoder_param=model_param_dec,
         shape_before_conv=shape_before_conv_dec,
-        dropout=dropout,
+        dropout_d=model_options['dropout_d'],
+        dropout_c=model_options['dropout_c'],
         time_stride=time_stride,
         shapes_after_upsize=shapes_before_pooling
     ) for inst in range(nb_instruments)]

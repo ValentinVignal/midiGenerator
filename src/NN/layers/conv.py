@@ -14,7 +14,7 @@ layers = tf.keras.layers
 # ------------------------------------------------------------
 
 class ConvBlock3D(KerasLayer):
-    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.nn.dropout, *args, **kwargs):
+    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.nn.dropout_c, *args, **kwargs):
         """
 
         :param filters: int: the size of the filters
@@ -63,7 +63,7 @@ class ConvBlock3D(KerasLayer):
 
 
 class ConvTransposedBlock3D(KerasLayer):
-    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.nn.dropout,
+    def __init__(self, filters: int, strides: t.strides = (1, 1, 1), dropout: float = g.nn.dropout_c,
                  final_shape: t.anyshape_ = None, *args, **kwargs):
         """
 
@@ -146,7 +146,7 @@ class ConvTransposedBlock3D(KerasLayer):
 # ------------------------------------------------------------
 
 class ConvBlock2D(KerasLayer):
-    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.nn.dropout, *args, **kwargs):
+    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.nn.dropout_c, *args, **kwargs):
         """
 
         :param filters: int: the size of the filters
@@ -196,7 +196,7 @@ class ConvBlock2D(KerasLayer):
 
 
 class ConvTransposedBlock2D(KerasLayer):
-    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.nn.dropout,
+    def __init__(self, filters: int, strides: t.strides = (1, 1), dropout: float = g.nn.dropout_c,
                  final_shape: t.anyshape_ = None, *args, **kwargs):
         """
 

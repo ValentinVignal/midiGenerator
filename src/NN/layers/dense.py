@@ -10,7 +10,7 @@ layers = tf.keras.layers
 
 
 class DenseBlock(KerasLayer):
-    def __init__(self, units: int, dropout: float = g.nn.dropout, *args, **kwargs):
+    def __init__(self, units: int, dropout: float = g.nn.dropout_d, *args, **kwargs):
         """
 
         :param units: int
@@ -61,7 +61,7 @@ class DenseCoder(KerasLayer):
 
     type_size_list = t.List[int]
 
-    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout, *args, **kwargs):
+    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout_d, *args, **kwargs):
         """
 
         :param size_list: list<int>, (nb_blocks,)
@@ -75,7 +75,7 @@ class DenseCoder(KerasLayer):
         self.dense_blocks = []
         self.init_dense_blocks(size_list, dropout=dropout)
 
-    def init_dense_blocks(self, size_list: t.List, dropout: float = g.nn.dropout):
+    def init_dense_blocks(self, size_list: t.List, dropout: float = g.nn.dropout_d):
         for size in size_list:
             self.dense_blocks.append(DenseBlock(size, dropout=dropout))
 

@@ -13,7 +13,7 @@ layers = tf.keras.layers
 class ConvEncoder3D(KerasLayer):
     type_filters_list = t.List[t.List[int]]
 
-    def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1,
+    def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout_c, time_stride: int = 1,
                  last_pool: bool = False, *args, **kwargs):
         """
         :param filters_list: List[List[int]]:
@@ -31,7 +31,7 @@ class ConvEncoder3D(KerasLayer):
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride)
         super(ConvEncoder3D, self).__init__(*args, **kwargs)
 
-    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1):
+    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.nn.dropout_c, time_stride: int = 1):
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):
                 if index == len(size_list) - 1:
@@ -83,7 +83,8 @@ class Encoder3D(KerasLayer):
         t.List[int]  # dense
     ]]
 
-    def __init__(self, encoder_param: type_encoder_param, dropout: float = g.nn.dropout, time_stride: int = 1,
+    def __init__(self, encoder_param: type_encoder_param, dropout_c: float = g.nn.dropout_c,
+                 dropout_d: float = g.nn.dropout_d, time_stride: int = 1,
                  time_distributed: bool = True, last_pool: bool = False, *args, **kwargs):
         """
 
@@ -91,20 +92,22 @@ class Encoder3D(KerasLayer):
             'conv': [[4, 8], [16, 8], [4, 8]],
             'dense': [24, 12]
         }
-        :param dropout: float:
+        :param dropout_c: float:
+        :param dropout_d: float:
         :param time_stride: int:
         :param time_distributed: bool:
         :param last_pool: bool:
         """
         # ---------- Raw parameters ----------
         self.encoder_param = encoder_param
-        self.dropout = dropout
+        self.dropout_c = dropout_c
+        self.dropout_d = dropout_d
         self.time_stride = time_stride
         self.time_distributed = time_distributed
         self.last_pool = last_pool
 
         self.conv_enc = ConvEncoder3D(filters_list=encoder_param['conv'],
-                                      dropout=dropout,
+                                      dropout=dropout_c,
                                       time_stride=time_stride,
                                       last_pool=self.last_pool)
         if time_distributed:
@@ -112,14 +115,15 @@ class Encoder3D(KerasLayer):
         else:
             self.flatten = layers.Flatten()
         self.dense_enc = dense.DenseCoder(size_list=encoder_param['dense'],
-                                          dropout=dropout)
+                                          dropout=dropout_d)
         super(Encoder3D, self).__init__(*args, **kwargs)
 
     def get_config(self):
         config = super(Encoder3D, self).get_config()
         config.update(dict(
             encoder_param=self.encoder_param,
-            dropout=self.dropout,
+            dropout_c=self.dropout_c,
+            dropout_d=self.dropout_d,
             time_stride=self.time_stride,
             time_distributed=self.time_distributed,
             last_pool=self.last_pool
@@ -163,7 +167,7 @@ class ConvDecoder3D(KerasLayer):
 
     nb_instance = 0
 
-    def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1,
+    def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout_c, time_stride: int = 1,
                  shapes_after_upsize: type_shapes_after_upsize = None, first_pool: bool = False, *args, **kwargs):
         """
 
@@ -184,7 +188,7 @@ class ConvDecoder3D(KerasLayer):
         self.conv_blocks = []
         self.init_conv_blocks(filters_list, dropout=dropout, time_stride=time_stride, final_shapes=shapes_after_upsize)
 
-    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.nn.dropout, time_stride: int = 1,
+    def init_conv_blocks(self, filters_list: type_filters_list, dropout: float = g.nn.dropout_c, time_stride: int = 1,
                          final_shapes: type_shapes_after_upsize = None, first_pool: bool = False):
         for index_list, size_list in enumerate(filters_list):
             for index, size in enumerate(size_list):
@@ -244,16 +248,17 @@ class Decoder3D(KerasLayer):
     ]]
     type_shapes_after_upsize = t.Optional[t.List[t.bshape]]
 
-    def __init__(self, decoder_param: type_decoder_param, shape_before_conv: t.shape, dropout: float = g.nn.dropout,
-                 time_stride: int = 1, shapes_after_upsize: type_shapes_after_upsize = None,
-                 first_upsize: bool = False, *args, **kwargs):
+    def __init__(self, decoder_param: type_decoder_param, shape_before_conv: t.shape, dropout_c: float = g.nn.dropout_c,
+                 dropout_d: float = g.nn.dropout_d, time_stride: int = 1,
+                 shapes_after_upsize: type_shapes_after_upsize = None, first_upsize: bool = False, *args, **kwargs):
         """
 
         :param decoder_param: {
             'conv': [[4, 8], [16, 8], [4, 8]],
             'dense': [24, 12]
         }
-        :param dropout: float:
+        :param dropout_c: float:
+        :param dropout_d: float:
         :param time_stride: int:
         :param shapes_after_upsize: Optional[List[bshape]]:
             ⚠ batch dim IS IN the shape ⚠
@@ -263,16 +268,17 @@ class Decoder3D(KerasLayer):
         # ---------- Raw parameters ----------
         self.decoder_param = decoder_param
         self.shape_before_conv = shape_before_conv
-        self.dropout = dropout
+        self.dropout_d = dropout_d
+        self.dropout_c = dropout_c
         self.time_stride = time_stride
         self.shapes_after_upsize = shapes_after_upsize
         self.first_upsize = first_upsize
 
         self.dense_dec = dense.DenseCoder(size_list=decoder_param['dense'],
-                                          dropout=dropout)
+                                          dropout=dropout_d)
         self.reshape = layers.Reshape(self.shape_before_conv)
         self.conv_dec = ConvDecoder3D(filters_list=decoder_param['conv'],
-                                      dropout=dropout,
+                                      dropout=dropout_c,
                                       time_stride=time_stride,
                                       shapes_after_upsize=shapes_after_upsize,
                                       first_pool=first_upsize)
@@ -288,7 +294,8 @@ class Decoder3D(KerasLayer):
         config.update(dict(
             decoder_param=self.decoder_param,
             shape_before_conv=self.shape_before_conv,
-            dropout=self.dropout,
+            dropout_c=self.dropout_c,
+            dropout_d=self.dropout_d,
             time_stride=self.time_stride,
             shapes_after_upsize=self.shapes_after_upsize,
             first_upsize=self.first_upsize

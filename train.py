@@ -42,7 +42,9 @@ def main(args):
             decay=args.decay
         )
         model_options = dict(
-            dropout=args.dropout,
+            dropout_d=args.dropout_d,
+            dropout_c=args.dropout_c,
+            dropout_r=args.dropout_r,
             all_sequence=args.all_sequence,
             lstm_state=args.lstm_state,
             sampling=not args.no_sampling,

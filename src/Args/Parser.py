@@ -238,8 +238,12 @@ class Parser(argparse.ArgumentParser):
                               help='Nb step to train on')
 
         # -------------------- Architecture --------------------
-        self.add_argument('--dropout', type=self.get_type(argtype, float),
-                          help='Value of the dropout')
+        self.add_argument('--dropout-d', type=self.get_type(argtype, float),
+                          help='Value of the dropout for dense layers')
+        self.add_argument('--dropout-c', type=self.get_type(argtype, float),
+                          help='Value of the dropout for the convolutional layers')
+        self.add_argument('--dropout-r', type=self.get_type(argtype, float),
+                          help='Value of the dropout for the RNN layers')
         self.add_store_true(name='--all-sequence', argtype=argtype,
                             help='Use or not all the sequence in the RNN layer')
         self.add_store_true(name='--lstm-state', argtype=argtype,
@@ -270,7 +274,9 @@ class Parser(argparse.ArgumentParser):
                 lr=g.nn.lr,
                 optimizer='adam',
                 decay=g.nn.decay,
-                dropout=g.nn.dropout,
+                dropout_d=g.nn.dropout_r,
+                dropout_c=g.nn.dropout_c,
+                dropout_r=g.nn.dropout_r,
                 all_sequence=g.nn.all_sequence,
                 lstm_state=g.nn.lstm_state,
                 no_sampling=False,
@@ -285,7 +291,9 @@ class Parser(argparse.ArgumentParser):
                 lr='1:4',
                 optimizer='adam',
                 decay='0.01:1',
-                dropout='0.1:0.3',
+                dropout_d='0.1:0.3',
+                dropout_c='0.1:0.3',
+                dropout_r='0.1:0.3',
                 all_sequence='False',
                 lstm_state='False',
                 no_sampling='False',
