@@ -75,3 +75,36 @@ class MGLogistic(MGInit):
             self.save_midis_path = Path(path)
         print('new save path for Midi files :', colored(str(self.save_midis_path), 'cyan'))
 
+    @staticmethod
+    def get_unique_path(path):
+        """
+
+        :param path: a pathlib path of a file
+        :return: the same path but with _(i) at the end if it already exists
+        """
+        if not path.exists():
+            return path
+        else:
+            folder_path = path.parent
+            suffix = path.suffix
+            name = path.stem
+
+            i = 0
+            while (folder_path / (name + f'_({i}){suffix}')).exists():
+                i += 1
+            return folder_path / (name + f'_({i}){suffix}')
+
+    @staticmethod
+    def get_unique_filename(folder_path, name, with_extension=True):
+        """
+
+        :param folder_path:
+        :param name:
+        :param with_extension: either to return new_name.stem or new_name
+        :return:
+        """
+        unique_path = MGLogistic.get_unique_path(folder_path / name)
+        return unique_path.name if with_extension else unique_path.stem
+
+
+
