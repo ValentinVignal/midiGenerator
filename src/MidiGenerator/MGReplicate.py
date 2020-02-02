@@ -105,11 +105,13 @@ class MGReplicate(MGComputeGeneration, MGInit):
             # Function params
             path=self.save_midis_path,
             title=self.full_name,
+            file_name='replicate_summary.txt',
             # Summary params
-            epochs=self.total_epochs,
-            input_params=self.input_param,
-            instruments=self.instruments,
-            notes_range=self.notes_range
+            length=length,
+            no_duration=no_duration,
+            noise=noise,
+            # Generic Summary
+            **self.summary_dict
         )
 
         cprint('Done replicating', 'green')
@@ -224,11 +226,13 @@ class MGReplicate(MGComputeGeneration, MGInit):
             # Function params
             path=self.save_midis_path,
             title=self.full_name,
+            file_name='replicate_fill_summary.txt',
             # Summary params
-            epochs=self.total_epochs,
-            input_params=self.input_param,
-            instruments=self.instruments,
-            notes_range=self.notes_range
+            length=max_length,
+            no_duration=no_duration,
+            noise=noise,
+            # Generic Summary
+            **self.summary_dict
         )
 
         cprint('Done replicating (fill)', 'green')
