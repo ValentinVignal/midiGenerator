@@ -96,11 +96,12 @@ class MGGenerate(MGComputeGeneration, MGInit):
             # Function params
             path=self.save_midis_path,
             title=self.full_name,
+            file_name='generate_summary.txt',
             # Summary params
-            epochs=self.total_epochs,
-            input_params=self.input_param,
-            instruments=self.instruments,
-            notes_range=self.notes_range
+            lenght=length,
+            no_duration=no_duration,
+            # Generic Summary
+            **self.summary_dict
         )
 
         cprint('Done generating', 'green')
@@ -193,6 +194,18 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 save_truth=False,
                 save_images=True
             )
+
+        summary.summarize(
+            # Function parameters
+            path=self.save_midis_path,
+            title=self.full_name,
+            file_name='generate_fill_summary.txt',
+            # Summary parameters
+            length=max_length,
+            no_duration=no_duration,
+            # Generic Summary
+            **self.summary_dict
+        )
 
         cprint('Done generating (fill)', 'green')
 
@@ -297,4 +310,36 @@ class MGGenerate(MGComputeGeneration, MGInit):
             save_truth=False,
             save_images=True
         )
+
+        # ----- summarize the generation -----
+
+        # Get the accuracies
+        generated_accuracy, generated_accuracies = self.accuracy_generation(
+            generated_midi_final,
+            generated_midi_final_truth,
+            mono=self.mono
+        )
+        helped_accuracy, helped_accuracies = self.accuracy_generation(
+            generated_midi_final_helped,
+            generated_midi_final_truth,
+            mono=self.mono
+        )
+
+        # Creation of the summary .txt file
+        summary.summarize(
+            # Function parameters
+            path=self.save_midis_path,
+            title=self.full_name,
+            file_name='compare_generation_summary.txt',
+            # Summary paramters,
+            length=max_length,
+            no_duration=no_duration,
+            generated_accuracy=generated_accuracy,
+            generated_accuracies=generated_accuracies,
+            helped_accuracy=helped_accuracy,
+            helped_accuracies=helped_accuracies,
+            # Generic Summary
+            **self.summary_dict
+        )
+
         cprint('Done comparing generation', 'green')

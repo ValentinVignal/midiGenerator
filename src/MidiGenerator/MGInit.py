@@ -70,3 +70,26 @@ class MGInit:
         del self.sequence
         del self.train_history
 
+    @property
+    def nb_instruments(self):
+        return len(self.instruments)
+
+    @property
+    def summary_dict(self):
+        """
+
+        :return: A dict with all the interesting attribut of the instance
+        """
+        return dict(
+            epochs=self.total_epochs,
+            name=self.name,
+            model_id=self.model_id,
+            full_name=self.full_name,
+            work_on=self.work_on,
+            predict_offset=self.predict_offset,
+            nb_instruments=self.nb_instruments,
+            instrumetns=self.instruments,
+            notes_range=self.notes_range,
+            mono=self.mono
+        )
+
