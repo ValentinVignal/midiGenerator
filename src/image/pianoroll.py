@@ -86,14 +86,23 @@ def save_pianoroll(array, path, seed_length, instruments, mono=False, replicate=
             for j in range(nb_steps):
                 if activations[inst, i, j] == 1:
                     all[i, j] = colors_rgb[inst]
+    all = np.flip(all, axis=0)
     img = Image.fromarray(
-        np.flip(all, axis=0).astype(np.uint8),
+        all.astype(np.uint8),
         mode='RGB'
     )
-    img.save(path)
+    img.save(path.parent / (path.stem + '_(PIL).jpg'))
+    plt.imshow(all.astype(np.int))
+    plt.title(path.stem)
+    plt.savefig(path.parent / (path.stem + '_(PLT).jpg'))
 
 
 def return_colors(nb_instruments):
+    """
+
+    :param nb_instruments: the number of color to return
+    :return: a list of colors with a length of nb_instruments
+    """
     colors = [Color('#' + ''.join([random.choice('0123456789abcdef') for j in range(6)])) for i in
               range(nb_instruments)]
     colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
