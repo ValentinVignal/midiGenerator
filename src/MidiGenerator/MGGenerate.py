@@ -178,7 +178,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
             filled_list[inst] = self.reshape_generated_array(filled_list[inst])
         self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
-        self.compute_generated_array(
+        accuracies, accuracies_inst = self.compute_generated_array(
             generated_array=truth,
             folder_path=self.save_midis_path,
             name='generated_fill_truth',
@@ -186,8 +186,9 @@ class MGGenerate(MGComputeGeneration, MGInit):
             verbose=verbose,
             save_images=True
         )
+        accuracies, accuracies_inst = [accuracies], [accuracies_inst]
         for inst in range(nb_instruments):
-            self.compute_generated_array(
+            acc, acc_inst = self.compute_generated_array(
                 generated_array=filled_list[inst],
                 folder_path=self.save_midis_path,
                 name=f'generated_fill_{inst}',
@@ -197,7 +198,22 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 save_truth=False,
                 save_images=True
             )
+            accuracies.append(acc)
+            accuracies_inst.append(acc_inst)
 
+        # Save the image of all in a subplot to allow easier comparaisons
+        self.save_generated_arrays_cross_images(
+            generated_arrays=[truth] + filled_list,
+            folder_path=self.save_midis_path,
+            name=f'generated_fill_all',
+            replicate=False,
+            titles=['Truth'] + [f'Fill Inst {i}' for i in range(nb_instruments)],
+            subtitles=[
+                f'Acc: {accuracies_inst[i][int(max(0, i - 1))]}' for i in range(nb_instruments + 1)
+            ]       # Truth is in it
+        )
+
+        # Save the summary of the generation
         summary.summarize(
             # Function parameters
             path=self.save_midis_path,
@@ -283,8 +299,9 @@ class MGGenerate(MGComputeGeneration, MGInit):
         self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
+        accuracies, accuracies_inst = [], []
         # Generated
-        self.compute_generated_array(
+        acc, acc_inst = self.compute_generated_array(
             generated_array=generated_midi_final,
             folder_path=self.save_midis_path,
             name='compare_generation_alone',
@@ -294,8 +311,10 @@ class MGGenerate(MGComputeGeneration, MGInit):
             save_truth=False,
             save_images=True
         )
+        accuracies.append(acc)
+        accuracies_inst.append(acc_inst)
         # Helped
-        self.compute_generated_array(
+        acc, acc_inst = self.compute_generated_array(
             generated_array=generated_midi_final_helped,
             folder_path=self.save_midis_path,
             name='compare_generation_helped',
@@ -305,6 +324,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
             save_truth=False,
             save_images=True
         )
+        accuracies.append(acc)
+        accuracies_inst.append(acc_inst)
         # Truth
         self.compute_generated_array(
             generated_array=generated_midi_final_truth,
@@ -316,20 +337,24 @@ class MGGenerate(MGComputeGeneration, MGInit):
             save_truth=False,
             save_images=True
         )
+        accuracies.append(acc)
+        accuracies_inst.append(acc_inst)
 
-        # ----- summarize the generation -----
+        # Save the image of all in a subplot to allow easier comparaisons
+        self.save_generated_arrays_cross_images(
+            generated_arrays=[generated_midi_final_truth, generated_midi_final_helped, generated_midi_final],
+            folder_path=self.save_midis_path,
+            name=f'compare_generation_all',
+            replicate=False,
+            titles=['Truth', 'Helped', 'Alone'],
+            subtitles=[
+                'Acc : 1',
+                f'Acc: {accuracies[1]:.3}, Acc_inst: [{", ".join([f"{a:.3}" for a in accuracies_inst[1]])}]',
+                f'Acc: {accuracies[0]:.3}, Acc_inst: [{", ".join([f"{a:.3}" for a in accuracies_inst[0]])}]'
+            ]       # Truth is in it
+        )
 
-        # Get the accuracies
-        generated_accuracy, generated_accuracies = self.accuracy_generation(
-            generated_midi_final,
-            generated_midi_final_truth,
-            mono=self.mono
-        )
-        helped_accuracy, helped_accuracies = self.accuracy_generation(
-            generated_midi_final_helped,
-            generated_midi_final_truth,
-            mono=self.mono
-        )
+        # ----- Summarize the generation -----
 
         # Creation of the summary .txt file
         summary.summarize(
@@ -340,10 +365,10 @@ class MGGenerate(MGComputeGeneration, MGInit):
             # Summary paramters,
             length=max_length,
             no_duration=no_duration,
-            generated_accuracy=generated_accuracy,
-            generated_accuracies=generated_accuracies,
-            helped_accuracy=helped_accuracy,
-            helped_accuracies=helped_accuracies,
+            generated_accuracy=accuracies[0],
+            generated_accuracies=accuracies_inst[0],
+            helped_accuracy=accuracies[1],
+            helped_accuracies=accuracies_inst[1],
             # Generic Summary
             **self.summary_dict
         )

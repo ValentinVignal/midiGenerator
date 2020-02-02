@@ -17,7 +17,7 @@ def array_to_pianoroll(array, seed_length=0, mono=False, replicate=False, colors
     nb_instruments = array.shape[0]
     # Get the colors for the instruments
     colors = mcolors.get_colors(nb_instruments) if colors is None else colors
-    activations = np.take(array, axis=-1, indices=0)        # (nb_instruments, size, nb_steps)
+    activations = np.take(array, axis=-1, indices=0)  # (nb_instruments, size, nb_steps)
     activations = activations[:, :-1] if mono else activations
     nb_instruments, input_size, nb_steps = activations.shape
     np.place(activations, 0.5 <= activations, 1)
@@ -25,7 +25,7 @@ def array_to_pianoroll(array, seed_length=0, mono=False, replicate=False, colors
     all = np.zeros((input_size, nb_steps, 3))  # RGB        (input_size, length, 3)
     if replicate:
         for i in range(seed_length):
-            all[:, i::2 * seed_length] = 25     # So steps are visible (grey)
+            all[:, i::2 * seed_length] = 25  # So steps are visible (grey)
     else:
         all[:, :seed_length] = 25  # So seed is visible (grey)
     for inst in range(nb_instruments):
@@ -67,48 +67,31 @@ def save_array_as_pianoroll(array, folder_path, name, seed_length=0, mono=False,
     )
 
 
-
-'''
-def save_pianoroll(array, path, seed_length, instruments, mono=False, replicate=False):
+def save_arrays_as_pianoroll_subplot(arrays, file_name, titles=None, subtitles=None, seed_length=0, mono=False,
+                                     replicate=False):
     """
 
-    :param replicate:
-    :param mono:
-    :param array: shape (nb_instruments, 128, nb_steps, 2)
-    :param path:
+    :param subtitles:
+    :param titles:
+    :param arrays: List[(nb_instruments, size, length, channels)]
+    :param file_name:
     :param seed_length:
-    :param instruments:
+    :param mono:
+    :param replicate:
     :return:
     """
-    # Colors
-    colors_rgb = return_colors(len(instruments))
-    activations = np.take(array, axis=-1, indices=0)        # (nb_instruments, size, nb_steps)
-    activations = activations[:, :-1] if mono else activations
-    nb_instruments, input_size, nb_steps = activations.shape
-    np.place(activations, 0.5 <= activations, 1)
-    np.place(activations, activations < 0.5, 0)
-    all = np.zeros((input_size, nb_steps, 3))  # RGB
-    if replicate:
-        for i in range(seed_length):
-            all[:, i::2 * seed_length] = 25     # So steps are visible (grey)
-    else:
-        all[:, :seed_length] = 25  # So seed is visible (grey)
-    for inst in range(nb_instruments):
-        for i in range(input_size):
-            for j in range(nb_steps):
-                if activations[inst, i, j] == 1:
-                    all[i, j] = colors_rgb[inst]
-    all = np.flip(all, axis=0)
-    img = Image.fromarray(
-        all.astype(np.uint8),
-        mode='RGB'
+    nb_instruments = arrays[0].shape[0]
+    colors = mcolors.get_colors(nb_instruments)
+    pianorolls = [array_to_pianoroll(
+        array=array,
+        seed_length=seed_length,
+        mono=mono,
+        replicate=replicate,
+        colors=colors
+    ) for array in arrays]
+    msave.save_arrays(
+        arrays=pianorolls,
+        file_name=file_name,
+        titles=titles,
+        subtitles=subtitles
     )
-    img.save(path.parent / (path.stem + '_(PIL).jpg'))
-    plt.imshow(all.astype(np.int))
-    plt.title(path.stem)
-    plt.savefig(path.parent / (path.stem + '_(PLT).jpg'))
-'''
-
-
-
-

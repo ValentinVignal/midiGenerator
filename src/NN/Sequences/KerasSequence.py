@@ -52,7 +52,6 @@ class KerasSequence(tf.keras.utils.Sequence):
             nb_steps=self.nb_steps,
             predict_offset=predict_offset
         )  # nb element available in the generator
-        print('nb el', self.nb_elements)
         self.nb_elements = int(self.nb_elements / self.batch_size)
         self.all_len = self.know_all_len(
             all_shapes=self.all_shapes,
@@ -60,7 +59,6 @@ class KerasSequence(tf.keras.utils.Sequence):
             nb_steps=self.nb_steps,
             predict_offset=self.predict_offset
         )
-        print('predict offset', self.predict_offset, 'len', self.nb_elements)
 
     # -------------------- For Keras --------------------
 

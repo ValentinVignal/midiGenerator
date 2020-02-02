@@ -200,7 +200,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
             self.reshape_generated_array(generated_list[inst]) for inst in range(nb_instruments)
         ]
         truth_final = self.reshape_generated_array(truth)
-        self.compute_generated_array(
+        accuracies, accuracies_inst = self.compute_generated_array(
             generated_array=truth_final,
             folder_path=self.save_midis_path,
             name='replicated_fill_truth',
@@ -209,8 +209,9 @@ class MGReplicate(MGComputeGeneration, MGInit):
             save_images=save_images,
             replicate=True
         )
+        accuracies, accuracies_inst = [accuracies], [accuracies_inst]
         for inst in range(nb_instruments):
-            self.compute_generated_array(
+            acc, acc_inst = self.compute_generated_array(
                 generated_array=generated_midi_final_list[inst],
                 folder_path=self.save_midis_path,
                 name=f'replicated_fill_{inst}',
@@ -221,10 +222,25 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 save_truth=False,
                 replicate=True
             )
+            accuracies.append(acc)
+            accuracies_inst.append(acc_inst)
 
         if self.batch is not None:
             self.sequence.change_batch_size(self.batch)
 
+        # Save the image of all in a subplot to allow easier comparaisons
+        self.save_generated_arrays_cross_images(
+            generated_arrays=[truth_final] + generated_midi_final_list,
+            folder_path=self.save_midis_path,
+            name=f'replicated_fill_all',
+            replicate=True,
+            titles=['Truth'] + [f'Fill Inst {i}' for i in range(nb_instruments)],
+            subtitles=[
+                f'Acc: {accuracies_inst[i][int(max(0, i - 1))]}' for i in range(nb_instruments + 1)
+            ]       # Truth is in it
+        )
+
+        # Save the summary of the generation
         summary.summarize(
             # Function params
             path=self.save_midis_path,

@@ -111,6 +111,33 @@ class MGComputeGeneration(MGInit):
                                                       seed_length=self.nb_steps * self.step_length,
                                                       mono=self.mono,
                                                       replicate=replicate)
+            return accuracy, accuracies_inst
+        return None, [None for _ in range(self.nb_instruments)]
+
+    def save_generated_arrays_cross_images(self, generated_arrays, folder_path, name, replicate=False, titles=None,
+                                           subtitles=None):
+        """
+        All the generated arrays in one subplot to give an easier way to compare them
+
+        :param subtitles:
+        :param titles:
+        :param replicate:
+        :param generated_arrays:
+        :param folder_path
+        :param name
+        """
+        folder_path = Path(folder_path)
+        file_name = self.get_unique_path(folder_path / (name + '.jpg'))  # From MGLogistic
+
+        pianoroll.save_arrays_as_pianoroll_subplot(
+            arrays=generated_arrays,
+            file_name=file_name,
+            seed_length=self.nb_steps * self.step_length,
+            mono=self.mono,
+            replicate=replicate,
+            titles=titles,
+            subtitles=subtitles
+        )
 
     def get_mask(self, nb_instruments, batch_size=1):
         if Models.needs_mask[self.model_name]:
