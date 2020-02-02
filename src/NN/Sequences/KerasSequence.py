@@ -11,15 +11,19 @@ class KerasSequence(tf.keras.utils.Sequence):
     """
 
     """
-    def __init__(self, path, nb_steps, batch_size=4, work_on=g.mg.work_on, noise=0, replicate=False):
+
+    def __init__(self, path, nb_steps, batch_size=4, work_on=g.mg.work_on, noise=0, replicate=False,
+                 predict_offset=g.train.predict_offset):
         """
 
-        :param path:
-        :param nb_steps:
-        :param work_on:
-        :param fill:
+        :type predict_offset:
+        :param path: The path to the data
+        :param nb_steps: The number of steps in the inputs
+        :param work_on: if it is on note/beat/measure
+        :param replicate: if true, input = output, else output = last step of input + 1
         """
         # -------------------- Attribut --------------------
+        self.predict_offset = 0 if replicate else predict_offset
         self.path = Path(path)
         self.npy_path = self.path / 'npy'
         self.nb_steps = nb_steps
@@ -45,14 +49,18 @@ class KerasSequence(tf.keras.utils.Sequence):
         self.nb_elements = KerasSequence.return_nb_elements(
             l=self.all_shapes,
             step_size=self.step_size,
-            nb_steps=self.nb_steps
+            nb_steps=self.nb_steps,
+            predict_offset=predict_offset
         )  # nb element available in the generator
+        print('nb el', self.nb_elements)
         self.nb_elements = int(self.nb_elements / self.batch_size)
         self.all_len = self.know_all_len(
             all_shapes=self.all_shapes,
             step_size=self.step_size,
-            nb_steps=self.nb_steps
+            nb_steps=self.nb_steps,
+            predict_offset=self.predict_offset
         )
+        print('predict offset', self.predict_offset, 'len', self.nb_elements)
 
     # -------------------- For Keras --------------------
 
@@ -65,15 +73,18 @@ class KerasSequence(tf.keras.utils.Sequence):
         x = []  # (batch, nb_steps * step_size, nb_instruments, input_size, 2)
         y = []  # (batch, nb_instruments, input_size, 2)
         for s in range(self.batch_size):
+            x_start, x_stop = k, k + self.nb_steps * self.step_size
+            y_start = k + (self.nb_steps + self.predict_offset - 1) * self.step_size
+            y_stop = y_start + self.step_size
+
             if i != self.i_loaded:
                 self.i_loaded = i
                 self.npy_loaded = np.load(str(self.npy_path / f'{i}.npy'), allow_pickle=True).item()['list']
             x.append(
-                self.npy_loaded[j][k: k + (self.nb_steps * self.step_size)]
+                self.npy_loaded[j][x_start: x_stop]
             )  # (batch, nb_steps * step_size, nb_instruments, input_size, 2)
             y.append(
-                self.npy_loaded[j][k + (self.nb_steps * self.step_size): k + (
-                        self.nb_steps * self.step_size) + self.step_size]
+                self.npy_loaded[j][y_start: y_stop]
             )  # (batch, step_size, nb_instruments, input_size, 2)
             k += self.step_size
             if k >= self.all_shapes[i][j][0] - ((self.nb_steps + 1) * self.step_size):
@@ -110,13 +121,17 @@ class KerasSequence(tf.keras.utils.Sequence):
         if self.batch_size != batch_size:
             self.batch_size = batch_size
 
-            self.nb_elements = KerasSequence.return_nb_elements(self.all_shapes, self.step_size,
-                                                              self.nb_steps)  # nb element available in the generator
+            self.nb_elements = KerasSequence.return_nb_elements(
+                self.all_shapes, self.step_size,
+                self.nb_steps,
+                self.predict_offset
+            )  # nb element available in the generator
             self.nb_elements = int(self.nb_elements / self.batch_size)
             self.all_len = self.know_all_len(
                 all_shapes=self.all_shapes,
                 step_size=self.step_size,
-                nb_steps=self.nb_steps
+                nb_steps=self.nb_steps,
+                predict_offset=self.predict_offset
             )
 
     # -------------------- Helper functions --------------------
@@ -148,9 +163,10 @@ class KerasSequence(tf.keras.utils.Sequence):
         return i, j, k
 
     @staticmethod
-    def return_nb_elements(l, step_size, nb_steps):
+    def return_nb_elements(l, step_size, nb_steps, predict_offset=g.train.predict_offset):
         """
 
+        :param predict_offset:
         :param l:
         :param step_size:
         :param nb_steps:
@@ -159,20 +175,21 @@ class KerasSequence(tf.keras.utils.Sequence):
         if type(l) is list:
             acc = 0
             for l2 in l:
-                acc += KerasSequence.return_nb_elements(l2, step_size, nb_steps)
+                acc += KerasSequence.return_nb_elements(l2, step_size, nb_steps, predict_offset)
             return acc
         else:
-            return int(l[0] / step_size) - nb_steps  # not - nb_steps + 1 because of the y (true tab)
+            return int(
+                l[0] / step_size) - nb_steps + 1 - predict_offset  # not - nb_steps + 1 because of the y (true tab)
 
     @staticmethod
-    def know_all_len(all_shapes, step_size, nb_steps):
+    def know_all_len(all_shapes, step_size, nb_steps, predict_offset=g.train.predict_offset):
         """
 
         :return: all the length of all files
         """
 
         def f_map(l):
-            return functools.reduce(lambda x, y: x + int(y[0] / step_size) - nb_steps,
+            return functools.reduce(lambda x, y: x + int(y[0] / step_size) - nb_steps + 1 - predict_offset,
                                     l,
                                     0)  # not -self.nb_steps + 1 because of the y (true tab)
 
@@ -182,6 +199,3 @@ class KerasSequence(tf.keras.utils.Sequence):
 
     def __del__(self, *args, **kwargs):
         del self.npy_loaded
-
-
-

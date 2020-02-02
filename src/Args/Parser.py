@@ -139,13 +139,16 @@ class Parser(argparse.ArgumentParser):
                           help='Store all the data in memory but for a sequence')
         self.add_argument('--validation', type=float,
                           help='Fraction of the training data to be used as validation data')
+        self.add_argument('--predict-offset', type=int,
+                          help='The offset of the predicted step')
 
         # ---------- Default values ----------
         self.set_defaults(
             epochs=g.train.epochs,
             batch=g.train.batch,
             noise=g.train.noise,
-            validation=g.train.validation
+            validation=g.train.validation,
+            predict_offset=g.train.predict_offset
         )
 
     def add_evaluate_model_args(self, argtype=ArgType.ALL):

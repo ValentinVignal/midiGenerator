@@ -66,7 +66,8 @@ def main(args):
                                     opt_param=opt_param,
                                     work_on=args.work_on,
                                     model_options=model_options,
-                                    loss_options=loss_options)
+                                    loss_options=loss_options,
+                                    predict_offset=args.predict_offset)
     elif args.load != '':
         midi_generator.recreate_model(args.load)
 

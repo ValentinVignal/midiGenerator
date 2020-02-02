@@ -271,7 +271,8 @@ def main(args):
             work_on=args.work_on,
             model_options=model_options,
             loss_options=loss_options,
-            print_model=False
+            print_model=False,
+            predict_offset=args.predict_offset
         )
         return midi_generator
 
@@ -448,7 +449,7 @@ def main(args):
     summary.summarize(
         # Function parameters
         path=folder_path,
-        title='Args of bayesia optimization',
+        title='Args of bayesian optimization',
         # Summary params
         **vars(args)
     )

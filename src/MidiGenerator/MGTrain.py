@@ -41,7 +41,8 @@ class MGTrain(MGInit):
                 path=str(self.data_transformed_path),
                 nb_steps=int(self.model_id.split(',')[2]),
                 batch_size=self.batch,
-                work_on=self.work_on
+                work_on=self.work_on,
+                predict_offset=self.predict_offset,
             )
         if noise is not None:
             self.sequence.set_noise(noise)

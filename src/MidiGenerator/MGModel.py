@@ -12,7 +12,7 @@ from .MGInit import MGInit
 class MGModel(MGInit):
 
     def new_nn_model(self, model_id, work_on=None, opt_param=None, model_options=None, loss_options=None,
-                     print_model=True):
+                     print_model=True, predict_offset=None):
         """
 
         :param loss_options:
@@ -38,6 +38,7 @@ class MGModel(MGInit):
 
         step_length = g.mg.work_on2nb(self.work_on)
         self.get_new_full_name()
+        self.predict_offset = g.train.predict_offset if predict_offset is None else predict_offset
 
         opt_param = {'lr': g.nn.lr, 'name': 'adam'} if opt_param is None else opt_param
 

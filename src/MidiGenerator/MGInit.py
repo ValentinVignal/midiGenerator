@@ -17,6 +17,7 @@ class MGInit:
         self.model_id = ''  # Id of the model used
         self.full_name = ''  # Id of this MyModel instance
         self.work_on = None
+        self.predict_offset = None
         self.get_new_full_name()
 
         self.saved_model_path = Path(
