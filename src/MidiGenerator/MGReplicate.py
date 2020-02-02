@@ -89,7 +89,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
         truth_final = self.reshape_generated_array(truth)
         self.compute_generated_array(
             generated_array=generated_midi_final,
-            file_name=self.save_midis_path / f'replicated',
+            folder_path=self.save_midis_path,
+            name=f'replicated',
             no_duration=no_duration,
             array_truth=truth_final,
             verbose=verbose,
@@ -201,7 +202,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
         truth_final = self.reshape_generated_array(truth)
         self.compute_generated_array(
             generated_array=truth_final,
-            file_name=self.save_midis_path / 'replicated_fill_truth',
+            folder_path=self.save_midis_path,
+            name='replicated_fill_truth',
             no_duration=no_duration,
             verbose=verbose,
             save_images=save_images,
@@ -210,7 +212,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
         for inst in range(nb_instruments):
             self.compute_generated_array(
                 generated_array=generated_midi_final_list[inst],
-                file_name=self.save_midis_path / f'replicated_fill_{inst}',
+                folder_path=self.save_midis_path,
+                name=f'replicated_fill_{inst}',
                 no_duration=no_duration,
                 array_truth=truth_final,
                 verbose=verbose,

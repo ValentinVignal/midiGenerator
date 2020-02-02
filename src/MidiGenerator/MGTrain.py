@@ -2,7 +2,7 @@
 from termcolor import colored, cprint
 
 from src import GlobalVariables as g
-import src.image.pianoroll as pianoroll
+import src.Images.pianoroll as pianoroll
 from .MGInit import MGInit
 
 

@@ -2,7 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-import src.image.pianoroll as pianoroll
+import src.Images.pianoroll as pianoroll
 from src.NN.Sequences.KerasSequence import KerasSequence
 
 

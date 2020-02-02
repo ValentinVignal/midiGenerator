@@ -83,7 +83,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
             generated_midi_final = self.reshape_generated_array(generated)
             self.compute_generated_array(
                 generated_array=generated_midi_final,
-                file_name=self.save_midis_path / f'generated_{s}',
+                folder_path=self.save_midis_path,
+                name=f'generated_{s}',
                 no_duration=no_duration,
                 verbose=verbose,
                 save_images=save_images
@@ -179,7 +180,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
         self.compute_generated_array(
             generated_array=truth,
-            file_name=self.save_midis_path / 'generated_fill_truth',
+            folder_path=self.save_midis_path,
+            name='generated_fill_truth',
             no_duration=no_duration,
             verbose=verbose,
             save_images=True
@@ -187,7 +189,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
         for inst in range(nb_instruments):
             self.compute_generated_array(
                 generated_array=filled_list[inst],
-                file_name=self.save_midis_path / f'generated_fill_{inst}',
+                folder_path=self.save_midis_path,
+                name=f'generated_fill_{inst}',
                 no_duration=no_duration,
                 array_truth=truth,
                 verbose=verbose,
@@ -283,7 +286,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # Generated
         self.compute_generated_array(
             generated_array=generated_midi_final,
-            file_name=self.save_midis_path / 'compare_generation_alone',
+            folder_path=self.save_midis_path,
+            name='compare_generation_alone',
             no_duration=no_duration,
             array_truth=generated_midi_final_truth,
             verbose=verbose,
@@ -293,7 +297,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # Helped
         self.compute_generated_array(
             generated_array=generated_midi_final_helped,
-            file_name=self.save_midis_path / 'compare_generation_helped',
+            folder_path=self.save_midis_path,
+            name='compare_generation_helped',
             no_duration=no_duration,
             array_truth=generated_midi_final_truth,
             verbose=verbose,
@@ -303,7 +308,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # Truth
         self.compute_generated_array(
             generated_array=generated_midi_final_truth,
-            file_name=self.save_midis_path / 'compare_generation_truth',
+            folder_path=self.save_midis_path,
+            name='compare_generation_truth',
             no_duration=no_duration,
             array_truth=None,
             verbose=verbose,

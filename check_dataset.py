@@ -7,7 +7,7 @@ import src.Midi.open as midi_open
 import src.Midi.create as midi_create
 import src.Midi.common as midi_common
 import src.Midi.instruments as midi_inst
-import src.image.pianoroll as p
+import src.Images.pianoroll as p
 from src import Args
 from src.Args import ArgType, Parser
 

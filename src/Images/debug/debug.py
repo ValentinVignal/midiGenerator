@@ -1,9 +1,17 @@
 import numpy as np
 from PIL import Image
+from matplotlib import pyplot as plt
 from pathlib import Path
-from colour import Color
-import random
-import matplotlib.pyplot as plt
+
+from .. import colors as mcolors
+
+
+def show_image(array):
+    activations = array[:, :, 0]
+    np.place(activations, 0.5 <= activations, 1)
+    np.place(activations, activations < 0.5, 0)
+    img = Image.fromarray(activations)
+    img.show()
 
 
 def save_img(array, path):
@@ -32,14 +40,6 @@ def save_img(array, path):
         img.save(save_path)
 
 
-def show_image(array):
-    activations = array[:, :, 0]
-    np.place(activations, 0.5 <= activations, 1)
-    np.place(activations, activations < 0.5, 0)
-    img = Image.fromarray(activations)
-    img.show()
-
-
 def see_MySequence(x, y):
     """
     To see the output of MySequence class
@@ -55,69 +55,6 @@ def see_MySequence(x, y):
     all = (255 * np.transpose(all, (1, 0, 2))).astype(np.uint8)
     img = Image.fromarray(all, mode='RGB')
     img.show()
-
-
-def save_pianoroll(array, path, seed_length, instruments, mono=False, replicate=False):
-    """
-
-    :param replicate:
-    :param mono:
-    :param array: shape (nb_instruments, 128, nb_steps, 2)
-    :param path:
-    :param seed_length:
-    :param instruments:
-    :return:
-    """
-    # Colors
-    colors_rgb = return_colors(len(instruments))
-    activations = np.take(array, axis=-1, indices=0)        # (nb_instruments, size, nb_steps)
-    activations = activations[:, :-1] if mono else activations
-    nb_instruments, input_size, nb_steps = activations.shape
-    np.place(activations, 0.5 <= activations, 1)
-    np.place(activations, activations < 0.5, 0)
-    all = np.zeros((input_size, nb_steps, 3))  # RGB
-    if replicate:
-        for i in range(seed_length):
-            all[:, i::2 * seed_length] = 25     # So steps are visible (grey)
-    else:
-        all[:, :seed_length] = 25  # So seed is visible (grey)
-    for inst in range(nb_instruments):
-        for i in range(input_size):
-            for j in range(nb_steps):
-                if activations[inst, i, j] == 1:
-                    all[i, j] = colors_rgb[inst]
-    all = np.flip(all, axis=0)
-    img = Image.fromarray(
-        all.astype(np.uint8),
-        mode='RGB'
-    )
-    img.save(path.parent / (path.stem + '_(PIL).jpg'))
-    plt.imshow(all.astype(np.int))
-    plt.title(path.stem)
-    plt.savefig(path.parent / (path.stem + '_(PLT).jpg'))
-
-
-def return_colors(nb_instruments):
-    """
-
-    :param nb_instruments: the number of color to return
-    :return: a list of colors with a length of nb_instruments
-    """
-    colors = [Color('#' + ''.join([random.choice('0123456789abcdef') for j in range(6)])) for i in
-              range(nb_instruments)]
-    colors_rgb = list(map(lambda color: [int(255 * c) for c in list(color.get_rgb())], colors))
-    for i in range(len(colors_rgb)):  # Make a light color
-        m = min(colors_rgb[i])
-        M = max(colors_rgb[i])
-        if M <= 100:  # If the color is too dark
-            for j in range(3):
-                if colors_rgb[i][j] == M:
-                    colors_rgb[i][j] = min(50 + 3 * colors_rgb[i][j], 255)
-                elif colors_rgb[i][j] == m:
-                    colors_rgb[i][j] = min(10 + int(1.5 * colors_rgb[i][j]), 255)
-                else:
-                    colors_rgb[i][j] = min(25 + 2 * colors_rgb[i][j], 255)
-    return colors_rgb
 
 
 def see_compare_generation_step(inputs, outputs, truth):
@@ -146,7 +83,7 @@ def see_compare_generation_step(inputs, outputs, truth):
     outputs_alone = outputs_a[:, 0]
     outputs_helped = outputs_a[:, 1]
 
-    colors = return_colors(nb_instruments)
+    colors = mcolors.get_colors(nb_instruments)
 
     final_inputs_alone = np.zeros((nb_steps * step_size, input_size, 3))
     final_outputs_alone = np.zeros((step_size, input_size, 3))
@@ -221,7 +158,7 @@ def see_compare_on_batch(x, yt, yp):
     nb_instruments, batch, nb_steps, step_size, input_size = x.shape
     x = np.reshape(x, (nb_instruments, batch, nb_steps * step_size, input_size))
 
-    colors = return_colors(nb_instruments)
+    colors = mcolors.get_colors(nb_instruments)
 
     x_final = np.zeros((batch, nb_steps * step_size, input_size, 3))
     yt_final = np.zeros((batch, step_size, input_size, 3))
