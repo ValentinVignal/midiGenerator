@@ -154,7 +154,7 @@ def main(args):
         title=args.data,
         # Summary params
         nb_files=nb_valid_files,
-        nb_instruments=len(args.instrument),
+        nb_instruments=len(args.instruments),
         instruments=args.instruments,
         input_size=all_shapes[0][0][2],
         notes_range=args.notes_range

@@ -22,7 +22,7 @@ class MissingInstSequence(KerasSequence):
     def __getitem__(self, item):
         x, y = super(MissingInstSequence, self).__getitem__(item // self.nb_combinations)
         # x (nb_instruments, batch, nb_steps, step_size, input_size, 2)
-        # x (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
+        # y (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
         mod = item % self.nb_combinations
         if mod == 0:
             # All the instruments
@@ -32,8 +32,8 @@ class MissingInstSequence(KerasSequence):
             mod -= 1
             mask = np.zeros((self.batch_size, self.nb_instruments, self.nb_steps))
             mask[:, mod] = 1
-            y[:, :mod] = np.nan
-            y[:, :mod+1] = np.nan
+            y[mod:] = np.nan
+            y[:mod + 1] = np.nan
         else:
             # Combinations
             zeros_axis = np.random.choice(
@@ -42,7 +42,7 @@ class MissingInstSequence(KerasSequence):
                 replace=False)
             mask = np.ones((self.batch_size, self.nb_instruments, self.nb_steps))
             mask[:, zeros_axis] = 0
-            y[:, zeros_axis] = np.nan
+            y[zeros_axis] = np.nan
         return list(x) + [mask], list(y)
 
     def change_batch_size(self, batch_size):

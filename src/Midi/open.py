@@ -344,7 +344,7 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
 
     if len(all_first_offset) >= 1:
         if all(f_o == all_first_offset[0] for f_o in all_first_offset):
-            final_matrix = final_matrix[:, :, int(all_first_offset[0] * g.step_per_beat):, :]
+            final_matrix = final_matrix[:, :, int(all_first_offset[0] * g.midi.step_per_beat):, :]
         else:
             cprint('Anacrouses not with the same length :{0}'.format(all_first_offset), 'red')
 
