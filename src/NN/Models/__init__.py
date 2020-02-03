@@ -1,14 +1,20 @@
 from .AEMono import AEMono as AEMono
 from .AEMonoRep import AEMonoRep
 from .RMVAEMono import RMVAEMono
-from .RMVAEMonoRep import RMVAEMonoRep
 from src.NN import Sequences
 
 from_name = dict(
-    AEMono=AEMono,
-    AEMonoRep=AEMonoRep,
-    RMVAEMono=RMVAEMono,
-    RMVAEMonoRep=RMVAEMonoRep
+    AEMono=AEMono.create_model,
+    AEMonoRep=AEMonoRep.create_model,
+    RMVAEMono=RMVAEMono.create_model,
+    RMVAEMonoRep=RMVAEMono.create_model_rep
+)
+
+param_folder_from_name = dict(
+    AEMono='AEMono',
+    AEMonoRep='AEMono',
+    RMVAEMono='RMVAEMono',
+    RMVAEMonoRep='RMVAEMono'
 )
 
 sequences = dict(

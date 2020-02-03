@@ -1,5 +1,0 @@
-{
-  "conv": [[10, 10], [15, 15, 20], [20, 20, 25]],
-  "dense": [60, 48],
-  "lstm": ["nb_steps * nb_instruments * 36", "nb_steps * nb_instruments * 36"]
-}

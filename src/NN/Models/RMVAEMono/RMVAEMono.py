@@ -14,10 +14,14 @@ Lambda = tf.keras.layers.Lambda
 K = tf.keras.backend
 
 
-def create_model(input_param, model_param, nb_steps, step_length, optimizer, model_options={}, loss_options={}
-                 ):
+def create_model_common(
+        # Mandatory arguments
+        input_param, model_param, nb_steps, step_length, optimizer, model_options={}, loss_options={},
+        # Hidden arguments
+        replicate=False):
     """
 
+    # Mandatory arguments
     :param loss_options:
     :param input_param: {
                             nb_instruments,
@@ -29,6 +33,10 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
     :param step_length: (Comes from the user)
     :param optimizer:
     :param model_options: (Comes from the user)
+
+    # Hidden_arguments
+    :param replicate: Bool: Indicates if this is a model to replicate the inpu
+
     :return: the neural network:
     """
 
@@ -124,9 +132,8 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
         time_distributed=False
     ) for inst in range(nb_instruments)]
 
-    encoded_step_inst = mlayers.wrapper.l.ApplySameOnList(
-        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=encoders),
-        name='encoders'
+    encoded_step_inst = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_different_on_list(layers=encoders)
     )(inputs_step_inst)  # List(steps, nb_instruments)[(batch, size)]
     # -------------------- Product of Expert --------------------
 
@@ -134,13 +141,11 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
     denses_for_mean = [mlayers.dense.DenseForMean(units=latent_size) for inst in range(nb_instruments)]
     denses_for_std = [mlayers.dense.DenseForSTD(units=latent_size) for inst in range(nb_instruments)]
 
-    means_step_inst = mlayers.wrapper.l.ApplySameOnList(
-        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=denses_for_mean),
-        name='mean_denses'
+    means_step_inst = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_different_on_list(layers=denses_for_mean)
     )(encoded_step_inst)  # List(steps, nb_instruments)[(batch, size)]
-    stds_step_inst = mlayers.wrapper.l.ApplySameOnList(
-        layer=mlayers.wrapper.l.ApplyDifferentOnList(layers=denses_for_std),
-        name='std_denses'
+    stds_step_inst = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_different_on_list(layers=denses_for_std)
     )(encoded_step_inst)  # List(steps, nb_instruments)[(batch, size)]
 
     means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)  # (batch, nb_instruments, nb_steps, size)
@@ -163,10 +168,16 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
 
     rnn_output = mlayers.rnn.LstmRNN(
         size_list=model_param['lstm'],
-        return_sequence=False,
+        return_sequence=replicate,
         use_sah=model_options['sah'],
         dropout=model_options['dropout_r']
-    )(samples)  # (batch, size)
+    )(samples)  # (batch, steps, size) if replicate else (batch, size)
+
+    if replicate:
+        rnn_output_steps = mlayers.shapes.Unstack(axis=0)(rnn_output)     # List(nb_steps)[(batch, size)]
+    else:
+        rnn_output_steps = [rnn_output]  # List(1)[(batch, size)]
+    # Now either case, we have rnn_output_steps : List(nb_steps)[(batch, size)]
 
     # ------------------------------ Decoding ------------------------------
 
@@ -177,21 +188,21 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
         dropout_d=model_options['dropout_d'],
         time_stride=time_stride,
         shapes_after_upsize=shapes_before_pooling
-    ) for inst in range(nb_instruments)]
-    decoded_inst = mlayers.wrapper.f.apply_different_layers(
-        layers=decoders,
-        x=rnn_output
-    )       # List(nb_instruments)[(batch, step_length, size, channels)]
+    ) for _ in range(nb_instruments)]
+    decoded_steps_inst = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_different_layers(layers=decoders)
+    )(rnn_output_steps)     # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
 
     last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
-    outputs_inst = mlayers.wrapper.f.apply_different_on_list(
-        layers=last_mono,
-        x=decoded_inst
-    )  # List(nb_instruments)[(batch, step_length, size, channels)]
-    outputs = mlayers.wrapper.f.apply_different_on_list(
-        layers=[mlayers.shapes.ExpandDims(axis=0) for _ in range(len(outputs_inst))],
-        x=outputs_inst
-    )       # List(nb_instruments)[(batch, nb_steps=1, step_length, size, channels)]
+    outputs_steps_inst = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_different_on_list(layers=last_mono)
+    )(decoded_steps_inst)       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
+    outputs_inst_steps = mlayers.shapes.transpose_list(
+        outputs_steps_inst,
+        axes=(1, 0))        # List(nb_instruments, nb_steps)[batch, step_length, size, channels)]
+
+    outputs = [mlayers.shapes.Stack(axis=0)(o) for o in
+               outputs_inst_steps]  # List(nb_instruments)[(batch, nb_steps, step_length, size, channel=1)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
     model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)
@@ -223,3 +234,25 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
         model=model,
         callbacks=callbacks
     )
+
+
+def create_model(*args, **kwargs):
+    """
+    Not replicate model
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    return create_model_common(*args, replicate=False, **kwargs)
+
+
+def create_model_rep(*args, **kwargs):
+    """
+    Replicate model
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    return create_model_common(*args, replicate=True, **kwargs)
+
+

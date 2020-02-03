@@ -112,13 +112,14 @@ class KerasNeuralNetwork:
         model_name, model_param_s, nb_steps = model_id.split(g.mg.split_model_id)
         nb_steps = int(nb_steps)
 
-        nn_model = Models.from_name[model_name]
+        # nn_model = Models.from_name[model_name]
+        folder_param = Models.param_folder_from_name[model_name]
 
         # Load model param .json file
         json_path = os.path.join('src',
                                  'NN',
                                  'Models',
-                                 model_name,
+                                 folder_param,
                                  '{0}.json'.format(model_param_s))
         with open(json_path) as json_file:
             model_param = json.load(json_file)
@@ -126,7 +127,7 @@ class KerasNeuralNetwork:
         self.opt_param = opt_param
         optimizer, self.decay = KerasNeuralNetwork.create_optimizer(**self.opt_param)
 
-        model_dict = nn_model.create_model(
+        model_dict = Models.from_name[model_name](
             input_param=input_param,
             model_param=model_param,
             nb_steps=nb_steps,
