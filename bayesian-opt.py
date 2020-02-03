@@ -394,7 +394,8 @@ def main(args):
                                                     callbacks=[best_accuracy_callback], batch_size=args.batch)
         else:
             history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[best_accuracy_callback],
-                                           verbose=1, validation=args.validation)
+                                           verbose=1, validation=args.validation, fast_sequence=args.fast_seq,
+                                           memory_sequence=args.memory_seq)
         accuracy = best_accuracy_callback.best_acc
 
         global best_accuracy

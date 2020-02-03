@@ -1,5 +1,4 @@
 import numpy as np
-from pathlib import Path
 
 from .KerasCallback import KerasCallback
 
@@ -27,6 +26,9 @@ class BestAccuracy(KerasCallback):
         :param logs:
         :return:
         """
+        # print('epoch', epoch)
+        # print('self.best_acc', self.best_acc, 'self.best_loss', self.best_loss)
+        # print('acc epoch', self.get_val_acc_mean(logs), 'loss epoch', self.get_val_loss(logs))
         logs = logs or {}
         if self.greater_result(logs):
             self.best_acc = self.get_val_acc_mean(logs)
