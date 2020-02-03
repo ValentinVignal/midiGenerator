@@ -405,7 +405,8 @@ def main(args):
         print(f'Accuracy:',
               colored(f'{accuracy:.2%}', 'cyan'),
               '- Best Accuracy for now:',
-              colored(f'{best_accuracy:.2%}', 'white', 'on_blue'))
+              colored(f'{best_accuracy:.2%}', 'white', 'on_blue'),
+              '\n')
 
         midi_generator.keras_nn.clear_session()
         del midi_generator
