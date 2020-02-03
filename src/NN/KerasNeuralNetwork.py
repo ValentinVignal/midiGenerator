@@ -187,9 +187,11 @@ class KerasNeuralNetwork:
         return dill.dumps(step_decay)
 
     def train_seq(self, epochs, generator, callbacks=[], verbose=1, validation=0.0, sequence_to_numpy=False,
-                  fast_seq=False, memory_seq=False):
+                  fast_seq=False, memory_seq=False, max_queue_size=g.train.max_queue_size, workers=g.train.workers):
         """
 
+        :param workers:
+        :param max_queue_size:
         :param fast_seq:
         :param memory_seq:
         :param sequence_to_numpy: To load all the generator into numpy files to train faster (only for small dataset)
@@ -222,26 +224,24 @@ class KerasNeuralNetwork:
             generator = Sequences.FastSequence(generator) if fast_seq else generator
             generator = Sequences.AllInMemorySequence(generator) if memory_seq else generator
 
-            if validation > 0:
-                generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(
-                    my_sequence=generator,
-                    validation_split=validation
-                )
+            workers = workers if memory_seq else 1
 
-                history = self.model.fit_generator(epochs=epochs, generator=generator_train,
-                                                   validation_data=generator_valid,
-                                                   shuffle=True, verbose=verbose, callbacks=callback_list,
-                                                   max_queue_size=16)
-            else:  # So it won't print a lot of lines for nothing
-                history = self.model.fit_generator(epochs=epochs, generator=generator,
-                                                   shuffle=True, verbose=verbose, callbacks=callback_list
-                                                   , max_queue_size=16)
+            generator_train, generator_valid = Sequences.TrainValSequence.get_train_valid_sequence(
+                my_sequence=generator,
+                validation_split=validation
+            )       # If validation == 0, generator_valid is None
+
+            history = self.model.fit_generator(epochs=epochs, generator=generator_train,
+                                               validation_data=generator_valid,
+                                               shuffle=True, verbose=verbose, callbacks=callback_list,
+                                               max_queue_size=max_queue_size, workers=workers)
 
         return history.history
 
     def train(self, epochs, x, y, callbacks=[], verbose=1, validation=0.0, batch_size=None):
         """
 
+        :param batch_size:
         :param epochs:
         :param x:
         :param y:

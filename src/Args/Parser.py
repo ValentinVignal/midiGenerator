@@ -141,6 +141,10 @@ class Parser(argparse.ArgumentParser):
                           help='Fraction of the training data to be used as validation data')
         self.add_argument('--predict-offset', type=int,
                           help='The offset of the predicted step')
+        self.add_argument('--max-queue-size', type=int,
+                          help='Max queue size for the function fit_generator')
+        self.add_argument('--workers', type=int,
+                          help='Number of workers for fit_generator')
 
         # ---------- Default values ----------
         self.set_defaults(
@@ -148,7 +152,9 @@ class Parser(argparse.ArgumentParser):
             batch=g.train.batch,
             noise=g.train.noise,
             validation=g.train.validation,
-            predict_offset=g.train.predict_offset
+            predict_offset=g.train.predict_offset,
+            max_queue_size=g.train.max_queue_size,
+            workers=g.train.workers
         )
 
     def add_evaluate_model_args(self, argtype=ArgType.ALL):

@@ -26,6 +26,8 @@ def train(args):
     if args.pc and not args.no_pc_arg:
         args.epochs = 2
         args.batch = 2
+        args.max_queue_size = 10        # Default parameter of Keras
+        args.workers = 4
     return args
 
 

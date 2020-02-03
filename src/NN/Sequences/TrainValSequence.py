@@ -25,11 +25,15 @@ def get_train_valid_sequence(my_sequence, validation_split=0.0):
     :param validation_split:
     :return:
     """
-    all_len = len(my_sequence)
-    len_valid = math.ceil(all_len * validation_split)
-    permutation = np.random.permutation(np.arange(all_len))
-    indexes_valid = permutation[:len_valid]
-    indexes_train = permutation[len_valid:]
-    my_sequence_valid = ReducedSequence(my_sequence, indexes_valid)
-    my_sequence_train = ReducedSequence(my_sequence, indexes_train)
+    if validation_split > 0:
+        all_len = len(my_sequence)
+        len_valid = math.ceil(all_len * validation_split)
+        permutation = np.random.permutation(np.arange(all_len))
+        indexes_valid = permutation[:len_valid]
+        indexes_train = permutation[len_valid:]
+        my_sequence_valid = ReducedSequence(my_sequence, indexes_valid)
+        my_sequence_train = ReducedSequence(my_sequence, indexes_train)
+    else:
+        my_sequence_train = my_sequence
+        my_sequence_valid = None
     return my_sequence_train, my_sequence_valid
