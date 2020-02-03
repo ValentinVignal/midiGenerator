@@ -1,5 +1,7 @@
 """
 A sequence with all the data in memory
+It loads all the inputs/outputs from a sequence and keep it in the variables x and y.
+It doesn't do any preprocessing for a faster training
 """
 import numpy as np
 import tensorflow as tf

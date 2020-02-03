@@ -1,3 +1,7 @@
+"""
+File to do an Bayesian Optimization of the hyper parameters
+"""
+# Import
 import os
 from termcolor import cprint, colored
 import numpy as np
@@ -5,20 +9,24 @@ import tensorflow as tf
 from pathlib import Path
 import matplotlib.pyplot as plt
 import gc
-
+# Personal import
 from src import skopt_
 from src.skopt_.space import Real, Categorical
 from src.skopt_.utils import use_named_args
 from src.skopt_ import gp_minimize
 from src.text import summary
-
-K = tf.keras.backend
-
 from src.MidiGenerator import MidiGenerator
 from src import Args
 from src.Args import ArgType, Parser
 from src.NN import Sequences
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
+from src.NN import Callbacks
+# Variables
+K = tf.keras.backend
+
+# ------------------------------------------------------------
+# Functions to create dimensions from args
+# ------------------------------------------------------------
 
 
 def create_list(string):
@@ -68,6 +76,7 @@ def ten_power(x):
 
 def create_dimensions(args):
     """
+    From the args, it creates all the dimensions on which the bayesian optimization will work on
 
     :param args:
     :return:
@@ -76,6 +85,14 @@ def create_dimensions(args):
     default_dim = []
 
     def add_Real(mtuple, name, prior='uniform'):
+        """
+        Add the Real dimension to the dimensions
+        But if the parameter is fixed, it only adds a categorical dimension with 1 choice
+        :param mtuple:
+        :param name:
+        :param prior:
+        :return:
+        """
         if len(mtuple) == 1:
             dimensions.append(Categorical([mtuple[0]], name=name))
             default_dim.append(mtuple[0])
@@ -84,6 +101,12 @@ def create_dimensions(args):
             default_dim.append(sum(mtuple) / len(mtuple))
 
     def add_Categorical(m_tuple, name):
+        """
+        Add Categorical dimension to the dimensions
+        :param m_tuple:
+        :param name:
+        :return:
+        """
         dimensions.append(Categorical(list(m_tuple), name=name))
         default_dim.append(m_tuple[0])
 
@@ -94,8 +117,8 @@ def create_dimensions(args):
     opt_tuple = get_tuple(args.optimizer, t=str, separator=',')
     add_Categorical(opt_tuple, name='optimizer')
     # decay
-    decay_tuple = get_tuple(args.decay)
-    add_Real(decay_tuple, name='decay')
+    decay_tuple = get_tuple(args.decay, t=ten_power)
+    add_Real(decay_tuple, name='decay', prior='log-uniform')
     # dropout d
     dropout_d_tuple = get_tuple(args.dropout_d)
     add_Real(dropout_d_tuple, name='dropout_d')
@@ -150,6 +173,9 @@ def create_dimensions(args):
     # No all step rhythm
     take_all_step_rhythm_tuple = get_tuple(args.no_all_step_rhythm, t=lambda x: not str2bool(x), separator=',')
     add_Categorical(take_all_step_rhythm_tuple, name='take_all_step_rhythm')
+    # sah
+    sah_tuple = get_tuple(args.sah, t=str2bool, separator=',')
+    add_Categorical(sah_tuple, name='sah')
 
     return dimensions, default_dim
 
@@ -188,15 +214,18 @@ def str_hp_to_print(name, value, exp_format=False, first_printed=False):
     return s
 
 
-# --------------------------------------------------
-# --------------------------------------------------
-# --------------------------------------------------
+# ----------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------
+#                                       Main function
+# ----------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------
 
 
 def main(args):
     """
         Entry point
     """
+    # -------------------- Setup --------------------
     # ----- pc -----
     if args.pc:
         # args.data = 'lmd_matched_mini'
@@ -219,18 +248,23 @@ def main(args):
             nb_intra=args.nb_intra_threads
         )
 
+    # get x and y if args.seq2np
+    if args.seq2np:
+        x_dict, y_dict = {}, {}
+
+    # -------------------- Setup Bayesian Optimization --------------------
+
     global best_accuracy
     best_accuracy = 0
     global iteration
     iteration = 0
 
-    # get x and y if args.seq2np
-    if args.seq2np:
-        x_dict, y_dict = {}, {}
-
     def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                      model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
-                     l_rhythm, l_scale_cost, l_rhythm_cost, take_all_step_rhythm):
+                     l_rhythm, l_scale_cost, l_rhythm_cost, take_all_step_rhythm, sah):
+        """
+        Creates a model from all the inputs == dimensions of the bayesian optimization
+        """
         midi_generator = MidiGenerator(name=args.name)
         midi_generator.load_data(data_transformed_path=data_transformed_path, verbose=0)
 
@@ -253,7 +287,8 @@ def main(args):
             kld=kld,
             kld_annealing_start=kld_annealing_start,
             kld_annealing_stop=kld_annealing_stop,
-            kld_sum=kld_sum
+            kld_sum=kld_sum,
+            sah=sah
         )
 
         loss_options = dict(
@@ -279,10 +314,15 @@ def main(args):
     @use_named_args(dimensions=dimensions)
     def fitness(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                 model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale, l_rhythm,
-                l_scale_cost, l_rhythm_cost, take_all_step_rhythm):
+                l_scale_cost, l_rhythm_cost, take_all_step_rhythm, sah):
+        """
+        From all the inputs == dimensions of the bayesian optimization, it creates a model, train it, add return
+        its negative accuracy (skopt works by minimizing a function)
+        """
         global iteration
         iteration += 1
 
+        # ------------------------------ Print the information to the user ------------------------------
         s = 'Iteration ' + colored(f'{iteration}/{args.n_calls}', 'yellow')
         model_id = f'{model_name},{model_param},{nb_steps}'
         s += str_hp_to_print('model', model_id, first_printed=False)
@@ -304,9 +344,10 @@ def main(args):
         s += str_hp_to_print('l_scale_cost', l_scale_cost, exp_format=True)
         s += str_hp_to_print('l_rhythm_cost', l_rhythm_cost, exp_format=True)
         s += str_hp_to_print('take_all_step_rhythm', take_all_step_rhythm)
-
+        s += str_hp_to_print('sah', sah)
         print(s)
 
+        # -------------------- Create the model --------------------
         midi_generator = create_model(
             lr=lr,
             optimizer=optimizer,
@@ -328,8 +369,12 @@ def main(args):
             l_rhythm=l_rhythm,
             l_scale_cost=l_scale_cost,
             l_rhythm_cost=l_rhythm_cost,
-            take_all_step_rhythm=take_all_step_rhythm
+            take_all_step_rhythm=take_all_step_rhythm,
+            sah=sah
         )
+
+        # -------------------- Train the model --------------------
+        best_accuracy_callback = Callbacks.BestAccuracy()
         if args.seq2np:
             # get x and y
             if nb_steps not in x_dict or nb_steps not in y_dict:
@@ -345,17 +390,18 @@ def main(args):
                 del x, y
             # Train
             history = midi_generator.keras_nn.train(epochs=args.epochs, x=x_dict[nb_steps], y=y_dict[nb_steps],
-                                                    verbose=1, validation=args.validation, callbacks=[],
-                                                    batch_size=args.batch)
+                                                    verbose=1, validation=args.validation,
+                                                    callbacks=[best_accuracy_callback], batch_size=args.batch)
         else:
-            history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[], verbose=1,
-                                           validation=args.validation)
-        accuracy = get_history_acc(history)
+            history = midi_generator.train(epochs=args.epochs, batch=args.batch, callbacks=[best_accuracy_callback],
+                                           verbose=1, validation=args.validation)
+        accuracy = best_accuracy_callback.best_acc
 
         global best_accuracy
         if accuracy > best_accuracy:
             best_accuracy = accuracy
 
+        # Print accuracy to the user
         print(f'Accuracy:',
               colored(f'{accuracy:.2%}', 'cyan'),
               '- Best Accuracy for now:',
@@ -373,11 +419,12 @@ def main(args):
         return res
         '''
 
+        # Return negative accuracy because skopt works by minimizing functions
         return -accuracy
 
-    # ------------------------------
-    #           Run it
-    # ------------------------------
+    # ------------------------------------------------------------
+    #               Actually run the Bayesian search
+    # ------------------------------------------------------------
 
     search_result = gp_minimize(
         func=fitness,
@@ -386,12 +433,17 @@ def main(args):
         n_calls=args.n_calls,
         x0=default_dim
     )
+
+    # ------------------------------------------------------------
+    #                       Get the results back
+    # ------------------------------------------------------------
+
     space = search_result.space
 
     best_param_dict = space.point_to_dict(search_result.x)
     best_accuracy = - search_result.fun
 
-    # ----- Print the best results -----
+    # ---------- Print the best results ----------
     print('Best Result:', colored(f'{best_accuracy}', 'green'))
     s = ''
     for k in best_param_dict:
@@ -419,11 +471,13 @@ def main(args):
     folder_path = get_folder_path()
     folder_path.mkdir(exist_ok=True, parents=True)
 
+    # Save the best result hyper parameters in a .txt file
     save_best_result(
         folder_path=folder_path,
         best_accuracy=best_accuracy,
         param_dict=best_param_dict
     )
+    # Save all the sorted results
     save_sorted_results(
         folder_path=folder_path,
         sorted_scores=sorted_scores
@@ -457,6 +511,11 @@ def main(args):
     print('Results saved in', colored(folder_path.as_posix(), 'green'))
 
     cprint('---------- Done ----------', 'grey', 'on_green')
+
+
+# ----------------------------------------------------------------------------------------------------
+# Function to save the results of the bayesian optimization
+# ----------------------------------------------------------------------------------------------------
 
 
 def save_histogram(search_result, folder_path):
@@ -574,6 +633,10 @@ def get_folder_path():
     folder_path = folder_path / f'bayesian_opt_{i}'
     return folder_path
 
+
+# ----------------------------------------------------------------------------------------------------
+#                                                   Script
+# ----------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     parser = Parser(argtype=ArgType.HPSearch)

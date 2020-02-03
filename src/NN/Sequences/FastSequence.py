@@ -1,5 +1,6 @@
 """"
-Faster sequence: save all the data in a temporary folder adn then delete it
+Faster sequence: save all the data in a temporary folder and then delete it
+Only load the files and give the inputs, doesn't do any processing for a faster training
 """
 import tensorflow as tf
 from pathlib import Path
@@ -14,6 +15,7 @@ class FastSequence(tf.keras.utils.Sequence):
     """
     def __init__(self, sequence, nb_steps_per_file=100, batch_size=None, dataset_folder_path=None):
         """
+
 
         :param sequence: Sequence to copy (Keras Sequence)
         :param nb_steps_per_file:

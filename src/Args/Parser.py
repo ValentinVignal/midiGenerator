@@ -199,7 +199,7 @@ class Parser(argparse.ArgumentParser):
                 l_rhythm='0:4',
                 l_scale_cost='0:4',
                 l_rhythm_cost='0:4',
-                no_all_step_rhythm='False,True'
+                no_all_step_rhythm='False'
             )
 
     def add_create_model_args(self, argtype=ArgType.ALL):
@@ -293,10 +293,10 @@ class Parser(argparse.ArgumentParser):
             self.set_defaults(
                 lr='1:4',
                 optimizer='adam',
-                decay='0.01:1',
-                dropout_d='0.1:0.3',
-                dropout_c='0.1:0.3',
-                dropout_r='0.1:0.3',
+                decay='0:3',
+                dropout_d='0.01:0.4',
+                dropout_c='0.01:0.4',
+                dropout_r='0.01:0.4',
                 all_sequence='False',
                 lstm_state='False',
                 no_sampling='False',
@@ -304,7 +304,7 @@ class Parser(argparse.ArgumentParser):
                 kld_annealing_start='0:0.5',
                 kld_annealing_stop='0.5:1',
                 no_kld_sum='False',
-                sah='False'
+                sah='False,True'
             )
 
     def add_generation_args(self, artype=ArgType.ALL):
