@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def unique(path, ext='_({0})', mandatory_ext=False):
+def unique(path, ext='_{0}', mandatory_ext=False):
     """
 
     :param mandatory_ext:
@@ -24,7 +24,7 @@ def unique(path, ext='_({0})', mandatory_ext=False):
         return folder_path / ''.join([stem + ext.format(i)] + suffixes)
 
 
-def unique_filename(folder_path, name, ext='_({0})', with_extension=True, mandatory_ext=False):
+def unique_filename(folder_path, name, ext='_{0}', with_extension=True, mandatory_ext=False):
     """
 
     :param mandatory_ext:

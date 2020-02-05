@@ -8,7 +8,7 @@ def bayesian_opt(args):
     :return:
     """
     if args.pc and not args.no_pc_arg:
-        args.epochs = 2
+        args.epochs = 1
     return args
 
 
