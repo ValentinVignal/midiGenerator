@@ -56,7 +56,6 @@ class MGTrain(MGInit):
 
         # Update parameters
         self.total_epochs += epochs
-        self.get_new_full_name()
         print(colored('Training done', 'green'))
         return self.train_history
 

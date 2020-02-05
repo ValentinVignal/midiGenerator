@@ -37,7 +37,7 @@ class MGModel(MGInit):
             self.work_on = work_on
 
         step_length = g.mg.work_on2nb(self.work_on)
-        self.get_new_full_name()
+        self.get_new_full_name_i()
         self.predict_offset = g.train.predict_offset if predict_offset is None else predict_offset
 
         opt_param = {'lr': g.nn.lr, 'name': 'adam'} if opt_param is None else opt_param
@@ -58,7 +58,7 @@ class MGModel(MGInit):
         """
         create a new model witht the same options as the saved model and then load the weights (if with_weights==True)
         :param id:
-        :param with_weigths: if we have to load the weight of the model
+        :param with_weights: if we have to load the weight of the model
         :param print_model:
         :return:
         """
@@ -78,7 +78,7 @@ class MGModel(MGInit):
             self.data_transformed_path = d['data_transformed_path']
             # Logistic
             self.total_epochs = d['epochs'] if with_weights else 0
-            self.full_name = d['full_name'] if with_weights else self.get_full_name(indice)
+            self.i = d['i'] if with_weights else self.get_new_full_name_i()
 
         self.keras_nn = KerasNeuralNetwork()
         self.keras_nn.recreate((path_to_load / 'MyNN').as_posix(), with_weights=with_weights)
@@ -93,15 +93,14 @@ class MGModel(MGInit):
         :param keep_name: if true keep the name, if not, get a new index at the and of the full name
         :return: load the weights of a model
         """
-        self.name, self.model_id, work_on_letter, total_epochs, indice = id.split('-')
-        self.work_on = g.letter2work_on(work_on_letter)
+        self.name, self.model_id, work_on_letter, total_epochs, i = id.split('-')
+        self.work_on = g.mg.letter2work_on(work_on_letter)
         self.total_epochs = int(total_epochs)
-        if keep_name:
-            self.get_full_name(indice)
-        else:
-            self.get_new_full_name()
+        self.i = i
+        if not keep_name:
+            self.get_new_full_name_i()
         path_to_load = Path('saved_models',
-                            f'{self.name}-m({self.model_id})-wo({work_on_letter})-e({self.total_epochs})-({indice})')
+                            self.full_name)
         self.keras_nn.load_weights(str(path_to_load / 'MyNN'))
         self.print_model()
         print('Weights of the', colored(f'{id}', 'white', 'on_blue'), 'model loaded')

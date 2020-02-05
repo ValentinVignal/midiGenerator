@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import warnings
+
 from src import GlobalVariables as g
 
 
@@ -12,13 +14,13 @@ class MGInit:
         :param data: if not None, load the data
         """
         # ----- General -----
-        self.total_epochs = 0
-        self.name = name
+        self._total_epochs = 0
+        self._name = name
         self.model_id = ''  # Id of the model used
-        self.full_name = ''  # Id of this MyModel instance
+        self._i = None       # To complete the full name
         self.work_on = None
         self.predict_offset = None
-        self.get_new_full_name()
+        self.get_new_full_name_i()
 
         self.saved_model_path = Path(
             os.path.join('saved_models', self.full_name))  # Where to saved the trained model
@@ -50,6 +52,49 @@ class MGInit:
         # --------------------------------------------------
 
     @property
+    def total_epochs(self):
+        return self._total_epochs
+
+    @total_epochs.setter
+    def total_epochs(self, total_epochs):
+        self.delete_token()
+        self._total_epochs = total_epochs
+        self.get_new_full_name_i()
+
+
+    @property
+    def i(self):
+        if self._i is None:
+            self.get_new_full_name_i()
+        return self._i
+
+    @i.setter
+    def i(self, i):
+        self.delete_token()
+        self._i = i
+        self.create_token()
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self.delete_token()
+        self._name = self._name if name is None else name
+        self.get_new_full_name_i()
+
+    @property
+    def full_name(self):
+        if self.i is None:
+            self.get_new_full_name_i()
+        return f'{self.full_name_no_i}-({self.i})'
+
+    @property
+    def full_name_no_i(self):
+        return f'{self.name}-m({self.model_id})-e({self.total_epochs})'
+
+    @property
     def nb_steps(self):
         """
 
@@ -65,10 +110,11 @@ class MGInit:
     def model_name(self):
         return self.model_id.split(',')[0]
 
-    def __del__(self):
+    def __del__(self, *args, **kwargs):
         del self.keras_nn
         del self.sequence
         del self.train_history
+        self.delete_token()
 
     @property
     def nb_instruments(self):
@@ -92,4 +138,130 @@ class MGInit:
             notes_range=self.notes_range,
             mono=self.mono
         )
+
+    # ----------------------------------------------------------------------------------------------------
+    #                                           Functions
+    # ----------------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def warning_init_function(function_name=None, subclass=None):
+        message = 'Call of a function in MGInit '
+        if function_name is not None:
+            message += f'"{function_name}" '
+        message += ', it does nothing, this function should be overwritten by a subclass'
+        if subclass is not None:
+            message += f'("{subclass}")'
+        warnings.warn(message)
+
+    # ---------------------------------------- MGComputeGeneration ----------------------------------------
+
+    @staticmethod
+    def reshape_generated_array(*args, **kwargs):
+        MGInit.warning_init_function(MGInit.reshape_generated_array.__name__, 'MGComputeGeneration')
+
+    @staticmethod
+    def accuracy_generation(*args, **kwargs):
+        MGInit.warning_init_function(MGInit.accuracy_generation.__name__, 'MGComputeGeneration')
+
+    def accuracy_generation(self, *args, **kwargs):
+        self.warning_init_function(self.accuracy_generation.__name__, 'MGComputeGeneration')
+
+    def compute_generated_array(self, *args, **kwargs):
+        self.warning_init_function(self.compute_generated_array.__name__, 'MGComputeGeneration')
+
+    def save_generated_array_cross_images(self, *args, **kwargs):
+        self.warning_init_function(self.save_generated_array_cross_images.__name__, 'MGComputeGeneration')
+
+    def get_mask(self, *args, **kwargs):
+        self.warning_init_function(self.get_mask.__name__, 'MGCompute_generation')
+
+    # ---------------------------------------- MGData ----------------------------------------
+
+    def load_data(self, *args, **kwargs):
+        self.warning_init_function(self.load_data.__name__, 'MGData')
+
+    def change_batch_size(self, *args, **kwargs):
+        self.warning_init_function(self.change_batch_size.__name__, 'MGData')
+
+    def get_sequence(self, *args, **kwargs):
+        self.warning_init_function(self.get_sequence.__name__, 'MGData')
+
+    # ---------------------------------------- MGGenerate ----------------------------------------
+
+    def generate_from_data(self, *args, **kwargs):
+        self.warning_init_function(self.generate_from_data.__name__, 'MGGenerate')
+
+    def generate_fill(self, *args, **kwargs):
+        self.warning_init_function(self.generate_fill.__name__, 'MGGenerate')
+
+    def compare_generation(self, *args, **kwargs):
+        self.warning_init_function(self.compare_generation.__name__, 'MGGenerate')
+
+    # ---------------------------------------- MGLogistic ----------------------------------------
+
+    def set_full_name_i(self, *args, **kwargs):
+        self.warning_init_function(self.set_full_name_i.__name__, 'MGLogistic')
+
+    def create_token(self, *args, **kwargs):
+        self.warning_init_function(self.create_token.__name__, 'MGLogistic')
+
+    def delete_token(self, *args, **kwargs):
+        self.warning_init_function(self.delete_token.__name__, 'MGLogistic')
+
+    def get_new_full_name_i(self):
+        self.warning_init_function(self.get_new_full_name_i.__name__, 'MGLogistic')
+
+    def ensure_save_midis_path(self, *args, **kwargs):
+        self.warning_init_function(self.ensure_save_midis_path.__name__, 'MGLogistic')
+
+    def get_new_save_midis_path(self, *args, **kwargs):
+        self.warning_init_function(self.get_new_save_midis_path.__name__, 'MGLogistic')
+
+    # ---------------------------------------- MGModel ----------------------------------------
+
+    def new_nn_model(self, *args, **kwargs):
+        self.warning_init_function(self.new_nn_model.__name__, 'MGModel')
+
+    def recreate_model(self, *args, **kwargs):
+        self.warning_init_function(self.recreate_model.__name__, 'MGModel')
+
+    def load_weights(self, *args, **kwargs):
+        self.warning_init_function(self.load_weights.__name__, 'MGModel')
+
+    def print_model(self, *args, **kwargs):
+        self.warning_init_function(self.print_model.__name__, 'MGModel')
+
+    def save_model(self, *args, **kwargs):
+        self.warning_init_function(self.save_model.__name__, 'MGModel')
+
+    def print_weights(self, *args, **kwargs):
+        self.warning_init_function(self.print_weights.__name__, 'MGModel')
+
+    # ---------------------------------------- MGReplicate ----------------------------------------
+
+    def replicate_from_data(self, *args, **kwargs):
+        self.warning_init_function(self.replicate_from_data.__name__, 'MGReplicate')
+
+    def replicate_fill(self, *args, **kwargs):
+        self.warning_init_function(self.replicate_fill.__name__, 'MGReplicate')
+
+    # ---------------------------------------- MGTrain ----------------------------------------
+
+    def train(self, *args, **kwargs):
+        self.warning_init_function(self.train.__name__, 'MGTrain')
+
+    def evaluate(self, *args, **kwargs):
+        self.warning_init_function(self.evaluate.__name__, 'MGTrain')
+
+    def test_on_batch(self, *args, **kwargs):
+        self.warning_init_function(self.test_on_batch.__name__, 'MGTrain')
+
+    def predict_on_batch(self, *args, **kwargs):
+        self.warning_init_function(self.predict_on_batch.__name__, 'MGTrain')
+
+    def compare_test_predict_on_batch(self, *args, **kwargs):
+        self.warning_init_function(self.compare_test_predict_on_batch.__name__, 'MGTrain')
+
+
+
 

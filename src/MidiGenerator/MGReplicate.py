@@ -14,8 +14,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
     """
 
-    def replicate_fom_data(self, length=None, new_save_path=None, save_images=False,
-                           no_duration=False, verbose=1, noise=0):
+    def replicate_from_data(self, length=None, new_save_path=None, save_images=False,
+                            no_duration=False, verbose=1, noise=0):
         """
         Generate Midi file from the seed and the trained model
         :param length: Length of th generation

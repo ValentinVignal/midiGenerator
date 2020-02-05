@@ -91,7 +91,7 @@ def main(args):
 
     # -------------------- Replicate --------------------
     if args.replicate:
-        midi_generator.replicate_fom_data(save_images=True, no_duration=args.no_duration, noise=args.noise)
+        midi_generator.replicate_from_data(save_images=True, no_duration=args.no_duration, noise=args.noise)
 
     # -------------------- Generate --------------------
     if args.generate_fill:

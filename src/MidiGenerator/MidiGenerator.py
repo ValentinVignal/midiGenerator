@@ -21,11 +21,13 @@ class MidiGenerator(MGGenerate, MGReplicate, MGComputeGeneration, MGData, MGTrai
     #               Class Methods
     # --------------------------------------------------
 
+    '''
     @classmethod
     def from_model(cls, id, name='name', data=None):
         my_model = cls(name=name, data=data)
         my_model.load_model(id=id)
         return my_model
+    '''
 
     @classmethod
     def with_new_model(cls, model_infos, name='name', work_on=g.mg.work_on, data=None):
@@ -52,7 +54,7 @@ class MidiGenerator(MGGenerate, MGReplicate, MGComputeGeneration, MGData, MGTrai
     @classmethod
     def with_model(cls, id, with_weights=True):
         my_model = cls()
-        my_model.recreate_model(id=id, with_weigths=with_weights)
+        my_model.recreate_model(id=id, with_weights=with_weights)
         return my_model
 
     def __del__(self, *args, **kwargs):
