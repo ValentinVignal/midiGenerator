@@ -9,7 +9,8 @@ class ArgType(Enum):
 
     Train = 1
     HPSearch = 2
-    Generate = 3
+    HPSummary = 3
+    Generate = 5
 
     ComputeData = 10
     CheckData = 11

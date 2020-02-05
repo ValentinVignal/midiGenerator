@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from src import Midi
 
 
@@ -102,6 +104,16 @@ def zip(args):
         args.all = True
     else:
         args.all = False
+    return args
+
+
+def hp_summary(args):
+    """
+
+    :param args:
+    :return:
+    """
+    args.folder = Path('hp_search', f'bayesian_opt_{args.folder}')
     return args
 
 

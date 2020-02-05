@@ -64,6 +64,9 @@ class Parser(argparse.ArgumentParser):
         # Zip
         if argtype in [ArgType.ALL, ArgType.Zip]:
             self.add_zip_args(argtype)
+        # HPSummary
+        if argtype in [ArgType.ALL, ArgType.HPSummary]:
+            self.add_hp_summary_args(argtype)
 
     @staticmethod
     def description_msg(argtype=None):
@@ -87,6 +90,8 @@ class Parser(argparse.ArgumentParser):
             description = 'To clean the environment'
         elif argtype is ArgType.Zip:
             description = 'To zip the files'
+        elif argtype is ArgType.HPSummary:
+            'To create the summary and images from checkpoint of bayesian optimization search'
         return description
 
     @staticmethod
@@ -459,3 +464,15 @@ class Parser(argparse.ArgumentParser):
                           help='To include saved_models folder')
         self.add_argument('--no-model', default=False, action='store_true',
                           help='To exclude saved_models folder')
+
+    def add_hp_summary_args(self, argtype=ArgType.ALL):
+        """
+
+        :param argtype:
+        :return:
+        """
+        self.add_argument('folder', type=int,
+                          help='Number of the bayesian optimization folder')
+
+
+
