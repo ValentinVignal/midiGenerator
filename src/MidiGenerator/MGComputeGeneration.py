@@ -6,6 +6,7 @@ import src.Midi as midi
 from src.NN import Models
 from src.Images import pianoroll
 from .MGInit import MGInit
+from src import Path as mPath
 
 
 class MGComputeGeneration(MGInit):
@@ -127,7 +128,8 @@ class MGComputeGeneration(MGInit):
         :param name
         """
         folder_path = Path(folder_path)
-        file_name = self.get_unique_path(folder_path / (name + '.jpg'))  # From MGLogistic
+        # file_name = self.get_unique_path(folder_path / (name + '.jpg'))  # From MGLogistic
+        file_name = mPath.new.unique(folder_path / (name + '.jpg'))
 
         pianoroll.save_arrays_as_pianoroll_subplot(
             arrays=generated_arrays,

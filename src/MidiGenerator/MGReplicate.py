@@ -141,6 +141,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
         max_length = int(min(max_length, len(self.sequence)))
         nb_instruments = self.sequence.nb_instruments
 
+        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
         shape_with_no_step = list(np.array(self.sequence[0][0]).shape)

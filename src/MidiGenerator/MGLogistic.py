@@ -1,6 +1,7 @@
 import os
 from termcolor import colored, cprint
 from pathlib import Path
+from src import Path as mPath
 
 from .MGInit import MGInit
 
@@ -65,46 +66,7 @@ class MGLogistic(MGInit):
         :return:
         """
         if path is None:
-            i = 0
-            m_str = f'{self.full_name}-generation({i})'
-            while Path('generated_midis', m_str).exists():
-                i += 1
-                m_str = f'{self.full_name}-generation({i})'
-            self.save_midis_path = Path('generated_midis', m_str)
-        else:
-            self.save_midis_path = Path(path)
+            path = Path('generated_midis', f'{self.full_name}-generation')
+        self.save_midis_path = mPath.new.unique(path, ext='({0})', mandatory_ext=True)
         print('new save path for Midi files :', colored(str(self.save_midis_path), 'cyan'))
-
-    @staticmethod
-    def get_unique_path(path):
-        """
-
-        :param path: a pathlib path of a file
-        :return: the same path but with _(i) at the end if it already exists
-        """
-        if not path.exists():
-            return path
-        else:
-            folder_path = path.parent
-            suffix = path.suffix
-            name = path.stem
-
-            i = 0
-            while (folder_path / (name + f'_({i}){suffix}')).exists():
-                i += 1
-            return folder_path / (name + f'_({i}){suffix}')
-
-    @staticmethod
-    def get_unique_filename(folder_path, name, with_extension=True):
-        """
-
-        :param folder_path:
-        :param name:
-        :param with_extension: either to return new_name.stem or new_name
-        :return:
-        """
-        unique_path = MGLogistic.get_unique_path(folder_path / name)
-        return unique_path.name if with_extension else unique_path.stem
-
-
 
