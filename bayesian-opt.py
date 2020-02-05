@@ -9,11 +9,11 @@ import tensorflow as tf
 from pathlib import Path
 import matplotlib.pyplot as plt
 import gc
+import skopt
+from skopt.space import Real, Categorical
+from skopt.utils import use_named_args
+from skopt import gp_minimize
 # Personal import
-from src import skopt_
-from src.skopt_.space import Real, Categorical
-from src.skopt_.utils import use_named_args
-from src.skopt_ import gp_minimize
 from src.text import summary
 from src.MidiGenerator import MidiGenerator
 from src import Args
@@ -530,7 +530,7 @@ def save_histogram(search_result, folder_path):
     histogram_folder_path = folder_path / 'histogram'
     histogram_folder_path.mkdir(exist_ok=True, parents=True)
     for dim_name in search_result.space.dimension_names:
-        fig, ax = skopt_.plots.plot_histogram(
+        fig, ax = skopt.plots.plot_histogram(
             result=search_result,
             dimension_name=dim_name
         )
@@ -548,7 +548,7 @@ def save_objective(search_result, folder_path):
     dimension_names = [
         name for name in search_result.space.dimension_names if not isinstance(search_result.space[name], Categorical)
     ]
-    fig, ax = skopt_.plots.plot_objective(result=search_result, dimension_names=dimension_names)
+    fig, ax = skopt.plots.plot_objective(result=search_result, dimension_names=dimension_names)
     folder_path.mkdir(exist_ok=True, parents=True)
     fig.savefig(folder_path / 'objective.png')
     plt.close(fig)
@@ -568,7 +568,7 @@ def save_objective_2D(search_result, folder_path):
         for j in range(i + 1, len(dimensions_names)):
             name1, name2 = dimensions_names[i], dimensions_names[j]
             if not any(isinstance(search_result.space[name], Categorical) for name in [name1, name2]):
-                fig, ax = skopt_.plots.plot_objective_2D(
+                fig, ax = skopt.plots.plot_objective_2D(
                     result=search_result,
                     dimension_name1=name1,
                     dimension_name2=name2,
