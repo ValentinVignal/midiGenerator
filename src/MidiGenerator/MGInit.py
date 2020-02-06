@@ -16,14 +16,11 @@ class MGInit:
         # ----- General -----
         self._total_epochs = 0
         self._name = name
-        self.model_id = ''  # Id of the model used
-        self._i = None       # To complete the full name
+        self._model_id = ''  # Id of the model used
+        self._i = 0       # To complete the full name
         self.work_on = None
         self.predict_offset = None
-        self.get_new_full_name_i()
-
-        self.saved_model_path = Path(
-            os.path.join('saved_models', self.full_name))  # Where to saved the trained model
+        self.get_new_i()
 
         # ----- Data -----
         self.data_transformed_path = None
@@ -52,6 +49,16 @@ class MGInit:
         # --------------------------------------------------
 
     @property
+    def model_id(self):
+        return self._model_id
+
+    @model_id.setter
+    def model_id(self, model_id):
+        self.delete_token()
+        self._model_id = model_id
+        self.get_new_i()
+
+    @property
     def total_epochs(self):
         return self._total_epochs
 
@@ -59,13 +66,12 @@ class MGInit:
     def total_epochs(self, total_epochs):
         self.delete_token()
         self._total_epochs = total_epochs
-        self.get_new_full_name_i()
-
+        self.get_new_i()
 
     @property
     def i(self):
         if self._i is None:
-            self.get_new_full_name_i()
+            self.get_new_i()
         return self._i
 
     @i.setter
@@ -82,13 +88,15 @@ class MGInit:
     def name(self, name):
         self.delete_token()
         self._name = self._name if name is None else name
-        self.get_new_full_name_i()
+        self.get_new_i()
 
     @property
     def full_name(self):
-        if self.i is None:
-            self.get_new_full_name_i()
         return f'{self.full_name_no_i}-({self.i})'
+
+    @property
+    def saved_model_path(self):
+        return Path('saved_models', self.full_name)
 
     @property
     def full_name_no_i(self):
@@ -169,8 +177,8 @@ class MGInit:
     def compute_generated_array(self, *args, **kwargs):
         self.warning_init_function(self.compute_generated_array.__name__, 'MGComputeGeneration')
 
-    def save_generated_array_cross_images(self, *args, **kwargs):
-        self.warning_init_function(self.save_generated_array_cross_images.__name__, 'MGComputeGeneration')
+    def save_generated_arrays_cross_images(self, *args, **kwargs):
+        self.warning_init_function(self.save_generated_arrays_cross_images.__name__, 'MGComputeGeneration')
 
     def get_mask(self, *args, **kwargs):
         self.warning_init_function(self.get_mask.__name__, 'MGCompute_generation')
@@ -199,17 +207,14 @@ class MGInit:
 
     # ---------------------------------------- MGLogistic ----------------------------------------
 
-    def set_full_name_i(self, *args, **kwargs):
-        self.warning_init_function(self.set_full_name_i.__name__, 'MGLogistic')
-
     def create_token(self, *args, **kwargs):
         self.warning_init_function(self.create_token.__name__, 'MGLogistic')
 
     def delete_token(self, *args, **kwargs):
         self.warning_init_function(self.delete_token.__name__, 'MGLogistic')
 
-    def get_new_full_name_i(self):
-        self.warning_init_function(self.get_new_full_name_i.__name__, 'MGLogistic')
+    def get_new_i(self):
+        self.warning_init_function(self.get_new_i.__name__, 'MGLogistic')
 
     def ensure_save_midis_path(self, *args, **kwargs):
         self.warning_init_function(self.ensure_save_midis_path.__name__, 'MGLogistic')

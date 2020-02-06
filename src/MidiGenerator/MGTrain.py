@@ -55,6 +55,7 @@ class MGTrain(MGInit):
                                                      memory_seq=memory_sequence)
 
         # Update parameters
+        self.total_epochs = 0
         self.total_epochs += epochs
         print(colored('Training done', 'green'))
         return self.train_history
