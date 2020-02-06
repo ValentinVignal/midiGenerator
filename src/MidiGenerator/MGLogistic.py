@@ -1,4 +1,3 @@
-import os
 from termcolor import colored, cprint
 from pathlib import Path
 

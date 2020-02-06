@@ -259,6 +259,68 @@ class KerasNeuralNetwork:
                                  callbacks=callback_list, batch_size=batch_size, verbose=verbose)
         return history.history
 
+    def train_on_batch(self, epochs, generator=None, x=None, y=None, callbacks=[], verbose=1, validation=0.0, batch_size=1):
+        """
+
+        :param epochs:
+        :param x:
+        :param y:
+        :param callbacks:
+        :param verbose:
+        :param validation:
+        :param batch_size:
+        :return:
+        """
+        if generator is None:
+            x = x if isinstance(x, list) else [x]
+            y = y if isinstance(y, list) else [y]
+            generator = SequenceTrainOnBatch(x=x, y=y, batch_size=batch_size)
+
+        nb_points = len(generator)
+        nb_val = int(nb_points * validation)
+        nb_train = nb_points - nb_val
+
+        callbacks += self.callbacks + [self.tensorboard]
+
+        for c in callbacks:
+            c.on_train_begin()
+        for epoch in range(epochs):
+            print(f'Epoch {epoch+1}/{epochs}')
+            for c in callbacks:
+                c.on_epoch_begin(epoch=epoch)
+            # Train
+            for batch_train in range(nb_train):
+                for c in callbacks:
+                    c.on_batch_begin(batch=batch_train)
+                x_, y_ = generator[batch_train]
+
+                logs_train = self.model.train_on_batch(
+                    x=x_,
+                    y=y_,
+                    reset_metrics=False
+                )
+
+                for c in callbacks:
+                    c.on_batch_end(batch=batch_train, logs=logs_train)
+            for c in callbacks:
+                c.on_epoch_end(epoch=epoch, logs=logs_train)
+            # Validate
+            for batch_val in range(nb_val):
+                x_, y_ = generator[batch_val]
+
+                logs_val = self.model.test_on_batch(
+                    x=x_,
+                    y=y_,
+                    reset_metrics=False
+                )
+        for c in callbacks:
+            c.on_train_end(logs=logs_train)
+
+
+
+
+
+
     def evaluate(self, generator, verbose=1):
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)
         return evaluation
@@ -426,3 +488,19 @@ class KerasNeuralNetwork:
     def slow_down_cpu(nb_inter=1, nb_intra=1):
         tf.config.threading.set_inter_op_parallelism_threads(nb_inter)
         tf.config.threading.set_intra_op_parallelism_threads(nb_intra)
+
+
+class SequenceTrainOnBatch:
+    def __init__(self, x, y, batch_size):
+        self.x = x
+        self.y = y
+        self.batch_size = batch_size
+        self.nb_points = len(x[0])
+
+    def __getitem__(self, item):
+        index = item * self.batch_size
+        return [x_[index] for x_ in self.x], [y_[index] for y_ in self.y]
+
+    def __len__(self):
+        return self.nb_points // self.batch_size
+
