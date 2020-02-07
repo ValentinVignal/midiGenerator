@@ -6,12 +6,17 @@ from termcolor import colored
 from src import Path as mPath
 from src import BayesianOpt as BO
 
-def get_folder_path():
+
+def get_folder_path(i=None):
     """
 
+    :type i: object
     :return: the path to the folder to save the results
     """
-    return mPath.new.unique(Path('hp_search', 'bayesian_opt'), mandatory_ext=True)
+    if i is None:
+        return mPath.new.unique(Path('hp_search', 'bayesian_opt'), mandatory_ext=True)
+    else:
+        return Path('hp_search', f'bayesian_opt_{i}')
 
 
 def save_evaluations(search_result, folder_path):
@@ -155,6 +160,7 @@ def save_search_result(search_result, dimensions, folder_path):
     # ------------------------------
     #           Save it
     # ------------------------------
+
 
     # ---------- Text ----------
 

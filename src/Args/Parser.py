@@ -424,6 +424,11 @@ class Parser(argparse.ArgumentParser):
                           help='Number of inter thread in tensorflow')
         self.add_argument('--nb-intra-threads', type=int, default=1,
                           help='Number of intra thread in tensorflow')
+        self.add_argument('--from-checkpoint', default=None,
+                          help='To continue the optimization from a checkpoint')
+        self.add_argument('--in-place', default=False, action='store_true',
+                          help='If continuing from a checkpoint and this arg set to True, '
+                               'then it is using the same folder to save the results')
 
     def add_clean_args(self, argtype=ArgType.ALL):
         """
@@ -473,6 +478,3 @@ class Parser(argparse.ArgumentParser):
         """
         self.add_argument('folder', type=int,
                           help='Number of the bayesian optimization folder')
-
-
-

@@ -8,6 +8,7 @@ import tensorflow as tf
 import gc
 import skopt
 from skopt import gp_minimize
+import pickle
 # Personal import
 from src.text import summary
 from src.MidiGenerator import MidiGenerator
@@ -99,7 +100,8 @@ def create_dimensions(args):
     l_rhythm_cost_tuple = string_to_tuple(args.l_rhythm_cost, t=ten_power, separator=':')
     dimensions.add_Real(l_rhythm_cost_tuple, name='l_rhythm_cost', prior='log-uniform')
     # No all step rhythm
-    take_all_step_rhythm_tuple = string_to_tuple(args.no_all_step_rhythm, t=lambda x: not string_to_bool(x), separator=',')
+    take_all_step_rhythm_tuple = string_to_tuple(args.no_all_step_rhythm, t=lambda x: not string_to_bool(x),
+                                                 separator=',')
     dimensions.add_Categorical(take_all_step_rhythm_tuple, name='take_all_step_rhythm')
     # sah
     sah_tuple = string_to_tuple(args.sah, t=string_to_bool, separator=',')
@@ -168,8 +170,6 @@ def main(args):
     if not args.pc:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    dimensions = create_dimensions(args)
-
     if args.seq2np:
         KerasNeuralNetwork.slow_down_cpu(
             nb_inter=args.nb_inter_threads,
@@ -180,17 +180,36 @@ def main(args):
     if args.seq2np:
         x_dict, y_dict = {}, {}
 
-    folder_path = BO.save.get_folder_path()
-    folder_path.mkdir(parents=True, exist_ok=False)  # We want it to act as a token
+    from_checkpoint = args.from_checkpoint is not None
+    saved_checkpoint_folder = None
+    i = None
+    if from_checkpoint:
+        saved_checkpoint_folder = BO.save.get_folder_path(args.from_checkpoint) / 'checkpoint'
+        i = args.from_checkpoint if args.in_place else None
+
+    folder_path = BO.save.get_folder_path(i=i)
+    folder_path.mkdir(parents=True, exist_ok=args.in_place)  # We want it to act as a token
     checkpoint_folder = folder_path / 'checkpoint'
-    checkpoint_folder.mkdir()
+    checkpoint_folder.mkdir(exist_ok=args.in_place)
 
     # -------------------- Setup Bayesian Optimization --------------------
+    saved_checkpoint, dimensions = None, None
 
     global best_accuracy
-    best_accuracy = 0
     global iteration
-    iteration = 0
+    global max_iterations
+    if not from_checkpoint:
+        best_accuracy = 0
+        iteration = 0
+    else:
+        saved_checkpoint, dimensions = BO.load.from_checkpoint(saved_checkpoint_folder)
+        best_accuracy = - saved_checkpoint.fun      # Because skopt minimizes it
+        iteration = saved_checkpoint.func_vals.size
+        print('Checkpoint loaded from', colored(f'{saved_checkpoint_folder.parent}', 'green'),
+              'save in place:', colored(f'{args.in_place}', 'yellow'))
+    max_iterations = args.n_calls + iteration
+
+    dimensions = create_dimensions(args) if dimensions is None else dimensions
 
     def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                      model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
@@ -250,6 +269,7 @@ def main(args):
         its negative accuracy (skopt works by minimizing a function)
         """
         global iteration
+        global max_iterations
         iteration += 1
 
         # ---------------------------------------- Get the variables ----------------------------------------
@@ -277,7 +297,7 @@ def main(args):
         sah = dimensions.get_value_param('sah', l)
 
         # ------------------------------ Print the information to the user ------------------------------
-        s = 'Iteration ' + colored(f'{iteration}/{args.n_calls}', 'yellow')
+        s = 'Iteration ' + colored(f'{iteration}/{max_iterations}', 'yellow')
         model_id = f'{model_name},{model_param},{nb_steps}'
         s += str_hp_to_print('model', model_id, first_printed=False)
         s += str_hp_to_print('lr', lr, exp_format=True)
@@ -382,6 +402,10 @@ def main(args):
     #               Actually run the Bayesian search
     # ------------------------------------------------------------
     dimensions.save(checkpoint_folder / 'dimensions.p')
+
+    with open(checkpoint_folder / 'args.p', 'wb') as dump_file:
+        pickle.dump(dict(args=args), dump_file)
+
     summary.summarize(
         # Function parameters
         path=folder_path,
@@ -394,14 +418,16 @@ def main(args):
         store_objective=False
     )
 
+    n_random_starts = 0 if from_checkpoint else 10
+
     search_result = gp_minimize(
         func=fitness,
         dimensions=dimensions.dimensions,
         acq_func='EI',
-        n_calls=2,#args.n_calls,
+        n_calls=2,  # args.n_calls,
         x0=dimensions.default_dim,
         callback=[checkpoint_callback],
-        n_random_starts=1
+        n_random_starts=1,  # n_random_starts
     )
 
     BO.save.save_search_result(

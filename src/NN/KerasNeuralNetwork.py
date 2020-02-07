@@ -285,6 +285,7 @@ class KerasNeuralNetwork:
         for c in callbacks:
             c.on_train_begin()
         for epoch in range(epochs):
+            self.model.reset_metrics()
             print(f'Epoch {epoch+1}/{epochs}')
             for c in callbacks:
                 c.on_epoch_begin(epoch=epoch)
@@ -315,11 +316,6 @@ class KerasNeuralNetwork:
                 )
         for c in callbacks:
             c.on_train_end(logs=logs_train)
-
-
-
-
-
 
     def evaluate(self, generator, verbose=1):
         evaluation = self.model.evaluate_generator(generator=generator, verbose=verbose)

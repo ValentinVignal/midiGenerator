@@ -1,4 +1,6 @@
 from pathlib import Path
+import warnings
+import pickle
 
 from src import Midi
 
@@ -11,6 +13,18 @@ def bayesian_opt(args):
     """
     if args.pc and not args.no_pc_arg:
         args.epochs = 1
+    if args.in_place and args.from_checkpoint is None:
+        warnings.warn('The arg "in-place" is set to "True" while the arg "from-checkpoint" is "None"')
+    if args.from_checkpoint is not None:
+        # It means the bayesian optimization continues a previous one, hence, some args must be the same the
+        # the optimization stays coherent
+        with open(Path('hp_search', f'bayesian_opt_{args.from_checkpoint}', 'checkpoint', 'args.p'), 'rb') as dump_file:
+            d = pickle.load(dump_file)
+            saved_args = d['args']
+            for k, value in vars(saved_args).items():
+                if k not in ['in_place', 'from_checkpoint', 'n_calls', 'gpu', 'debug']:
+                    setattr(args, k, value)
+
     return args
 
 
