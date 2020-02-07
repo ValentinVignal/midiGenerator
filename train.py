@@ -6,12 +6,13 @@ from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 from src import Args
 from src.Args import ArgType, Parser
 
+os.system('echo start train.py')
+
 
 def main(args):
     """
         Entry point
     """
-
     if args.pc:
         # args.data = 'lmd_matched_mini'
         data_path = os.path.join('../Dataset', args.data)

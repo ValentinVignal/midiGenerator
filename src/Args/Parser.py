@@ -38,16 +38,16 @@ class Parser(argparse.ArgumentParser):
             self.add_compute_data_args(argtype)
         # ---------- Model ----------
         # Creation Model
-        if argtype in [ArgType.ALL, ArgType.Train, ArgType.HPSearch]:
+        if argtype in [ArgType.ALL, ArgType.Train, ArgType.HPSearch, ArgType.NScriptsBO]:
             self.add_create_model_args(argtype)
         # Load Model
         if argtype in [ArgType.ALL, ArgType.Train, ArgType.Generate]:
             self.add_load_model_args(argtype)
         # Load Data
-        if argtype in [ArgType.ALL, ArgType.Train, ArgType.HPSearch, ArgType.Generate]:
+        if argtype in [ArgType.ALL, ArgType.Train, ArgType.HPSearch, ArgType.Generate, ArgType.NScriptsBO]:
             self.add_load_data_args(argtype)
         # Train Model
-        if argtype in [ArgType.ALL, ArgType.Train, ArgType.HPSearch]:
+        if argtype in [ArgType.ALL, ArgType.Train, ArgType.HPSearch, ArgType.NScriptsBO]:
             self.add_train_args(argtype)
         # Evaluate Model
         if argtype in [ArgType.ALL, ArgType.Train]:
@@ -56,7 +56,7 @@ class Parser(argparse.ArgumentParser):
         if argtype in [ArgType.ALL, ArgType.Train, ArgType.Generate]:
             self.add_generation_args(argtype)
         # HP Search
-        if argtype in [ArgType.ALL, ArgType.HPSearch]:
+        if argtype in [ArgType.ALL, ArgType.HPSearch, ArgType.NScriptsBO]:
             self.add_hp_search_args(argtype)
         # Clean
         if argtype in [ArgType.ALL, ArgType.Clean]:
@@ -67,6 +67,9 @@ class Parser(argparse.ArgumentParser):
         # HPSummary
         if argtype in [ArgType.ALL, ArgType.HPSummary]:
             self.add_hp_summary_args(argtype)
+        # NScriptsBO
+        if argtype in [ArgType.NScriptsBO]:
+            self.add_n_scripts_bo_args(argtype)
 
     @staticmethod
     def description_msg(argtype=None):
@@ -102,7 +105,7 @@ class Parser(argparse.ArgumentParser):
         :param t:
         :return:
         """
-        if argtype in [ArgType.HPSearch]:
+        if argtype in [ArgType.HPSearch, ArgType.NScriptsBO]:
             return str
         else:
             return t
@@ -197,7 +200,7 @@ class Parser(argparse.ArgumentParser):
             loss_name=g.loss.loss_name,
         )
 
-        if argtype is not ArgType.HPSearch:
+        if argtype not in [ArgType.HPSearch, ArgType.NScriptsBO]:
             self.set_defaults(
                 l_scale=g.loss.l_scale,
                 l_rhythm=g.loss.l_rhythm,
@@ -243,7 +246,7 @@ class Parser(argparse.ArgumentParser):
         if argtype in [ArgType.ALL, ArgType.Train]:
             self.add_argument('-m', '--model-id', type=str, default='',
                               help='The model id modelName,modelParam,nbSteps')
-        elif argtype is ArgType.HPSearch:
+        elif argtype in [ArgType.HPSearch, ArgType.NScriptsBO]:
             self.add_argument('--model-name', type=str, default='',
                               help='The model name')
             self.add_argument('--model-param', type=str, default='',
@@ -283,7 +286,7 @@ class Parser(argparse.ArgumentParser):
             work_on=g.mg.work_on,
         )
 
-        if argtype is not ArgType.HPSearch:
+        if argtype not in [ArgType.HPSearch, ArgType.NScriptsBO]:
             self.set_defaults(
                 lr=g.nn.lr,
                 optimizer='adam',
@@ -426,6 +429,8 @@ class Parser(argparse.ArgumentParser):
                           help='Number of intra thread in tensorflow')
         self.add_argument('--from-checkpoint', default=None,
                           help='To continue the optimization from a checkpoint')
+        self.add_argument('--bo-name', default=None,
+                          help='Name of the bayesian optimization')
         self.add_argument('--in-place', default=False, action='store_true',
                           help='If continuing from a checkpoint and this arg set to True, '
                                'then it is using the same folder to save the results')
@@ -478,3 +483,12 @@ class Parser(argparse.ArgumentParser):
         """
         self.add_argument('folder', type=int,
                           help='Number of the bayesian optimization folder')
+
+    def add_n_scripts_bo_args(self, argtype=ArgType.NScriptsBO):
+        """
+
+        :param argtype:
+        :return:
+        """
+        self.add_argument('nscripts', type=int, default=1,
+                          help='Number of time to run the script')

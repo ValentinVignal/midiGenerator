@@ -8,8 +8,6 @@ class ArgType(Enum):
     ALL = 0
 
     Train = 1
-    HPSearch = 2
-    HPSummary = 3
     Generate = 5
 
     ComputeData = 10
@@ -17,3 +15,8 @@ class ArgType(Enum):
 
     Clean = 20
     Zip = 21
+
+    HPSearch = 30
+    HPSummary = 32
+
+    NScriptsBO = 40

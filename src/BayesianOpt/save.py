@@ -7,16 +7,21 @@ from src import Path as mPath
 from src import BayesianOpt as BO
 
 
-def get_folder_path(i=None):
+def get_folder_path(id=None, name=None):
     """
 
-    :type i: object
+    :param name: The name of the future saved folder
+    :type id: The id of an existing folder
     :return: the path to the folder to save the results
     """
-    if i is None:
-        return mPath.new.unique(Path('hp_search', 'bayesian_opt'), mandatory_ext=True)
+    if id is None:
+        # Then it has to be a new folder
+        name_str = f'_{name}' if name is not None else ''
+        return mPath.new.unique(Path('hp_search', f'bayesian_opt{name_str}'), mandatory_ext=True)
     else:
-        return Path('hp_search', f'bayesian_opt_{i}')
+        id_list = id.split('-')
+        id_str = '_' + '_'.join([str(s) for s in id_list])
+        return Path('hp_search', f'bayesian_opt{id_str}')
 
 
 def save_evaluations(search_result, folder_path):

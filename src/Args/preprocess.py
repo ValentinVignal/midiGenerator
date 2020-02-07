@@ -13,12 +13,13 @@ def bayesian_opt(args):
     """
     if args.pc and not args.no_pc_arg:
         args.epochs = 1
+        args.n_calls = 2
     if args.in_place and args.from_checkpoint is None:
         warnings.warn('The arg "in-place" is set to "True" while the arg "from-checkpoint" is "None"')
     if args.from_checkpoint is not None:
         # It means the bayesian optimization continues a previous one, hence, some args must be the same the
         # the optimization stays coherent
-        with open(Path('hp_search', f'bayesian_opt_{args.from_checkpoint}', 'checkpoint', 'args.p'), 'rb') as dump_file:
+        with open(Path('hp_search', f'bayesian_opt_{"_".join([str(s) for s in args.from_checkpoint.split("-")])}', 'checkpoint', 'args.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
             saved_args = d['args']
             for k, value in vars(saved_args).items():
@@ -129,5 +130,15 @@ def hp_summary(args):
     """
     args.folder = Path('hp_search', f'bayesian_opt_{args.folder}')
     return args
+
+
+def n_scripts_bo(args):
+    """
+
+    :param args:
+    :return:
+    """
+    return args
+
 
 

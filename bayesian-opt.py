@@ -23,6 +23,7 @@ from src.BayesianOpt.process_args import string_to_tuple, ten_power, string_to_b
 # Variables
 K = tf.keras.backend
 
+os.system('echo start bayesian-opt.py')
 
 # ------------------------------------------------------------
 # Functions to create dimensions from args
@@ -182,12 +183,12 @@ def main(args):
 
     from_checkpoint = args.from_checkpoint is not None
     saved_checkpoint_folder = None
-    i = None
+    id = None
     if from_checkpoint:
         saved_checkpoint_folder = BO.save.get_folder_path(args.from_checkpoint) / 'checkpoint'
-        i = args.from_checkpoint if args.in_place else None
+        id = args.from_checkpoint if args.in_place else None
 
-    folder_path = BO.save.get_folder_path(i=i)
+    folder_path = BO.save.get_folder_path(id=id, name=args.bo_name)
     folder_path.mkdir(parents=True, exist_ok=args.in_place)  # We want it to act as a token
     checkpoint_folder = folder_path / 'checkpoint'
     checkpoint_folder.mkdir(exist_ok=args.in_place)
@@ -418,16 +419,20 @@ def main(args):
         store_objective=False
     )
 
-    n_random_starts = 0 if from_checkpoint else 10
+    n_random_starts = 10
+    if args.pc and not args.no_pc_arg:
+        n_random_starts = 1
+    if from_checkpoint:
+        n_random_starts = 0
 
     search_result = gp_minimize(
         func=fitness,
         dimensions=dimensions.dimensions,
         acq_func='EI',
-        n_calls=2,  # args.n_calls,
+        n_calls=args.n_calls,
         x0=dimensions.default_dim,
         callback=[checkpoint_callback],
-        n_random_starts=1,  # n_random_starts
+        n_random_starts=n_random_starts
     )
 
     BO.save.save_search_result(
