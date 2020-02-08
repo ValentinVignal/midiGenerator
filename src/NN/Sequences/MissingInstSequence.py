@@ -23,6 +23,7 @@ class MissingInstSequence(KerasSequence):
         x, y = super(MissingInstSequence, self).__getitem__(item // self.nb_combinations)
         # x (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         # y (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
+        # mask (batch, nb_instruments, nb_steps)
         mod = item % self.nb_combinations
         if mod == 0:
             # All the instruments
