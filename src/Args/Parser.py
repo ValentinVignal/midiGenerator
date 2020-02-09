@@ -328,8 +328,6 @@ class Parser(argparse.ArgumentParser):
         :param artype:
         :return:
         """
-        self.add_argument('--compare-generation', default=False, action='store_true',
-                          help='Compare generation after training')
         self.add_argument('--generate', default=False, action='store_true',
                           help='Generation after training')
         self.add_argument('--replicate', default=False, action='store_true',
@@ -338,6 +336,12 @@ class Parser(argparse.ArgumentParser):
                           help='Fill the missing instrument')
         self.add_argument('--replicate-fill', default=False, action='store_true',
                           help='Fill the missing instrument')
+        self.add_argument('--compare-generation', default=False, action='store_true',
+                          help='Compare generation after training')
+        self.add_argument('--song-number', default=-1, type=int,
+                          help='Number of the song in the dataset')
+        self.add_argument('--redo-replicate', default=False, action='store_true',
+                          help='Redo a song by changing one by one the instruments')
         self.add_argument('--no-duration', action='store_true', default=False,
                           help='Generate only shortest notes possible')
 

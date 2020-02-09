@@ -101,6 +101,11 @@ def main(args):
     if args.replicate_fill:
         midi_generator.replicate_fill(save_images=True, no_duration=args.no_duration, verbose=1, noise=args.noise)
 
+    # -------------------- Redo song replicate --------------------
+    if args.redo_replicate:
+        midi_generator.redo_song_replicate(song_number=args.song_number, save_images=True, no_duration=args.no_duration,
+                                           noise=args.noise,)
+
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:
         for i in range(len(midi_generator.sequence)):

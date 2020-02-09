@@ -250,6 +250,9 @@ class MGInit:
     def replicate_fill(self, *args, **kwargs):
         self.warning_init_function(self.replicate_fill.__name__, 'MGReplicate')
 
+    def redo_song_replicate(self, *args, **kwargs):
+        self.warning_init_function(self.redo_song_replicate.__name__, 'MGReplicate')
+
     # ---------------------------------------- MGTrain ----------------------------------------
 
     def train(self, *args, **kwargs):

@@ -303,7 +303,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         :return:
         """
         # Find back the index of the step for this song
-        file_number = self.song_file()
+        file_number = self.song_file(song_number)
         song_index = 0
         index = 0
         # First add all the steps of the preceding files

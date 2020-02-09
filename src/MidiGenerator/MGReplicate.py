@@ -257,4 +257,129 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
         cprint('Done replicating (fill)', 'green')
 
+    def redo_song_replicate(self, song_number=None, instrument_order=None, no_duration=False, save_images=True, noise=0):
+        """
+
+        :param instrument_order: The order of the instruments to remplace
+        :param song_number: The number of the song in the dataset
+        :param no_duration:
+        :param save_images:
+        :param noise:
+        :return:
+        """
+        self.sequence = Sequences.KerasSequence(
+            path=self.data_transformed_path,
+            nb_steps=self.nb_steps,
+            batch_size=1,
+            work_on=self.work_on,
+            noise=noise,
+            replicate=True
+        )
+        song_number = np.random.randint(self.sequence.nb_songs) if song_number is None else song_number
+        instrument_order = np.random.permutation(self.nb_instruments) if instrument_order is None else instrument_order
+        all_arrays = []
+        # Construct the truth array
+        x, y = self.sequence.get_all_song(song_number=song_number, in_batch_format=False)
+        # x: List(nb_instruments)[(batch=1, nb_steps, step_size, input_size, channels)]
+        # y: List(nb_instruments)[(batch=1, nb_steps, step_size, input_size, channels)]
+        # x and y are the same except that in x, there is some noise
+        truth = np.asarray(x)
+        # truth: (nb_instruments, batch=1, len_song, step_size, input_size, channels
+        # We then take a number of step which is a multiple of self.nb_steps
+        indices = range(truth.shape[0] // self.nb_steps * self.nb_steps)
+        truth = np.take(truth, axis=2, indices=indices)
+        length = truth.shape[2]
+        all_arrays.append(truth)
+        cprint('Start redoing song (replicate) ...', 'blue')
+        bar = progressbar.ProgressBar(maxval=length * self.nb_instruments,
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        bar.start()  # To see it working
+        for instrument in range(len(instrument_order)):
+            # We replace the instruments one by one
+            generated = []
+            for step in range(0, length, self.nb_steps):
+                instrument_to_remove = instrument_order[instrument]
+                inputs = np.take(all_arrays[-1], axis=2, indices=range(step, step+self.nb_steps))
+                # inputs = (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
+                mask = np.ones((1, self.nb_instruments, self.nb_steps))     # (batch=1, nb_instruments, nb_steps)
+                # Remove the instrument from the input
+                mask[:, instrument_to_remove] = 0
+                inputs[instrument_to_remove] = 0
+                preds = np.asarray(self.keras_nn.generate(input=list(inputs) + [mask])).astype('float64')
+                # preds: (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)
+                preds = midi.create.normalize_activation(preds, mono=self.mono)
+                outputs = np.copy(inputs)
+                outputs[instrument_to_remove] = preds[instrument_to_remove]
+                generated.append(outputs)
+                bar.update(instrument * length + step)
+            all_arrays.append(np.concatenate(generated, axis=2))
+            # all_arrays: List(nb_instruments + 1)[(nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
+        bar.finish()
+
+        self.ensure_save_midis_path()
+        self.save_midis_path.mkdir(exist_ok=True, parents=True)
+        generated_midi = [self.reshape_generated_array(arr) for arr in all_arrays]
+        # Save the truth
+        accuracies, accuracies_inst = self.compute_generated_array(
+            generated_array=generated_midi[0],
+            folder_path=self.save_midis_path,
+            name='redo_song_truth',
+            no_duration=no_duration,
+            save_images=save_images,
+            replicate=True
+        )
+        accuracies, accuracies_inst = [accuracies], [accuracies_inst]
+        for inst in range(self.nb_instruments):
+            acc, acc_inst = self.compute_generated_array(
+                generated_array=generated_midi[inst + 1],
+                folder_path=self.save_midis_path,
+                name=f'redo_song_replicate_{inst}_(inst_{instrument_order[inst]})',
+                no_duration=no_duration,
+                array_truth=generated_midi[0],
+                save_images=save_images,
+                save_truth=False,
+                replicate=True
+            )
+            accuracies.append(acc)
+            accuracies_inst.append(acc_inst)
+
+        if self.batch is not None:
+            self.sequence.batch_size = self.batch
+
+        self.save_generated_arrays_cross_images(
+            generated_arrays=generated_midi,
+            folder_path=self.save_midis_path,
+            name='redo_song_all',
+            replicate=True,
+            titles=['Truth'] + [f'Iteration {i}: change inst {instrument_order[i]}' for i in range(self.nb_instruments)],
+            subtitles=[f'Acc: {accuracies[i]}, Acc inst: {accuracies_inst[i]}' for i in range(self.nb_instruments + 1)]
+        )
+
+        summary.summarize(
+            # Function params
+            path=self.save_midis_path,
+            title=self.full_name,
+            file_name='redo_song_replicate_summary.txt',
+            # Summary params
+            song_number=song_number,
+            instrument_order=instrument_order,
+            no_duration=no_duration,
+            noise=noise,
+            # Generic summary
+            **self.summary_dict
+        )
+
+        cprint('Done redo song replicate', 'green')
+
+
+
+
+
+
+
+
+
+
+
 

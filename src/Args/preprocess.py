@@ -40,6 +40,8 @@ def train(args):
             args.loss_name = 'mono'
         elif 'mono' not in args.loss_name:
             args.loss_name = 'mono_' + args.loss_name
+    if args.song_number == -1:
+        args.song_number = None
     if args.pc and not args.no_pc_arg:
         args.epochs = 2
         args.batch = 2
