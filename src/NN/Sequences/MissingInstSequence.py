@@ -20,6 +20,14 @@ class MissingInstSequence(KerasSequence):
         return super(MissingInstSequence, self).__len__() * self.nb_combinations
 
     def __getitem__(self, item):
+        """
+
+        :param item:
+        :return: x + [mask], y
+            x: List(nb_instruments)[(batch, nb_steps, step_size, input_size, channels)]
+            mask: (batch, nb_instruments, nb_steps)
+            y: List(nb_instruments)[(batch, nb_steps, step_size, input_size, channels)]
+        """
         x, y = super(MissingInstSequence, self).__getitem__(item // self.nb_combinations)
         # x (nb_instruments, batch, nb_steps, step_size, input_size, 2)
         # y (nb_instruments, batch, nb_steps=1, step_size, input_size, 2)
@@ -46,13 +54,42 @@ class MissingInstSequence(KerasSequence):
             y[zeros_axis] = np.nan
         return list(x) + [mask], list(y)
 
-    def change_batch_size(self, batch_size):
-        super(MissingInstSequence, self).change_batch_size(batch_size)
+    def get_song_step(self, song_number, step_number, with_mask=True):
+        """
 
-    @staticmethod
-    def predict(*args, **kwargs):
-        return MissingInstSequence(*args, replicate=False, **kwargs)
+        :param song_number:
+        :param step_number:
+        :param with_mask:
+        :return:
+        """
+        x, y = super(MissingInstSequence, self).get_song_step(song_number, step_number)
+        # x (nb_instruments batch, nb_steps, step_size, input_size, channels)
+        # y (nb_instruments batch, nb_steps, step_size, input_size, channels)
+        batch_size = x.shape[1]
+        if with_mask:
+            mask = np.ones((batch_size, self.nb_instruments, self.nb_steps))
+            return list(x) + [mask], list(y)
+        else:
+            return list(x), list(y)
 
-    @staticmethod
-    def replicate(*args, **kwargs):
-        return MissingInstSequence(*args, replicate=True, **kwargs)
+    def get_all_song(self, song_number, in_batch_format=True):
+        """
+
+        :param song_number:
+        :param in_batch_format:
+        :param with_mask:
+        :return:
+        """
+        x, y = super(MissingInstSequence, self).get_all_song(
+            song_number=song_number,
+            in_batch_format=in_batch_format
+        )
+        return list(x), list(y)
+
+    @classmethod
+    def predict(cls, *args, **kwargs):
+        return cls(*args, replicate=False, **kwargs)
+
+    @classmethod
+    def replicate(cls, *args, **kwargs):
+        return cls(*args, replicate=True, **kwargs)

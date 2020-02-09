@@ -56,6 +56,21 @@ class KerasSequence(tf.keras.utils.Sequence):
         self.file_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded
 
+    def get_init_params(self):
+        """
+
+        :return:
+        """
+        return dict(
+            path=self.path,
+            nb_steps=self.nb_steps,
+            batch_size=self.batch_size,
+            work_on=self.work_on,
+            noise=self.noise,
+            replicate=self.replicate,
+            predict_offset=self.predict_offset
+        )
+
     @property
     def len(self):
         return self.nb_elements_available // self.batch_size
@@ -323,14 +338,16 @@ class KerasSequence(tf.keras.utils.Sequence):
         :param song_number:
         :return:
         """
-        # Get the first index of the first step of the song
-        first_index = self.get_index_first_step_song(song_number)
-        old_batch_size = self.batch_size
-        self.batch_size = 1
+        init_params = self.get_init_params()
+        init_params['replicate'] = True
+        init_params['nb_steps'] = 1
+        init_params['batch_size'] = 1
+        sub_sequence = KerasSequence(**init_params)
         x_list = []
         y_list = []
-        for s in range(self.get_song_len(song_number)):
-            x, y = self.get_item(s + first_index)
+        start_index = sub_sequence.get_index_first_step_song(song_number)
+        for s in range(sub_sequence.get_song_len(song_number)):
+            x, y = sub_sequence[start_index + s]
             # x (nb_instruments, batch=1, nb_steps, step_size, input_size, 2)
             # x (nb_instruments, batch=1, nb_steps=1, step_size, input_size, 2)
             x_list.append(x)
@@ -338,7 +355,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         axis = 1 if in_batch_format else 2
         x = np.concatenate(x_list, axis=axis)
         y = np.concatenate(y_list, axis=axis)
-        self.batch_size = old_batch_size
+        del sub_sequence
         return x, y
 
 
