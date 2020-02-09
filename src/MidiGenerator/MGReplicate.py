@@ -14,12 +14,10 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
     """
 
-    def replicate_from_data(self, length=None, new_save_path=None, save_images=False,
-                            no_duration=False, verbose=1, noise=0):
+    def replicate_from_data(self, length=None, save_images=False, no_duration=False, verbose=1, noise=0):
         """
         Generate Midi file from the seed and the trained model
         :param length: Length of th generation
-        :param new_save_path:
         :param save_images: To save the pianoroll of the generation (.jpg images)
         :param no_duration: if True : all notes will be the shortest length possible
         :param verbose: Level of verbose
@@ -42,11 +40,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
         # -- Length --
         length = length if length is not None else min(20, len(self.sequence))
-        # -- For save Midi path --
-        if type(new_save_path) is str or (
-                type(new_save_path) is bool and new_save_path) or (
-                new_save_path is None and self.save_midis_path is None):
-            self.get_new_save_midis_path(path=new_save_path)
         # --- Done Verifying the inputs ---
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
@@ -83,7 +76,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
             bar.update(l + 1)
         bar.finish()
-        self.ensure_save_midis_path()
 
         generated_midi_final = self.reshape_generated_array(generated)
         truth_final = self.reshape_generated_array(truth)
@@ -141,7 +133,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
         max_length = int(min(max_length, len(self.sequence)))
         nb_instruments = self.sequence.nb_instruments
 
-        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
         shape_with_no_step = list(np.array(self.sequence[0][0]).shape)
@@ -194,8 +185,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
                                    axis=2)  # (nb_instruments, 1, nb_steps, step_length, size, channels)
             bar.update(l + 1)
         bar.finish()
-
-        self.ensure_save_midis_path()
 
         generated_midi_final_list = [
             self.reshape_generated_array(generated_list[inst]) for inst in range(nb_instruments)
@@ -320,7 +309,6 @@ class MGReplicate(MGComputeGeneration, MGInit):
             # all_arrays: List(nb_instruments + 1)[(nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
         bar.finish()
 
-        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(exist_ok=True, parents=True)
         generated_midi = [self.reshape_generated_array(arr) for arr in all_arrays]
         # Save the truth

@@ -80,7 +80,7 @@ class MGModel(MGInit):
             self.data_transformed_path = d['data_transformed_path']
             # Logistic
             self.total_epochs = d['epochs'] if with_weights else 0
-            self.i = d['i'] if with_weights else self.get_new_i()
+            self.full_name_i = d['i'] if with_weights else self.get_new_i()
 
         self.keras_nn = KerasNeuralNetwork()
         self.keras_nn.recreate((path_to_load / 'MyNN').as_posix(), with_weights=with_weights)
@@ -127,7 +127,7 @@ class MGModel(MGInit):
                     model_id=self.model_id,
                     work_on=self.work_on,
                     input_param=self.input_param,
-                    i=self.i,
+                    i=self.full_name_i,
                     name=self.name,
                     # data
                     instruments=self.instruments,

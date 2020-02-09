@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import warnings
 
@@ -17,10 +16,9 @@ class MGInit:
         self._total_epochs = 0
         self._name = name
         self._model_id = ''  # Id of the model used
-        self._i = 0       # To complete the full name
+        self._full_name_i = 0       # To complete the full name
         self.work_on = None
         self.predict_offset = None
-        self.get_new_i()
 
         # ----- Data -----
         self.data_transformed_path = None
@@ -39,7 +37,9 @@ class MGInit:
         self.train_history = None
 
         # ------ save_midi_path -----
-        self.save_midis_path = None  # Where to save the generated Midi files
+        self._save_midis_path_i = None  # Where to save the generated Midi files
+
+        self.get_new_i()
 
         if data is not None:
             self.load_data(data)
@@ -54,7 +54,7 @@ class MGInit:
 
     @model_id.setter
     def model_id(self, model_id):
-        self.delete_token()
+        self.delete_tokens()
         self._model_id = model_id
         self.get_new_i()
 
@@ -64,21 +64,26 @@ class MGInit:
 
     @total_epochs.setter
     def total_epochs(self, total_epochs):
-        self.delete_token()
+        self.delete_tokens()
         self._total_epochs = total_epochs
         self.get_new_i()
 
     @property
-    def i(self):
-        if self._i is None:
+    def full_name_i(self):
+        if self._full_name_i is None:
             self.get_new_i()
-        return self._i
+        return self._full_name_i
 
-    @i.setter
-    def i(self, i):
+    @full_name_i.setter
+    def full_name_i(self, i):
+        self.delete_tokens()
+        self._full_name_i = i
+        self.create_tokens()
+
+    @full_name_i.deleter
+    def full_name_i(self):
         self.delete_token()
-        self._i = i
-        self.create_token()
+        del self._full_name_i
 
     @property
     def name(self):
@@ -86,13 +91,13 @@ class MGInit:
 
     @name.setter
     def name(self, name):
-        self.delete_token()
+        self.delete_tokens()
         self._name = self._name if name is None else name
         self.get_new_i()
 
     @property
     def full_name(self):
-        return f'{self.full_name_no_i}-({self.i})'
+        return f'{self.full_name_no_i}-({self.full_name_i})'
 
     @property
     def saved_model_path(self):
@@ -118,12 +123,6 @@ class MGInit:
     def model_name(self):
         return self.model_id.split(',')[0]
 
-    def __del__(self, *args, **kwargs):
-        del self.keras_nn
-        del self.sequence
-        del self.train_history
-        self.delete_token()
-
     @property
     def nb_instruments(self):
         return len(self.instruments)
@@ -146,6 +145,33 @@ class MGInit:
             notes_range=self.notes_range,
             mono=self.mono
         )
+
+    @property
+    def save_midis_path_i(self):
+        if self._save_midis_path_i is None:
+            self.get_new_save_midis_path_i()
+        return self._save_midis_path_i
+
+    @save_midis_path_i.setter
+    def save_midis_path_i(self, save_midis_path_i):
+        self.delete_token_midis_path()
+        self._save_midis_path_i = save_midis_path_i
+        self.create_token_midis_path()
+
+    @save_midis_path_i.deleter
+    def save_midis_path_i(self):
+        self.delete_token_midis_path()
+        del self._save_midis_path_i
+
+    @property
+    def save_midis_path(self):
+        return Path('generated_midis', f'{self.full_name}-generation({self.save_midis_path_i})')
+
+    def __del__(self, *args, **kwargs):
+        del self.keras_nn
+        del self.sequence
+        del self.train_history
+        self.delete_tokens()
 
     # ----------------------------------------------------------------------------------------------------
     #                                           Functions
@@ -219,11 +245,20 @@ class MGInit:
     def get_new_i(self):
         self.warning_init_function(self.get_new_i.__name__, 'MGLogistic')
 
-    def ensure_save_midis_path(self, *args, **kwargs):
-        self.warning_init_function(self.ensure_save_midis_path.__name__, 'MGLogistic')
+    def get_new_save_midis_path_i(self, *args, **kwargs):
+        self.warning_init_function(self.get_new_save_midis_path_i.__name__, 'MGLogistic')
 
-    def get_new_save_midis_path(self, *args, **kwargs):
-        self.warning_init_function(self.get_new_save_midis_path.__name__, 'MGLogistic')
+    def create_token_midis_path(self, *args, **kwargs):
+        self.warning_init_function(self.create_token_midis_path.__name__, 'MGLogistic')
+
+    def delete_token_midis_path(self, *args, **kwargs):
+        self.warning_init_function(self.delete_token_midis_path.__name__, 'MGLogistic')
+
+    def delete_tokens(self, *args, **kwargs):
+        self.warning_init_function(self.delete_tokens.__name__, 'MGLogistic')
+
+    def create_tokens(self, *args, **kwargs):
+        self.warning_init_function(self.create_tokens.__name__, 'MGLogistic')
 
     # ---------------------------------------- MGModel ----------------------------------------
 

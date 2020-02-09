@@ -15,12 +15,11 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
     """
 
-    def generate_from_data(self, nb_seeds=10, new_data_path=None, length=None, new_save_path=None, save_images=False,
+    def generate_from_data(self, nb_seeds=10, length=None, new_save_path=None, save_images=False,
                            no_duration=False, verbose=1):
         """
         Generate Midi file from the seed and the trained model
         :param nb_seeds: number of seeds for the generation
-        :param new_data_path: The path of the seed
         :param length: Length of th generation
         :param new_save_path:
         :param save_images: To save the pianoroll of the generation (.jpg images)
@@ -31,8 +30,6 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # ---------- Verify the inputs ----------
 
         # ----- Create the seed -----
-        if (new_data_path is not None) and (new_data_path != self.data_transformed_path.as_posix()):
-            self.load_data(new_data_path)
         if self.data_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
         self.sequence = Sequences.AllInstSequence(
@@ -46,11 +43,6 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
         # -- Length --
         length = length if length is not None else 10
-        # -- For save Midi path --
-        if type(new_save_path) is str or (
-                type(new_save_path) is bool and new_save_path) or (
-                new_save_path is None and self.save_midis_path is None):
-            self.get_new_save_midis_path(path=new_save_path)
         # --- Done Verifying the inputs ---
         mask = self.get_mask(nb_instruments)
 
@@ -77,8 +69,6 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
                 bar.update(l + 1)
             bar.finish()
-
-            self.ensure_save_midis_path()
 
             generated_midi_final = self.reshape_generated_array(generated)
             self.compute_generated_array(
@@ -176,7 +166,6 @@ class MGGenerate(MGComputeGeneration, MGInit):
         truth = self.reshape_generated_array(truth)
         for inst in range(nb_instruments):
             filled_list[inst] = self.reshape_generated_array(filled_list[inst])
-        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
         accuracies, accuracies_inst = self.compute_generated_array(
             generated_array=truth,
@@ -296,7 +285,6 @@ class MGGenerate(MGComputeGeneration, MGInit):
         generated_midi_final_truth = self.reshape_generated_array(generated_truth)
 
         # ---------- find the name for the midi_file ----------
-        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
 
         accuracies, accuracies_inst = [], []
@@ -435,7 +423,6 @@ class MGGenerate(MGComputeGeneration, MGInit):
             # all_arrays: List(nb_instruments + 1)[(nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
         bar.finish()
 
-        self.ensure_save_midis_path()
         self.save_midis_path.mkdir(exist_ok=True, parents=True)
         generated_midi = [self.reshape_generated_array(arr) for arr in all_arrays]
         # Save the truth
