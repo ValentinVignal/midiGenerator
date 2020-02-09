@@ -88,7 +88,7 @@ class FastSequence(tf.keras.utils.Sequence):
     def replicate_dataset(self, sequence):
         print('Replicate dataset for FastSequence instance')
         old_batch_size = sequence.batch_size
-        sequence.change_batch_size(1)
+        sequence.batch_size = 1
         nb_inputs, nb_outputs = len(sequence[0][0]), len(sequence[0][1])
         for file_number in range(int(math.ceil(len(sequence) / self.nb_steps_per_file))):
             # Load all the data
@@ -115,7 +115,7 @@ class FastSequence(tf.keras.utils.Sequence):
             np.save(self.folder_path / f'y_{file_number}.npy', y)
             if self.has_mask:
                 np.save(self.folder_path / f'mask_{file_number}.npy', mask)
-        sequence.change_batch_size(old_batch_size)
+        sequence.batch_size = old_batch_size
 
     def __len__(self):
         return self.nb_steps // self.batch_size

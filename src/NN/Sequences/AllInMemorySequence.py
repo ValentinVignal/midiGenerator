@@ -28,7 +28,7 @@ class AllInMemorySequence(tf.keras.utils.Sequence):
     def load(self, sequence):
         print('Loading all the data in an AllInMemorySequence instance')
         old_batch_size = sequence.batch_size
-        sequence.change_batch_size(1)
+        sequence.batch_size = 1
         self.nb_steps = len(sequence)
 
         first_x, first_y = sequence[0]
@@ -44,7 +44,7 @@ class AllInMemorySequence(tf.keras.utils.Sequence):
                 all_y[j].append(y[j])
         self.x = [np.concatenate(l, axis=0) for l in all_x]
         self.y = [np.concatenate(l, axis=0) for l in all_y]
-        sequence.change_batch_size(old_batch_size)
+        sequence.batch_size = old_batch_size
 
     def __len__(self):
         return self.nb_steps // self.batch_size
