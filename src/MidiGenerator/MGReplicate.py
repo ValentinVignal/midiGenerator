@@ -100,7 +100,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
         )
 
         if self.batch is not None:
-            self.sequence.change_batch_size(self.batch)
+            self.sequence.batch_size = self.batch
 
         summary.summarize(
             # Function params
@@ -227,7 +227,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
             accuracies_inst.append(acc_inst)
 
         if self.batch is not None:
-            self.sequence.change_batch_size(self.batch)
+            self.sequence.batch_size = self.batch
 
         # Save the image of all in a subplot to allow easier comparaisons
         self.save_generated_arrays_cross_images(

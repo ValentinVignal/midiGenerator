@@ -91,7 +91,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
             )
 
         if self.batch is not None:
-            self.sequence.change_batch_size(self.batch)
+            self.sequence.batch_size = self.batch
 
         summary.summarize(
             # Function params
