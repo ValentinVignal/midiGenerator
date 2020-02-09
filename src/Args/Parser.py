@@ -340,8 +340,10 @@ class Parser(argparse.ArgumentParser):
                           help='Compare generation after training')
         self.add_argument('--song-number', default=-1, type=int,
                           help='Number of the song in the dataset')
+        self.add_argument('--redo-generate', default=False, action='store_true',
+                          help='Redo a song by changing one by one the instruments (generate method)')
         self.add_argument('--redo-replicate', default=False, action='store_true',
-                          help='Redo a song by changing one by one the instruments')
+                          help='Redo a song by changing one by one the instruments (replicate method)')
         self.add_argument('--no-duration', action='store_true', default=False,
                           help='Generate only shortest notes possible')
 

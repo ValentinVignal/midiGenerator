@@ -169,12 +169,12 @@ class MGReplicate(MGComputeGeneration, MGInit):
             x_missing_inst_list = []
             for inst in range(nb_instruments):
                 x_missing_inst = np.copy(x)
-                x_missing_inst[inst] = 0        # (nb_instruments, batch, nb_steps, step_length, size, channels)
+                x_missing_inst[inst] = 0  # (nb_instruments, batch, nb_steps, step_length, size, channels)
                 x_missing_inst_list.append(x_missing_inst)
             nn_input = np.concatenate(
                 tuple(x_missing_inst_list),
                 axis=1
-            )       # (nb_instruments, batch=nb_instruments, nb_steps, step_length, size, channels)
+            )  # (nb_instruments, batch=nb_instruments, nb_steps, step_length, size, channels)
             preds = self.keras_nn.generate(
                 input=list(nn_input) + [mask])  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
             preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
@@ -184,12 +184,12 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 y = np.expand_dims(y, axis=0)
             preds = midi.create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
             for inst in range(nb_instruments):
-                p = np.copy(y)      # (nb_instruments, batch=1, nb_steps, step_length, size, channels)
+                p = np.copy(y)  # (nb_instruments, batch=1, nb_steps, step_length, size, channels)
                 p[inst] = np.take(preds, axis=1, indices=[inst])[inst]
                 generated_list[inst] = np.concatenate(
                     (generated_list[inst], p),
                     axis=2
-                )       # (nb_instruments, batch=1, nb_steps, step_length, size, channels)
+                )  # (nb_instruments, batch=1, nb_steps, step_length, size, channels)
             truth = np.concatenate((truth, np.asarray(y)),
                                    axis=2)  # (nb_instruments, 1, nb_steps, step_length, size, channels)
             bar.update(l + 1)
@@ -238,7 +238,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
             titles=['Truth'] + [f'Fill Inst {i}' for i in range(nb_instruments)],
             subtitles=[
                 f'Acc: {accuracies_inst[i][int(max(0, i - 1))]}' for i in range(nb_instruments + 1)
-            ]       # Truth is in it
+            ]  # Truth is in it
         )
 
         # Save the summary of the generation
@@ -257,7 +257,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
 
         cprint('Done replicating (fill)', 'green')
 
-    def redo_song_replicate(self, song_number=None, instrument_order=None, no_duration=False, save_images=True, noise=0):
+    def redo_song_replicate(self, song_number=None, instrument_order=None, no_duration=False, save_images=True,
+                            noise=0):
         """
 
         :param instrument_order: The order of the instruments to remplace
@@ -280,13 +281,13 @@ class MGReplicate(MGComputeGeneration, MGInit):
         all_arrays = []
         # Construct the truth array
         x, y = self.sequence.get_all_song(song_number=song_number, in_batch_format=False)
-        # x: List(nb_instruments)[(batch=1, nb_steps, step_size, input_size, channels)]
-        # y: List(nb_instruments)[(batch=1, nb_steps, step_size, input_size, channels)]
+        # x: (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
+        # y: (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
         # x and y are the same except that in x, there is some noise
-        truth = np.asarray(x)
+        truth = x
         # truth: (nb_instruments, batch=1, len_song, step_size, input_size, channels
         # We then take a number of step which is a multiple of self.nb_steps
-        indices = range(truth.shape[0] // self.nb_steps * self.nb_steps)
+        indices = range(truth.shape[2] // self.nb_steps * self.nb_steps)
         truth = np.take(truth, axis=2, indices=indices)
         length = truth.shape[2]
         all_arrays.append(truth)
@@ -297,12 +298,12 @@ class MGReplicate(MGComputeGeneration, MGInit):
         bar.start()  # To see it working
         for instrument in range(len(instrument_order)):
             # We replace the instruments one by one
+            instrument_to_remove = instrument_order[instrument]
             generated = []
             for step in range(0, length, self.nb_steps):
-                instrument_to_remove = instrument_order[instrument]
-                inputs = np.take(all_arrays[-1], axis=2, indices=range(step, step+self.nb_steps))
+                inputs = np.take(all_arrays[-1], axis=2, indices=range(step, step + self.nb_steps))
                 # inputs = (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
-                mask = np.ones((1, self.nb_instruments, self.nb_steps))     # (batch=1, nb_instruments, nb_steps)
+                mask = np.ones((1, self.nb_instruments, self.nb_steps))  # (batch=1, nb_instruments, nb_steps)
                 # Remove the instrument from the input
                 mask[:, instrument_to_remove] = 0
                 inputs[instrument_to_remove] = 0
@@ -312,7 +313,9 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 outputs = np.copy(inputs)
                 outputs[instrument_to_remove] = preds[instrument_to_remove]
                 generated.append(outputs)
+
                 bar.update(instrument * length + step)
+
             all_arrays.append(np.concatenate(generated, axis=2))
             # all_arrays: List(nb_instruments + 1)[(nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
         bar.finish()
@@ -324,7 +327,7 @@ class MGReplicate(MGComputeGeneration, MGInit):
         accuracies, accuracies_inst = self.compute_generated_array(
             generated_array=generated_midi[0],
             folder_path=self.save_midis_path,
-            name='redo_song_truth',
+            name='redo_song_replicate_truth',
             no_duration=no_duration,
             save_images=save_images,
             replicate=True
@@ -352,7 +355,8 @@ class MGReplicate(MGComputeGeneration, MGInit):
             folder_path=self.save_midis_path,
             name='redo_song_all',
             replicate=True,
-            titles=['Truth'] + [f'Iteration {i}: change inst {instrument_order[i]}' for i in range(self.nb_instruments)],
+            titles=['Truth'] + [f'Iteration {i}: change inst {instrument_order[i]}' for i in
+                                range(self.nb_instruments)],
             subtitles=[f'Acc: {accuracies[i]}, Acc inst: {accuracies_inst[i]}' for i in range(self.nb_instruments + 1)]
         )
 
@@ -371,15 +375,3 @@ class MGReplicate(MGComputeGeneration, MGInit):
         )
 
         cprint('Done redo song replicate', 'green')
-
-
-
-
-
-
-
-
-
-
-
-

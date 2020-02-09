@@ -263,7 +263,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         :param length:
         :return:
         """
-        return (length // self.step_size) - (self.nb_steps - 1 + self.predict_offset)
+        return (length // self.step_size) - (self.nb_steps + self.predict_offset) + 1
 
     def __del__(self, *args, **kwargs):
         del self.npy_loaded
@@ -294,7 +294,8 @@ class KerasSequence(tf.keras.utils.Sequence):
         :return: The number of steps available in this song
         """
         file_number = self.song_file(song_number)
-        return self.nb_elements_available_per_song[file_number][song_number]
+        length = self.nb_elements_available_per_song[file_number][song_number]
+        return length
 
     def get_index_first_step_song(self, song_number):
         """
@@ -349,7 +350,8 @@ class KerasSequence(tf.keras.utils.Sequence):
         for s in range(sub_sequence.get_song_len(song_number)):
             x, y = sub_sequence[start_index + s]
             # x (nb_instruments, batch=1, nb_steps, step_size, input_size, 2)
-            # x (nb_instruments, batch=1, nb_steps=1, step_size, input_size, 2)
+            # y (nb_instruments, batch=1, nb_steps=1, step_size, input_size, 2)
+            # x can be with noise and y is without noise
             x_list.append(x)
             y_list.append(y)
         axis = 1 if in_batch_format else 2

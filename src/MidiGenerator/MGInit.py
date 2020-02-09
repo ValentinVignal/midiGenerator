@@ -205,6 +205,9 @@ class MGInit:
     def compare_generation(self, *args, **kwargs):
         self.warning_init_function(self.compare_generation.__name__, 'MGGenerate')
 
+    def redo_song_generate(self, *args, **kwargs):
+        self.warning_init_function(self.redo_song_generate.__name__, 'MGGenerate')
+
     # ---------------------------------------- MGLogistic ----------------------------------------
 
     def create_token(self, *args, **kwargs):
