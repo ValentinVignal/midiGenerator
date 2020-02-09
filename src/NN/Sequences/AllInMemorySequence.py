@@ -50,5 +50,5 @@ class AllInMemorySequence(tf.keras.utils.Sequence):
         return self.nb_steps // self.batch_size
 
     def __getitem__(self, item):
-        return [x[item * self.batch: (item + 1) * self.batch_size] for x in self.x], [
+        return [x[item * self.batch_size: (item + 1) * self.batch_size] for x in self.x], [
             y[self.batch_size * item: (item + 1) * self.batch_size] for y in self.y]
