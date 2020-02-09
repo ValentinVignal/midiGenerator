@@ -12,6 +12,8 @@ import src.text.summary as summary
 from src import Args
 from src.Args import Parser, ArgType
 
+os.system('echo Start compute data')
+
 
 def check_args(args):
     """
