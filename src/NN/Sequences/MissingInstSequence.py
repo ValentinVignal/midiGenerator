@@ -10,11 +10,12 @@ class MissingInstSequence(KerasSequence):
         everyone
         k random combinations
     """
-    def __init__(self, k=2, replicate=False, *args, **kwargs):
+    def __init__(self, *args, k=2, replicate=False, scale=False, **kwargs):
         super(MissingInstSequence, self).__init__(*args, replicate=replicate, **kwargs)
 
         self.k = k
         self.nb_combinations = min(self.nb_instruments + 1 + k, 2 ** self.nb_instruments - 1)
+        self.scale = scale
 
     def __len__(self):
         return super(MissingInstSequence, self).__len__() * self.nb_combinations
@@ -52,11 +53,16 @@ class MissingInstSequence(KerasSequence):
             mask = np.ones((self.batch_size, self.nb_instruments, self.nb_steps))
             mask[:, zeros_axis] = 0
             y[zeros_axis] = np.nan
-        return list(x) + [mask], list(y)
+        y_list = list(y)
+        if self.scale:
+            y_list.append(np.transpose(y, axes=[1, 0, 2, 3, 4, 5]))
+            # y: (batch, nb_instruments, nb_steps, step_size, input_size, channels)
+        return list(x) + [mask], y_list
 
-    def get_song_step(self, song_number, step_number, with_mask=True):
+    def get_song_step(self, song_number, step_number, with_mask=True, with_last_tensor=False):
         """
 
+        :param with_last_tensor:
         :param song_number:
         :param step_number:
         :param with_mask:
@@ -66,11 +72,14 @@ class MissingInstSequence(KerasSequence):
         # x (nb_instruments batch, nb_steps, step_size, input_size, channels)
         # y (nb_instruments batch, nb_steps, step_size, input_size, channels)
         batch_size = x.shape[1]
+        x_list = list(x)
+        y_list = list(y)
         if with_mask:
             mask = np.ones((batch_size, self.nb_instruments, self.nb_steps))
-            return list(x) + [mask], list(y)
-        else:
-            return list(x), list(y)
+            x_list.append(mask)
+        if with_last_tensor:
+            y_list.append(np.transpose(y, [1, 0, 2, 3, 4, 5]))
+        return x_list, y_list
 
     def get_all_song(self, song_number, in_batch_format=True):
         """

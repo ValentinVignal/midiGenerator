@@ -88,10 +88,48 @@ def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.
 
         loss = mono()(y_true, y_pred)
         loss += l_scale * cost.scale_loss(y_true_a, y_pred_a,
-                                          cost_value=l_scale_cost)
+                                          cost_value=l_scale_cost, has_instruments_dim=False)
+        loss += l_rhythm * cost.rhythm_loss(y_true_a, y_pred_a,
+                                            cost_value=l_rhythm_cost,
+                                            take_all_steps_rhythm=take_all_steps_rhythm, has_instruments=False)
+        return loss
+
+    return _mono_scale
+
+
+def scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.loss.l_scale_cost,
+          l_rhythm_cost=g.loss.l_rhythm_cost, take_all_steps_rhythm=g.loss.take_all_step_rhythm,
+          *args, **kwargs):
+    """
+    Add the scale and rhythm reward/cost
+    :param take_all_steps_rhythm:
+    :param l_rhythm_cost:
+    :param l_scale_cost:
+    :param l_scale:
+    :param l_rhythm:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+
+    def _scale(y_true, y_pred):
+        """
+
+        :param y_true: (batch, nb_instruments, nb_steps, step_size, input_size, channels)
+        :param y_pred: (batch, nb_instruments, nb_steps, step_size, input_size, channels)
+        :return:
+        """
+        y_true_a = utils.get_activation(y_true)
+        y_pred_a = utils.get_activation(y_pred)
+        # y_a: (batch, nb_instruments, nb_steps, step_size, input_size)
+        y_pred_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
+        y_true_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
+
+        loss = l_scale * cost.scale_loss(y_true_a, y_pred_a,
+                                         cost_value=l_scale_cost)
         loss += l_rhythm * cost.rhythm_loss(y_true_a, y_pred_a,
                                             cost_value=l_rhythm_cost,
                                             take_all_steps_rhythm=take_all_steps_rhythm)
         return loss
 
-    return _mono_scale
+    return _scale

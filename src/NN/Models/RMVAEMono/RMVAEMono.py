@@ -10,15 +10,41 @@ from src.NN import Loss
 from src import dictionaries
 
 layers = tf.keras.layers
-Lambda = tf.keras.layers.Lambda
 K = tf.keras.backend
 
 
-def create_model_common(
+class RMVAEMono(KerasModel):
+
+    def __init__(self, *args, replicate=False, scale=False, **kwargs):
+        super(RMVAEMono, self).__init__(*args, **kwargs)
+        self.replicate = replicate
+        self.all_outputs = scale
+
+    def generate(self, x, *args, **kwargs):
+        """
+        Same as predict but without messing output
+
+        :param x:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        y = self.predict(x=x, *args, **kwargs)
+        # y = List(nb_instruments) + [all instruments]
+        if self.scale:
+            # Remove the all_outputs tensor at the end of the list
+            return y[:-1]
+        else:
+            # Return all the outputs
+            return y
+
+
+def create(
         # Mandatory arguments
         input_param, model_param, nb_steps, step_length, optimizer, model_options={}, loss_options={},
         # Hidden arguments
-        replicate=False):
+        replicate=False, scale=False
+    ):
     """
 
     # Mandatory arguments
@@ -35,7 +61,8 @@ def create_model_common(
     :param model_options: (Comes from the user)
 
     # Hidden_arguments
-    :param replicate: Bool: Indicates if this is a model to replicate the inpu
+    :param replicate: Bool: Indicates if this is a model to replicate the input
+    :param scale: Bool, indicate if we want to use the concatenated outputs at the end
 
     :return: the neural network:
     """
@@ -205,7 +232,13 @@ def create_model_common(
                outputs_inst_steps]  # List(nb_instruments)[(batch, nb_steps, step_length, size, channel=1)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
-    model = KerasModel(inputs=inputs_midi + [input_mask], outputs=outputs)
+    if scale:
+        all_outputs = mlayers.shapes.Stack(name='All_outputs', axis=0)(outputs)
+        # all_outputs: (batch, nb_instruments, nb_steps, step_size, input_size, channels=1)
+        outputs = outputs + [all_outputs]
+
+    model = RMVAEMono(inputs=inputs_midi + [input_mask], outputs=outputs,
+                      scale=scale, replicate=replicate)
 
     # ------------------ Losses -----------------
     # Define losses dict for outputs
@@ -214,6 +247,8 @@ def create_model_common(
         losses[f'Output_{inst}'] = Loss.from_names[loss_options['loss_name']](
             **loss_options
         )
+    if scale:
+        losses['All_outputs'] = Loss.scale(**loss_options)
 
     # Define kld
     if model_options['kld']:
@@ -236,23 +271,15 @@ def create_model_common(
     )
 
 
-def create_model(*args, **kwargs):
+def get_create(replicate=False, scale=False):
     """
-    Not replicate model
-    :param args:
-    :param kwargs:
+
+    :param replicate:
+    :param scale:
     :return:
     """
-    return create_model_common(*args, replicate=False, **kwargs)
-
-
-def create_model_rep(*args, **kwargs):
-    """
-    Replicate model
-    :param args:
-    :param kwargs:
-    :return:
-    """
-    return create_model_common(*args, replicate=True, **kwargs)
+    def _create(*args, **kwargs):
+        return create(*args, replicate=replicate, scale=scale, **kwargs)
+    return _create
 
 

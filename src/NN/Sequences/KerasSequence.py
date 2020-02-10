@@ -56,6 +56,19 @@ class KerasSequence(tf.keras.utils.Sequence):
         self.file_loaded = None  # number of the .npy already loaded
         self.npy_loaded = None  # npy file already loaded
 
+    @classmethod
+    def getter(cls, **params):
+        """
+
+        :param params:
+        :return:
+        """
+
+        def getter(*args, **kwargs):
+            return cls(*args, **params, **kwargs)
+
+        return getter
+
     def get_init_params(self):
         """
 

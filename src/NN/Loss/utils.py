@@ -4,11 +4,11 @@ math = tf.math
 Lambda = tf.keras.layers.Lambda
 
 
-def get_activation(x, activation_indice=4):
+def get_activation(x, activation_indice=-1):
     return Lambda(lambda x: tf.gather(x, axis=activation_indice, indices=0))(x)
 
 
-def get_duration(x, duration_indice=4):
+def get_duration(x, duration_indice=-1):
     return Lambda(lambda x: tf.gather(x, axis=duration_indice, indices=1))(x)
 
 

@@ -77,6 +77,17 @@ class KerasModel(tf.keras.Model):
 
         return super(KerasModel, self).fit_generator(generator=generator, *args, **kwargs)
 
+    def generate(self, x, *args, **kwargs):
+        """
+        to filter messy output if there are some
+
+        :param x:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        return self.predict(x=x, *args, **kwargs)
+
     def print_summary(self):
         """
         Print a "working" summary
