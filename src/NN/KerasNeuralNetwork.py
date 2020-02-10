@@ -437,13 +437,21 @@ class KerasNeuralNetwork:
             d = pickle.load(dump_file)
             self.model.set_weights(d['weights'])
 
+    def predict(self, input):
+        """
+
+        :param input:
+        :return: All the input of the neural network
+        """
+        self.model.predict(input, verbose=0)
+
     def generate(self, input):
         """
 
         :param input:
-        :return:
+        :return: The "usefull" outputs of the neural network == List(nb_instruments)[instrument_output]
         """
-        return self.model.predict(input, verbose=0)
+        return self.model.generate(input, verbose=0)
 
     # ------------------------------------------------------------
     #                       Static methods

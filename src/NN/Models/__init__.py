@@ -37,6 +37,8 @@ needs_mask = dict(
     AEMono=False,
     AEMonoRep=False,
     RMVAEMono=True,
-    RMVAEMonoRep=True
+    RMVAEMonoRep=True,
+    RMVAEScaleMono=True,
+    RMVAEScaleMonoRep=True
 )
 

@@ -18,7 +18,7 @@ class RMVAEMono(KerasModel):
     def __init__(self, *args, replicate=False, scale=False, **kwargs):
         super(RMVAEMono, self).__init__(*args, **kwargs)
         self.replicate = replicate
-        self.all_outputs = scale
+        self.scale = scale
 
     def generate(self, x, *args, **kwargs):
         """
@@ -241,12 +241,14 @@ def create(
                       scale=scale, replicate=replicate)
 
     # ------------------ Losses -----------------
-    # Define losses dict for outputs
+    # Define losses dict for outputs and metric
     losses = {}
+    metrics = {}
     for inst in range(nb_instruments):
         losses[f'Output_{inst}'] = Loss.from_names[loss_options['loss_name']](
             **loss_options
         )
+        metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
     if scale:
         losses['All_outputs'] = Loss.scale(**loss_options)
 
@@ -261,7 +263,7 @@ def create(
 
     model.compile(loss=losses,
                   optimizer=optimizer,
-                  metrics=[Loss.metrics.acc_mono()])
+                  metrics=metrics)
     if model_options['kld']:
         model.add_metric(kld, name='kld', aggregation='mean')
 
