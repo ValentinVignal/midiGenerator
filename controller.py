@@ -1,27 +1,196 @@
-import pynput
 from pynput import keyboard
 import pygame.midi
 import time
-import sys
 from string import ascii_lowercase
-
-pygame.midi.init()
-
-player = pygame.midi.Output(0)
-player.set_instrument(0)
-player.note_on(64, 127)
-time.sleep(1)
-player.note_off(64, 127)
+from argparse import ArgumentParser
 
 key_to_note = {
-    'q': 72,
-    'w': 74,
-    'e': 76,
-    'r': 77,
-    't': 79,
-    'y': 81,
-    'u': 83
+    'q': 72,  # C5
+    '2': 73,
+    'w': 74,  # D5
+    '3': 75,
+    'e': 76,  # E5
+    'r': 77,  # F5
+    '5': 78,
+    't': 79,  # G5
+    '6': 80,
+    'y': 81,  # A5
+    '7': 82,
+    'u': 83,  # B5
+    'i': 84,  # C6
+    '9': 85,
+    'o': 86,  # D6
+    '0': 87,
+    'p': 88,  # E6
+    '[': 89,  # F6
+    '=': 90,
+    ']': 91,  # G6
+    # ---
+    'z': 60,  # C4,
+    's': 61,
+    'x': 62,  # D4
+    'd': 63,
+    'c': 64,  # E4
+    'v': 65,  # F4
+    'g': 66,
+    'b': 67,  # G4
+    'h': 68,
+    'n': 69,  # A4
+    'j': 70,
+    'm': 71,  # B5
+    ',': 72,  # C5
+    'l': 73,
+    '.': 74,  # D5
+    ';': 75,
+    '/': 76,  # E5
 }
+
+midi_instruments = [
+    # Piano
+    'Acoustic-Piano',
+    'BrtAcou-Piano',
+    'ElecGrand-Piano',
+    'Honky-Tonk-Piano',
+    'Elec.Piano-1',
+    'Elec.Piano-2',
+    'Harsichord',
+    'Clavichord',
+    # Chromatic Percussion
+    'Celesta',
+    'Glockenspiel',
+    'Music-Box',
+    'Vibraphone',
+    'Marimba',
+    'Xylophone',
+    'Tubular-Bells',
+    'Dulcimer',
+    # Organ
+    'Drawbar Organ',
+    'Perc.Organ',
+    'Rock-Organ',
+    'Church-Organ',
+    'Reed-Organ',
+    'Accordian',
+    'Harmonica',
+    'Tango-Accordian',
+    # Guitar
+    'Acoustic-Guitar',
+    'SteelAcous.Guitar',
+    'El.Jazz-Guitar',
+    'Electric-Guitar',
+    'El.Muted-Guitar',
+    'Overdriven-Guitar',
+    'Distortion-Guitar',
+    'Guitar-Harmonic',
+    # Bass
+    'Acoustic-Bass',
+    'El.Bass-Finger',
+    'El.Bass-Pick',
+    'Fretless-Bass',
+    'Slap Bass 1',
+    'Slap Bass 2',
+    'Synth Bass 1',
+    'Synth Bass 2',
+    # Strings
+    'Violin',
+    'Viola',
+    'Cello',
+    'Contra-Bass',
+    'Tremelo-Strings',
+    'Pizz.Strings',
+    'Orch.Strings',
+    'Timpani',
+    # Ensemble
+    'String-Ens.1',
+    'String-Ens.2',
+    'Synth.Strings-1',
+    'Synth.Strings-2',
+    'Choir-Aahs',
+    'Voice-Oohs',
+    'Synth-Voice',
+    'Orchestra-Hit',
+    # Brass
+    'Trumpet',
+    'Trombone',
+    'Tuba',
+    'Muted-Trumpet',
+    'French-Horn',
+    'Brass-Section',
+    'Synth-Brass-1',
+    'Synth-Brass-2',
+    # Reed
+    'Soprano-Sax',
+    'Alto-Sax',
+    'Tenor-Sax',
+    'Baritone-Sax',
+    'Oboe',
+    'English-Horn',
+    'Bassoon',
+    'Clarinet',
+    # Pipe
+    'Piccolo',
+    'Flute',
+    'Recorder',
+    'Pan-Flute',
+    'Blown-Bottle',
+    'Shakuhachi',
+    'Whistle',
+    'Ocarina',
+    # Synth Lead
+    'Lead1-Square',
+    'Lead2-Sawtooth',
+    'Lead3-Calliope',
+    'Lead4-Chiff',
+    'Lead5-Charang',
+    'Lead6-Voice',
+    'Lead7-Fifths',
+    'Lead8-Bass-Ld',
+    # Synth Pad
+    '9-Pad-1',
+    '0-Pad-2',
+    '1-Pad-3',
+    '2-Pad-4',
+    '3-Pad-5',
+    '4-Pad-6',
+    '5-Pad-7',
+    '6-Pad-8',
+    # Synth F / X
+    'FX1-Rain',
+    'FX2-Soundtrack',
+    'FX3-Crystal',
+    'FX4-Atmosphere',
+    'FX5-Brightness',
+    'FX6-Goblins',
+    'FX7-Echoes',
+    'FX8-Sci-Fi',
+    # Ethnic
+    'Sitar',
+    'Banjo',
+    'Shamisen',
+    'Koto',
+    'Kalimba',
+    'Bagpipe',
+    'Fiddle',
+    'Shanai',
+    # Percussive
+    'TinkerBell',
+    'Agogo',
+    'SteelDrums',
+    'Woodblock',
+    'TaikoDrum',
+    'Melodic-Tom',
+    'SynthDrum',
+    'Reverse-Cymbal',
+    # Sound F / X
+    'Guitar-Fret-Noise',
+    'Breath-Noise',
+    'Seashore',
+    'BirdTweet',
+    'Telephone',
+    'Helicopter',
+    'Applause',
+    'Gunshot',
+]
 
 
 class Controller:
@@ -57,21 +226,48 @@ class Controller:
             return False
 
 
-controller = Controller(player)
+def main(args):
+    pygame.midi.init()
 
-# Collect events until released
-with keyboard.Listener(
+    player = pygame.midi.Output(0)
+    player.set_instrument(args.inst)
+    player.note_on(64, 127)
+    time.sleep(1)
+    player.note_off(64, 127)
+
+    controller = Controller(player)
+
+    # Collect events until released
+    with keyboard.Listener(
+            on_press=controller.on_press,
+            on_release=controller.on_release) as listener:
+        listener.join()
+
+    '''
+    # ...or, in a non-blocking fashion:
+    listener = keyboard.Listener(
         on_press=controller.on_press,
-        on_release=controller.on_release) as listener:
-    listener.join()
+        on_release=controller.on_release)
+    listener.start()
+    '''
 
-'''
-# ...or, in a non-blocking fashion:
-listener = keyboard.Listener(
-    on_press=controller.on_press,
-    on_release=controller.on_release)
-listener.start()
-'''
+    del player
+    pygame.midi.quit()
 
-del player
-pygame.midi.quit()
+
+def preprocess(args):
+    try:
+        args.inst = int(args.inst)
+    except ValueError:
+        args.inst = midi_instruments.index(args.inst)
+    return args
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('--inst', type=str, default='0',
+                        help='Number or name of the instrument')
+    args = parser.parse_args()
+    args =preprocess(args)
+
+    main(args)
