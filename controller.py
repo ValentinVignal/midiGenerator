@@ -194,10 +194,33 @@ midi_instruments = [
 
 
 class Controller:
-    def __init__(self, player):
-        self.player = player
+
+    next_midi_output = 0
+
+    def __init__(self, instrument=0):
+        self.instrument = self.get_instrument_from_input(instrument)
+        self.player = None
+        self.get_player()
         self.accepted_keys = ascii_lowercase + "01234567890-=m,./[]'\\"
         self.already_pressed = {k: False for k in self.accepted_keys}
+
+    def get_player(self):
+        self.player = pygame.midi.Output(self.next_midi_output)
+        self.next_midi_output += 1
+        self.player.set_instrument(self.instrument)
+
+    @staticmethod
+    def get_instrument_from_input(instrument):
+        if isinstance(instrument, int):
+            pass
+        if isinstance(instrument, str):
+            try:
+                instrument = int(instrument)
+            except ValueError:
+                instrument = midi_instruments.index(instrument)
+        if not (0 <= instrument <= 127):
+            instrument = 0
+        return instrument
 
     def on_press(self, key):
         # print('self', self, 'key', key)
@@ -234,8 +257,9 @@ def main(args):
     player.note_on(64, 127)
     time.sleep(1)
     player.note_off(64, 127)
+    player.close()
 
-    controller = Controller(player)
+    controller = Controller(instrument=args.inst)
 
     # Collect events until released
     with keyboard.Listener(
@@ -250,8 +274,7 @@ def main(args):
         on_release=controller.on_release)
     listener.start()
     '''
-
-    del player
+    controller.player.close()
     pygame.midi.quit()
 
 
