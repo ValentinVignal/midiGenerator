@@ -1,8 +1,9 @@
 from pynput import keyboard
 import pygame.midi
-import time
-from string import ascii_lowercase
 from argparse import ArgumentParser
+import time
+import _thread
+import threading
 
 key_to_note = {
     'q': 72,  # C5
@@ -193,21 +194,17 @@ midi_instruments = [
 ]
 
 
-class Controller:
+class MidiPlayer:
+    pygame.midi.init()
+    player = pygame.midi.Output(0)
 
-    next_midi_output = 0
+    taken_channels = [False for _ in range(16)]
 
     def __init__(self, instrument=0):
         self.instrument = self.get_instrument_from_input(instrument)
-        self.player = None
-        self.get_player()
-        self.accepted_keys = ascii_lowercase + "01234567890-=m,./[]'\\"
-        self.already_pressed = {k: False for k in self.accepted_keys}
 
-    def get_player(self):
-        self.player = pygame.midi.Output(self.next_midi_output)
-        self.next_midi_output += 1
-        self.player.set_instrument(self.instrument)
+        self.channel = None
+        self.get_channel()
 
     @staticmethod
     def get_instrument_from_input(instrument):
@@ -222,12 +219,96 @@ class Controller:
             instrument = 0
         return instrument
 
+    def get_channel(self):
+        for i in range(16):
+            if not MidiPlayer.taken_channels[i]:
+                self.channel = i
+                MidiPlayer.taken_channels[i] = True
+                MidiPlayer.player.set_instrument(self.instrument, self.channel)
+                break
+
+    def __del__(self):
+        MidiPlayer.taken_channels[self.channel] = False
+
+    def note_on(self, note, velocity=127):
+        MidiPlayer.player.note_on(note, velocity, self.channel)
+
+    def note_off(self, note, velocity=127):
+        MidiPlayer.player.note_off(note, velocity, self.channel)
+
+
+class Metronome(MidiPlayer):
+    def __init__(self, *args, tempo, **kwargs):
+        super(Metronome, self).__init__(*args, **kwargs)
+        self.tempo = tempo
+
+        self.start_time = None
+        self.keep_playing = False
+        self.thread = None
+
+    def start(self, start_time=None):
+        """
+
+        :param start_time:
+        :return:
+        """
+        self.start_time = time.perf_counter() if start_time is None else start_time
+        """
+        try:
+            _thread.start_new_thread(self.play)
+        except:
+            print('Cannot start metronome')
+        """
+
+        self.thread = threading.Thread(target=self.play, args=())
+        self.thread.start()
+
+    def play(self):
+        """
+
+        :return:
+        """
+        beat = -1
+        self.keep_playing = True
+        while self.keep_playing:
+            if ((time.perf_counter() - self.start_time) * self.tempo) // 60  > beat:
+                beat += 1
+                note = 72 if beat % 4 == 0 else 60
+                self.note_on(note)
+                time.sleep(self.tempo / (8 * 60))
+                self.note_off(note)
+
+    def stop(self):
+        self.keep_playing = False
+        self.thread.join()
+
+
+class Controller(MidiPlayer):
+    def __init__(self, *args, tempo=120, **kwargs):
+        super(Controller, self).__init__(*args, **kwargs)
+        # Raw parameters
+        self.tempo = tempo
+
+        # for pygame output
+        self.already_pressed = {}
+
+        # metronome
+        self.metronome = None
+        self.start_play = None
+
     def on_press(self, key):
+        """
+
+        :param key:
+        :return:
+        """
         # print('self', self, 'key', key)
         try:
             # print(f'alphanumeric key {key.char} pressed')
+            if not key.char in self.already_pressed:
+                self.already_pressed[key.char] = False
             if not self.already_pressed[key.char]:
-                self.player.note_on(key_to_note[key.char], 127)
+                self.note_on(key_to_note[key.char])
                 self.already_pressed[key.char] = True
         except KeyError:
             pass
@@ -236,9 +317,14 @@ class Controller:
             pass
 
     def on_release(self, key):
+        """
+
+        :param key:
+        :return:
+        """
         # print(f'{key} released')
         try:
-            self.player.note_off(key_to_note[key.char], 127)
+            self.note_off(key_to_note[key.char])
             self.already_pressed[key.char] = False
         except KeyError:
             pass
@@ -248,8 +334,25 @@ class Controller:
             # Stop listener
             return False
 
+    def play(self):
+        """
+
+        :return:
+        """
+        start_time = time.perf_counter()
+        metronome = Metronome(instrument='Woodblock', tempo=self.tempo)
+        metronome.start(start_time=start_time)
+        with keyboard.Listener(
+            on_press=self.on_press,
+            on_release=self.on_release,
+        ) as listener:
+            listener.join()
+        metronome.stop()
+        del metronome
+
 
 def main(args):
+    """
     pygame.midi.init()
 
     player = pygame.midi.Output(0)
@@ -258,23 +361,25 @@ def main(args):
     time.sleep(1)
     player.note_off(64, 127)
     player.close()
+    """
 
-    controller = Controller(instrument=args.inst)
+    controller = Controller(instrument=args.inst, tempo=args.tempo)
+    controller.play()
 
+    '''
     # Collect events until released
     with keyboard.Listener(
             on_press=controller.on_press,
             on_release=controller.on_release) as listener:
         listener.join()
 
-    '''
     # ...or, in a non-blocking fashion:
     listener = keyboard.Listener(
         on_press=controller.on_press,
         on_release=controller.on_release)
     listener.start()
     '''
-    controller.player.close()
+    MidiPlayer.player.close()
     pygame.midi.quit()
 
 
@@ -290,6 +395,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--inst', type=str, default='0',
                         help='Number or name of the instrument')
+    parser.add_argument('--tempo', type=int, default=120,
+                        help='Tempo')
     args = parser.parse_args()
     args =preprocess(args)
 
