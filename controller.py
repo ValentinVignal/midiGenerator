@@ -2,8 +2,8 @@ from pynput import keyboard
 import pygame.midi
 from argparse import ArgumentParser
 import time
-import _thread
 import threading
+import numpy as np
 
 key_to_note = {
     'q': 72,  # C5
@@ -194,6 +194,10 @@ midi_instruments = [
 ]
 
 
+step_per_beat = 4
+work_on = 4 * step_per_beat     # (measure)
+
+
 class MidiPlayer:
     pygame.midi.init()
     player = pygame.midi.Output(0)
@@ -238,28 +242,29 @@ class MidiPlayer:
 
 
 class Metronome(MidiPlayer):
-    def __init__(self, *args, tempo, **kwargs):
+    def __init__(self, tempo, *args, on_new_step_callbacks=[], on_new_time_step_callbacks=[], **kwargs):
         super(Metronome, self).__init__(*args, **kwargs)
         self.tempo = tempo
 
         self.start_time = None
         self.keep_playing = False
+        self.hard_stop = True
         self.thread = None
 
-    def start(self, start_time=None):
+        self.on_new_step_callbacks = on_new_step_callbacks
+        self.on_new_time_step_callbacks = on_new_time_step_callbacks
+
+    def start(self, start_time=None, on_new_step_callbacks=[], on_new_time_step_callbacks=[]):
         """
 
         :param start_time:
         :return:
         """
         self.start_time = time.perf_counter() if start_time is None else start_time
-        """
-        try:
-            _thread.start_new_thread(self.play)
-        except:
-            print('Cannot start metronome')
-        """
-
+        # Callbacks
+        self.on_new_step_callbacks.extend(on_new_step_callbacks)
+        self.on_new_time_step_callbacks.extend(on_new_time_step_callbacks)
+        # Start the thread
         self.thread = threading.Thread(target=self.play, args=())
         self.thread.start()
 
@@ -269,18 +274,49 @@ class Metronome(MidiPlayer):
         :return:
         """
         beat = -1
+        half_time_step = -1
+        step = -1
         self.keep_playing = True
-        while self.keep_playing:
-            if ((time.perf_counter() - self.start_time) * self.tempo) // 60  > beat:
-                beat += 1
-                note = 72 if beat % 4 == 0 else 60
-                self.note_on(note)
-                time.sleep(self.tempo / (8 * 60))
-                self.note_off(note)
+        self.hard_stop = False
+        while not self.hard_stop:
+            t = time.perf_counter()
+            half_time_step_number_float = ((t - self.start_time) * self.tempo * step_per_beat * 2/ 60)
+            half_time_step_number = np.floor(half_time_step_number_float)
+            if half_time_step_number > half_time_step:
+                # Do action for the new time step
+                half_time_step += 1
+                if half_time_step % 2 == 0:
+                    # Do all the actions exactly on time
+                    beat_number = half_time_step_number // (2 * step_per_beat)
+                    if beat_number > beat:
+                        beat += 1
+                        note = 72 if beat % 4 == 0 else 60
+                        self.note_on(note)
+                        time.sleep(self.tempo / (8 * 60))
+                        self.note_off(note)
+                else:
+                    # Do the action with offset of half a time_step
+                    for callback in self.on_new_time_step_callbacks:
+                        callback((half_time_step // 2) + 1)
 
-    def stop(self):
+                    step_number = half_time_step_number // (2 * work_on)
+                    if step_number > step:
+                        step += 1
+                        for callback in self.on_new_step_callbacks:
+                            callback(step)
+                        if not self.keep_playing:
+                            break
+
+    def stop(self, hard=False):
+        """
+
+        :param hard: if False: will finish the last step, if True: won't finish it
+        :return:
+        """
         self.keep_playing = False
+        self.hard_stop = hard
         self.thread.join()
+        self.hard_stop = True
 
 
 class Controller(MidiPlayer):
@@ -296,6 +332,11 @@ class Controller(MidiPlayer):
         self.metronome = None
         self.start_play = None
 
+        # np array
+        self.current_array = np.zeros((work_on, 128))
+        self.arrays = []
+        self.current_time_step = 0
+
     def on_press(self, key):
         """
 
@@ -308,8 +349,10 @@ class Controller(MidiPlayer):
             if not key.char in self.already_pressed:
                 self.already_pressed[key.char] = False
             if not self.already_pressed[key.char]:
-                self.note_on(key_to_note[key.char])
+                note = key_to_note[key.char]
+                self.note_on(note)
                 self.already_pressed[key.char] = True
+                self.current_array[self.current_time_step, note] = 1
         except KeyError:
             pass
         except AttributeError:
@@ -341,44 +384,47 @@ class Controller(MidiPlayer):
         """
         start_time = time.perf_counter()
         metronome = Metronome(instrument='Woodblock', tempo=self.tempo)
-        metronome.start(start_time=start_time)
-        with keyboard.Listener(
+        listener = keyboard.Listener(
             on_press=self.on_press,
-            on_release=self.on_release,
-        ) as listener:
-            listener.join()
+            on_release=self.on_release
+        )
+        metronome.start(
+            start_time=start_time,
+            on_new_step_callbacks=[self.on_new_step],
+            on_new_time_step_callbacks=[self.on_new_time_step]
+        )
+        # Start of the threads
+        listener.start()
+        listener.join()
+        # Stop of the threads
         metronome.stop()
         del metronome
 
+    def on_new_step(self, *args, **kwargs):
+        """
+
+        :return:
+        """
+
+        self.arrays.append(np.copy(self.current_array))
+        self.current_array = np.zeros((16, 128))
+
+    def on_new_time_step(self, time_step, *args, **kwargs):
+        """
+
+        :return:
+        """
+        self.current_time_step = time_step % work_on
+
+    @property
+    def array(self):
+        return np.concatenate(self.arrays, )
 
 def main(args):
-    """
-    pygame.midi.init()
-
-    player = pygame.midi.Output(0)
-    player.set_instrument(args.inst)
-    player.note_on(64, 127)
-    time.sleep(1)
-    player.note_off(64, 127)
-    player.close()
-    """
-
     controller = Controller(instrument=args.inst, tempo=args.tempo)
     controller.play()
-
-    '''
-    # Collect events until released
-    with keyboard.Listener(
-            on_press=controller.on_press,
-            on_release=controller.on_release) as listener:
-        listener.join()
-
-    # ...or, in a non-blocking fashion:
-    listener = keyboard.Listener(
-        on_press=controller.on_press,
-        on_release=controller.on_release)
-    listener.start()
-    '''
+    for i, arr in enumerate(controller.arrays):
+        print(f'Step {i} --> {arr[:, 60:92]}')
     MidiPlayer.player.close()
     pygame.midi.quit()
 
