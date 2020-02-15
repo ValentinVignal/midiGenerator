@@ -3,11 +3,14 @@ from argparse import ArgumentParser
 
 from src import Midi
 from src.Midi.Player import Controller, MidiPlayer
-from src import GlobalVariables as g
+from src.MidiGenerator import MidiGenerator
 
 
 def main(args):
-    controller = Controller(instrument=args.inst, tempo=args.tempo, work_on=g.mg.work_on)
+    # midi_generator = MidiGenerator()
+    # midi_generator.recreate_model(args.load)
+
+    controller = Controller(instrument=args.inst, tempo=args.tempo)
     controller.play()
     for i, arr in enumerate(controller.arrays):
         print(f'Step {i} --> {arr[:, 60:92]}')
@@ -29,6 +32,10 @@ if __name__ == '__main__':
                         help='Number or name of the instrument')
     parser.add_argument('--tempo', type=int, default=120,
                         help='Tempo')
+    parser.add_argument('--voice', type=int, default=0,
+                        help='The voice the player wants to play')
+    parser.add_argument('-l', '--load', type=str, default='',
+                      help='The name of the train model to load')
     args = parser.parse_args()
     args =preprocess(args)
 
