@@ -1,9 +1,12 @@
 import pygame.midi
 from argparse import ArgumentParser
+import os
 
 from src import Midi
 from src.Midi.Player import MidiPlayer, BandPlayer
 from src.MidiGenerator import MidiGenerator
+
+os.system('echo Start Controller')
 
 
 def main(args):

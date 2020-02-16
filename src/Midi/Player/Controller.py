@@ -71,7 +71,11 @@ class Controller(MidiPlayer):
             # Stop listener
             return False
 
-    def play(self, start_time=None, on_new_step_callbacks=[], on_new_time_step_callback=[]):
+    def play(self, start_time=None,
+             on_time_step_begin_callbacks=[],
+             on_step_end_callbacks=[],
+             **kwargs
+             ):
         """
 
         :return:
@@ -83,8 +87,9 @@ class Controller(MidiPlayer):
         )
         self.metronome.start(
             start_time=start_time,
-            on_new_step_callbacks=[self.on_new_step] + on_new_step_callbacks,
-            on_new_time_step_callbacks=[self.on_new_time_step] + on_new_time_step_callback
+            on_time_step_begin_callbacks=[self.on_new_time_step] + on_time_step_begin_callbacks,
+            on_step_end_callbacks=[self.on_new_step] + on_step_end_callbacks,
+            **kwargs
         )
         # Start of the threads
         listener.start()

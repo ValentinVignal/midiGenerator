@@ -1,6 +1,8 @@
 import numpy as np
 
 from .Controller import Controller
+from .MidiPlayer import MidiPlayer
+from ..create import normalize_activation
 
 
 class BandPlayer(Controller):
@@ -26,14 +28,17 @@ class BandPlayer(Controller):
         # What will be played by the model on the next step
         self.next_model_part = np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1))
 
+        self.band_players = [MidiPlayer(instrument=instrument) for instrument in range(self.model.nb_instruments)]
+        self.previous_notes = [None for instrument in range(self.model.nb_instruments)]
+
     def play(self):
         """
 
         :return:
         """
         super(BandPlayer, self).play(
-            on_new_step_callbacks=[self.feed_model],
-            on_new_time_step_callback=[]
+            on_step_end_callbacks=[self.feed_model],
+            on_exact_time_step_begin_callbacks=[self.play_current_model_part]
         )
 
     def feed_model(self, *args, **kwargs):
@@ -61,5 +66,32 @@ class BandPlayer(Controller):
         # played_inst_input: (batch=1, nb_steps, step_length, input_size, 1
         inputs_models[0] = played_inst_input
         outputs_model = self.model.keras_nn.generate(input=list(inputs_models) + self.mask)
+        outputs_model = np.asarray(outputs_model).astype('float64')
+
         # output_model: (nb_instruments, batch=1, np_steps=1, step_length, input_size, channels)
-        self.next_model_part = np.asarray(outputs_model)
+        self.next_model_part = normalize_activation(outputs_model)
+
+    def play_current_model_part(self, exact_time_step):
+        """
+        Plays the models notes
+
+        :param time_step:
+        :return:
+        """
+        exact_time_step = exact_time_step % self.step_length
+        for instrument in range(1, self.model.nb_instruments):
+            # current_model_part: (nb_instruments, batch=1, nb_steps=1, step_length, input_size, channels)
+            current_instrument_step = self.current_model_part[instrument, 0, 0, exact_time_step, :, 0]
+            # current_instrument_step: (input_size)
+            current_instrument_step = current_instrument_step[:-1] if self.model.mono else current_instrument_step
+            if np.any(current_instrument_step):
+                note = np.where(current_instrument_step == 1)[0][0]
+                note += 50
+                if self.previous_notes[instrument] is not None:
+                    self.band_players[instrument].note_off(self.previous_notes[instrument])
+                self.band_players[instrument].note_on(note)
+                self.previous_notes[instrument] = note
+
+
+
+
