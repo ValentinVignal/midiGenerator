@@ -394,3 +394,14 @@ def to_mono_matrix(matrix):
              np.all(one_note[:, :-1] == 0, axis=1),
              1)
     return one_note[..., np.newaxis]
+
+
+def note_to_midinote(note, notes_range=(0, 88)):
+    """
+
+    :param note:
+    :param notes_range:
+    :return:
+    """
+    return note + 21 + notes_range[0]
+

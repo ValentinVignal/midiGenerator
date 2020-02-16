@@ -234,3 +234,13 @@ def print_informations(nb_steps, matrix, notes_list, verbose):
     elif verbose == 1:
         print('notes in seed :', colored(nb_notes_seed, 'magenta'), 'notes generated :',
               colored(nb_notes_generated, 'magenta'), 'for length', colored(matrix.shape[2], 'magenta'))
+
+
+def midinote_to_note(note, notes_range=(0, 88)):
+    """
+
+    :param note:
+    :param notes_range:
+    :return:
+    """
+    return note - (21 + notes_range[0])

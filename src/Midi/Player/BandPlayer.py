@@ -3,6 +3,7 @@ import numpy as np
 from .Controller import Controller
 from .MidiPlayer import MidiPlayer
 from ..create import normalize_activation
+from ..open import note_to_midinote
 
 
 class BandPlayer(Controller):
@@ -30,6 +31,8 @@ class BandPlayer(Controller):
 
         self.band_players = [MidiPlayer(instrument=instrument) for instrument in range(self.model.nb_instruments)]
         self.previous_notes = [None for instrument in range(self.model.nb_instruments)]
+        self.midi_notes_range = (note_to_midinote(self.model.notes_range[0], self.model.notes_range),
+                                 note_to_midinote(self.model.notes_range[1], self.model.notes_range))
 
     def play(self):
         """
@@ -53,7 +56,7 @@ class BandPlayer(Controller):
         # input_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
         played_inst_input = np.concatenate(
             self.arrays[-self.model.nb_steps:], axis=0
-        )[:, self.model.notes_range[0]: self.model.notes_range[1]]
+        )[:, self.midi_notes_range[0]: self.midi_notes_range[1]]
         # played_inst_input: (nb_steps * step_length, input_size)
         if self.model.mono:
             # We have to had the note "no note"
@@ -86,7 +89,7 @@ class BandPlayer(Controller):
             current_instrument_step = current_instrument_step[:-1] if self.model.mono else current_instrument_step
             if np.any(current_instrument_step):
                 note = np.where(current_instrument_step == 1)[0][0]
-                note += 50
+                note = note_to_midinote(note, notes_range=self.model.notes_range)
                 if self.previous_notes[instrument] is not None:
                     self.band_players[instrument].note_off(self.previous_notes[instrument])
                 self.band_players[instrument].note_on(note)
