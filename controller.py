@@ -2,18 +2,20 @@ import pygame.midi
 from argparse import ArgumentParser
 
 from src import Midi
-from src.Midi.Player import Controller, MidiPlayer
+from src.Midi.Player import MidiPlayer, BandPlayer
 from src.MidiGenerator import MidiGenerator
 
 
 def main(args):
-    # midi_generator = MidiGenerator()
-    # midi_generator.recreate_model(args.load)
+    midi_generator = MidiGenerator()
+    midi_generator.recreate_model(args.load, print_model=False)
 
-    controller = Controller(instrument=args.inst, tempo=args.tempo)
+    controller = BandPlayer(instrument=args.inst, tempo=args.tempo, model=midi_generator)
     controller.play()
+    """
     for i, arr in enumerate(controller.arrays):
         print(f'Step {i} --> {arr[:, 60:92]}')
+    """
     MidiPlayer.player.close()
     pygame.midi.quit()
 

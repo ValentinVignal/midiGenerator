@@ -115,6 +115,7 @@ def converter_func(arr, mono=False, no_duration=False):
     :param no_duration:
     :return:
     """
+    print('mono', mono)
     if mono:
         arr = converter_func_mono(arr)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     else:

@@ -77,16 +77,36 @@ class Metronome(MidiPlayer):
                         self.note_off(note)
                 else:
                     # Do the action with offset of half a time_step
+                    thread_time_step = threading.Thread(
+                        target=self.call_callbacks,
+                        args=(self.on_new_time_step_callbacks, self.current_time_step)
+                    )
+                    thread_time_step.start()
+                    """
                     for callback in self.on_new_time_step_callbacks:
+                        
                         callback((half_time_step // 2) + 1)
+                    """
 
                     step_number = half_time_step_number // (2 * self.step_length)
                     if step_number > self.current_step:
                         self.current_step += 1
+                        thread_step = threading.Thread(
+                            target=self.call_callbacks,
+                            args=(self.on_new_step_callbacks, self.current_step)
+                        )
+                        thread_step.start()
+                        """
                         for callback in self.on_new_step_callbacks:
                             callback(self.current_step)
+                        """
                         if not self.keep_playing:
                             break
+
+
+    def call_callbacks(self, callbacks=[], *args, **kwargs):
+        for callback in callbacks:
+            callback(*args, **kwargs)
 
     def stop(self, hard=False):
         """
