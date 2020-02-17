@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 from .Controller import Controller
 from .MidiPlayer import MidiPlayer
@@ -14,7 +13,9 @@ class BandPlayer(Controller):
 
     """
 
-    def __init__(self, model, instrument=None, played_voice=0, include_output=True, instrument_mask=None, *args,
+    def __init__(self, model,
+                 instrument=None, played_voice=0, include_output=True, instrument_mask=None, max_plotted=None,
+                 *args,
                  **kwargs):
         """
 
@@ -27,19 +28,25 @@ class BandPlayer(Controller):
         :param args:
         :param kwargs:
         """
+        # ---------- Raw parameters ----------
         self.model = model
         self.played_voice = played_voice
         self.include_output = include_output
         self.nn_mask = self.get_nn_mask(instrument_mask=instrument_mask)  # (batch=1, nb_instruments, nb_steps)
         self.instrument_mask = [1 for _ in
                                 range(self.model.nb_instruments)] if instrument_mask is None else instrument_mask
+        self.max_plotted = model.nb_steps if max_plotted is None else max_plotted
+
         self.band_players = []
         self.set_band_players(instrument=instrument, played_voice=played_voice)
         instrument = self.band_players[played_voice].instrument if instrument is None else instrument
 
+        # ---------- Do super call ----------
         super(BandPlayer, self).__init__(*args, instrument=instrument, step_length=self.model.work_on, **kwargs)
+        # Overwrite the instrument of MidiPlayer
         self.arrays.extend([np.zeros((self.step_length, 128)) for _ in range(self.model.nb_steps)])
 
+        # ---------- Create the objects to save what it producing the model ----------
         self.model_outputs = [
             np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1)) for _ in
             range(self.model.nb_steps)
@@ -51,12 +58,14 @@ class BandPlayer(Controller):
         # What will be played by the model on the next step
         self.next_model_part = np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1))
 
-        # self.band_players = [MidiPlayer(instrument=instrument) for instrument in range(self.model.nb_instruments)]
-        self.band_players = []
-        self.set_band_players(instrument=instrument, played_voice=played_voice)
-        self.previous_notes = [None for instrument in range(self.model.nb_instruments)]
+        # To know what note we have to stop when a new not is played
+        self.previous_notes = [None for _ in range(self.model.nb_instruments)]
+        # to be able to switch between 128 midi note to the ones used by the model
         self.midi_notes_range = (note_to_midinote(self.model.notes_range[0], self.model.notes_range),
                                  note_to_midinote(self.model.notes_range[1], self.model.notes_range))
+
+        # ---------- To plot the played notes ----------
+        self.real_time_pianoroll = Images.RealTimePianoroll()
 
     def set_band_players(self, instrument=None, played_voice=0):
         """
@@ -89,13 +98,13 @@ class BandPlayer(Controller):
         )
 
     def show_pianoroll(self, *args, **kwargs):
-        played_model = np.concatenate(self.model_outputs[-self.model.nb_steps:], axis=2)
+        played_model = np.concatenate(self.model_outputs[-self.max_plotted:], axis=2)
         # played_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
         played_model = played_model[:, 0, :, :, :, 0]
         # played_model: (nb_instruments, nb_steps, step_length, input_size)
         if self.model.mono:
             played_model = played_model[:, :, :, :-1]
-        played_inputs = np.stack(self.arrays[-self.model.nb_steps:], axis=0)[
+        played_inputs = np.stack(self.arrays[-self.max_plotted:], axis=0)[
             :, :, self.midi_notes_range[0]: self.midi_notes_range[1]
         ]        # (nb_steps, step_length, input_size)
         played_model[self.played_voice] = played_inputs     # (nb_instruments, nb_steps, step_length, input_size)
@@ -119,9 +128,7 @@ class BandPlayer(Controller):
             replicate=True,
             colors=None
         )
-        plt.close('all')
-        plt.imshow(arr_pianoroll.astype(np.int))
-        plt.show()
+        self.real_time_pianoroll.show_pianoroll(arr_pianoroll.astype(np.int))
 
     def feed_model(self, *args, **kwargs):
         """

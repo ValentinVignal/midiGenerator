@@ -10,7 +10,6 @@ os.system('echo Start Controller')
 
 
 def main(args):
-    print('args', args.inst_mask)
     midi_generator = MidiGenerator()
     midi_generator.recreate_model(args.load, print_model=False)
 
@@ -19,7 +18,8 @@ def main(args):
                             model=midi_generator,
                             played_voice=args.played_voice,
                             include_output=not args.no_include_output,
-                            instrument_mask=args.inst_mask
+                            instrument_mask=args.inst_mask,
+                            max_plotted=10
                             )
     controller.play()
     """
