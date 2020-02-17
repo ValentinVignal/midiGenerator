@@ -1,10 +1,12 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from .Controller import Controller
 from .MidiPlayer import MidiPlayer
 from ..create import normalize_activation
 from ..open import note_to_midinote
 from ..instruments import music21_instruments_dict
+from src import Images
 
 
 class BandPlayer(Controller):
@@ -81,10 +83,45 @@ class BandPlayer(Controller):
         :return:
         """
         super(BandPlayer, self).play(
-            on_step_end_callbacks=[self.feed_model] + on_step_end_callbacks,
+            on_step_end_callbacks=[self.feed_model, self.show_pianoroll] + on_step_end_callbacks,
             on_exact_time_step_begin_callbacks=[self.play_current_model_part] + on_exact_time_step_begin_callbacks,
             **kwargs
         )
+
+    def show_pianoroll(self, *args, **kwargs):
+        played_model = np.concatenate(self.model_outputs[-self.model.nb_steps:], axis=2)
+        # played_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
+        played_model = played_model[:, 0, :, :, :, 0]
+        # played_model: (nb_instruments, nb_steps, step_length, input_size)
+        if self.model.mono:
+            played_model = played_model[:, :, :, :-1]
+        played_inputs = np.stack(self.arrays[-self.model.nb_steps:], axis=0)[
+            :, :, self.midi_notes_range[0]: self.midi_notes_range[1]
+        ]        # (nb_steps, step_length, input_size)
+        played_model[self.played_voice] = played_inputs     # (nb_instruments, nb_steps, step_length, input_size)
+        played_model = np.expand_dims(played_model, axis=-1)
+        # played_model: (nb_instruments, nb_steps, step_length, input_size, 1)
+        played_model = np.transpose(played_model, axes=[0, 3, 1, 2, 4])
+        played_model_shape = played_model.shape
+        # played_model : (nb_instruments, input_size, nb_steps, step_length, 1)
+        played_model = np.reshape(
+            played_model,
+            newshape=(*played_model.shape[:2], played_model_shape[2] * played_model_shape[3], *played_model_shape[4:])
+        )
+        for inst in range(self.model.nb_instruments):
+            if self.instrument_mask[inst] == 0:
+                played_model[inst] = 0
+        # played_model: (nb_instruments, input_size, length, 1)
+        arr_pianoroll = Images.pianoroll.array_to_pianoroll(
+            array=played_model,
+            seed_length=self.step_length,
+            mono=False,
+            replicate=True,
+            colors=None
+        )
+        plt.close('all')
+        plt.imshow(arr_pianoroll.astype(np.int))
+        plt.show()
 
     def feed_model(self, *args, **kwargs):
         """
