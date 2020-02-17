@@ -4,6 +4,7 @@ from .Controller import Controller
 from .MidiPlayer import MidiPlayer
 from ..create import normalize_activation
 from ..open import note_to_midinote
+from ..instruments import music21_instruments_dict
 
 
 class BandPlayer(Controller):
@@ -11,15 +12,30 @@ class BandPlayer(Controller):
 
     """
 
-    def __init__(self, model, played_voice=0, include_output=True, instrument_mask=None, *args, **kwargs):
+    def __init__(self, model, instrument=None, played_voice=0, include_output=True, instrument_mask=None, *args,
+                 **kwargs):
+        """
+
+        :param model: The model to generate the notes
+        :param instrument: The instrument the player wants to play, if None, it will be the one of the voice played of
+                            the model
+        :param played_voice: The voice the player wants to played < model.nb_instruments
+        :param include_output: Whether the model should use its previous outputs as a input
+        :param instrument_mask: Whether we want to mask some instruments, If not provided, nothing if masked
+        :param args:
+        :param kwargs:
+        """
         self.model = model
         self.played_voice = played_voice
         self.include_output = include_output
-        self.nn_mask = self.get_nn_mask(instrument_mask=instrument_mask)       # (batch=1, nb_instruments, nb_steps)
-        self.instrument_mask = [1 for _ in range(self.model.nb_instruments)] if instrument_mask is None else instrument_mask
+        self.nn_mask = self.get_nn_mask(instrument_mask=instrument_mask)  # (batch=1, nb_instruments, nb_steps)
+        self.instrument_mask = [1 for _ in
+                                range(self.model.nb_instruments)] if instrument_mask is None else instrument_mask
+        self.band_players = []
+        self.set_band_players(instrument=instrument, played_voice=played_voice)
+        instrument = self.band_players[played_voice].instrument if instrument is None else instrument
 
-        super(BandPlayer, self).__init__(*args, step_length=self.model.work_on, **kwargs)
-
+        super(BandPlayer, self).__init__(*args, instrument=instrument, step_length=self.model.work_on, **kwargs)
         self.arrays.extend([np.zeros((self.step_length, 128)) for _ in range(self.model.nb_steps)])
 
         self.model_outputs = [
@@ -33,16 +49,30 @@ class BandPlayer(Controller):
         # What will be played by the model on the next step
         self.next_model_part = np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1))
 
-        self.band_players = [MidiPlayer(instrument=instrument) for instrument in range(self.model.nb_instruments)]
+        # self.band_players = [MidiPlayer(instrument=instrument) for instrument in range(self.model.nb_instruments)]
+        self.band_players = []
+        self.set_band_players(instrument=instrument, played_voice=played_voice)
         self.previous_notes = [None for instrument in range(self.model.nb_instruments)]
         self.midi_notes_range = (note_to_midinote(self.model.notes_range[0], self.model.notes_range),
                                  note_to_midinote(self.model.notes_range[1], self.model.notes_range))
+
+    def set_band_players(self, instrument=None, played_voice=0):
+        """
+
+        :param instrument:
+        :param played_voice:
+        :return:
+        """
+        self.band_players = []
+        for i_inst in range(self.model.nb_instruments):
+            instrument = music21_instruments_dict[self.model.instruments[i_inst]]().midiProgram
+            self.band_players.append(MidiPlayer(instrument=instrument))
 
     def get_nn_mask(self, instrument_mask=None):
         nn_mask = self.model.get_mask()  # (batch=1, nb_instruments, nb_steps)
         if instrument_mask is not None:
             for i in range(self.model.nb_instruments):
-                nn_mask[:, i] = instrument_mask[i]
+                nn_mask[0][:, i] = instrument_mask[i]
         return nn_mask
 
     def play(self, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], **kwargs):

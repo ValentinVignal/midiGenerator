@@ -10,6 +10,7 @@ os.system('echo Start Controller')
 
 
 def main(args):
+    print('args', args.inst_mask)
     midi_generator = MidiGenerator()
     midi_generator.recreate_model(args.load, print_model=False)
 
@@ -30,17 +31,20 @@ def main(args):
 
 
 def preprocess(args):
-    try:
-        args.inst = int(args.inst)
-    except ValueError:
-        args.inst = Midi.instruments.all_midi_instruments.index(args.inst)
+    if args.inst == 'None':
+        args.inst = None
+    else:
+        try:
+            args.inst = int(args.inst)
+        except ValueError:
+            args.inst = Midi.instruments.all_midi_instruments.index(args.inst)
     args.inst_mask = eval(args.inst_mask)
     return args
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--inst', type=str, default='0',
+    parser.add_argument('--inst', type=str, default='None',
                         help='Number or name of the instrument')
     parser.add_argument('--tempo', type=int, default=120,
                         help='Tempo')
