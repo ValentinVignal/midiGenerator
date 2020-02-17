@@ -11,9 +11,12 @@ class BandPlayer(Controller):
 
     """
 
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, played_voice=0, include_output=True, instrument_mask=None, *args, **kwargs):
         self.model = model
-        self.mask = self.model.get_mask()
+        self.played_voice = played_voice
+        self.include_output = include_output
+        self.nn_mask = self.get_nn_mask(instrument_mask=instrument_mask)       # (batch=1, nb_instruments, nb_steps)
+        self.instrument_mask = [1 for _ in range(self.model.nb_instruments)] if instrument_mask is None else instrument_mask
 
         super(BandPlayer, self).__init__(*args, step_length=self.model.work_on, **kwargs)
 
@@ -25,7 +28,8 @@ class BandPlayer(Controller):
         ]  # Actually, self.model.nb_steps - 1 would be enough
         # (nb_instrument, batch=1, nb_step=1, step_length, input_size, channels=1)
         # What is currently played by the model
-        self.current_model_part = np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1))
+        self.current_model_part = np.zeros(
+            (self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1))
         # What will be played by the model on the next step
         self.next_model_part = np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1))
 
@@ -34,14 +38,22 @@ class BandPlayer(Controller):
         self.midi_notes_range = (note_to_midinote(self.model.notes_range[0], self.model.notes_range),
                                  note_to_midinote(self.model.notes_range[1], self.model.notes_range))
 
-    def play(self):
+    def get_nn_mask(self, instrument_mask=None):
+        nn_mask = self.model.get_mask()  # (batch=1, nb_instruments, nb_steps)
+        if instrument_mask is not None:
+            for i in range(self.model.nb_instruments):
+                nn_mask[:, i] = instrument_mask[i]
+        return nn_mask
+
+    def play(self, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], **kwargs):
         """
 
         :return:
         """
         super(BandPlayer, self).play(
-            on_step_end_callbacks=[self.feed_model],
-            on_exact_time_step_begin_callbacks=[self.play_current_model_part]
+            on_step_end_callbacks=[self.feed_model] + on_step_end_callbacks,
+            on_exact_time_step_begin_callbacks=[self.play_current_model_part] + on_exact_time_step_begin_callbacks,
+            **kwargs
         )
 
     def feed_model(self, *args, **kwargs):
@@ -53,6 +65,8 @@ class BandPlayer(Controller):
         self.model_outputs.append(self.current_model_part)
         self.current_model_part = self.next_model_part
         inputs_models = np.concatenate(self.model_outputs[-self.model.nb_steps:], axis=2)
+        if not self.include_output:
+            inputs_models = np.zeros_like(inputs_models)
         # input_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
         played_inst_input = np.concatenate(
             self.arrays[-self.model.nb_steps:], axis=0
@@ -67,12 +81,12 @@ class BandPlayer(Controller):
         played_inst_input = np.reshape(played_inst_input,
                                        newshape=(1, self.model.nb_steps, self.step_length, self.model.input_size, 1))
         # played_inst_input: (batch=1, nb_steps, step_length, input_size, 1
-        inputs_models[0] = played_inst_input
-        outputs_model = self.model.keras_nn.generate(input=list(inputs_models) + self.mask)
+        inputs_models[self.played_voice] = played_inst_input
+        outputs_model = self.model.keras_nn.generate(input=list(inputs_models) + self.nn_mask)
         outputs_model = np.asarray(outputs_model).astype('float64')
 
         # output_model: (nb_instruments, batch=1, np_steps=1, step_length, input_size, channels)
-        self.next_model_part = normalize_activation(outputs_model)
+        self.next_model_part = normalize_activation(outputs_model, mono=self.model.mono)
 
     def play_current_model_part(self, exact_time_step):
         """
@@ -82,19 +96,16 @@ class BandPlayer(Controller):
         :return:
         """
         exact_time_step = exact_time_step % self.step_length
-        for instrument in range(1, self.model.nb_instruments):
-            # current_model_part: (nb_instruments, batch=1, nb_steps=1, step_length, input_size, channels)
-            current_instrument_step = self.current_model_part[instrument, 0, 0, exact_time_step, :, 0]
-            # current_instrument_step: (input_size)
-            current_instrument_step = current_instrument_step[:-1] if self.model.mono else current_instrument_step
-            if np.any(current_instrument_step):
-                note = np.where(current_instrument_step == 1)[0][0]
-                note = note_to_midinote(note, notes_range=self.model.notes_range)
-                if self.previous_notes[instrument] is not None:
-                    self.band_players[instrument].note_off(self.previous_notes[instrument])
-                self.band_players[instrument].note_on(note)
-                self.previous_notes[instrument] = note
-
-
-
-
+        for instrument in range(0, self.model.nb_instruments):
+            if self.instrument_mask[instrument] == 1 and instrument != self.played_voice:
+                # current_model_part: (nb_instruments, batch=1, nb_steps=1, step_length, input_size, channels)
+                current_instrument_step = self.current_model_part[instrument, 0, 0, exact_time_step, :, 0]
+                # current_instrument_step: (input_size)
+                current_instrument_step = current_instrument_step[:-1] if self.model.mono else current_instrument_step
+                if np.any(current_instrument_step):
+                    note = np.where(current_instrument_step == 1)[0][0]
+                    note = note_to_midinote(note, notes_range=self.model.notes_range)
+                    if self.previous_notes[instrument] is not None:
+                        self.band_players[instrument].note_off(self.previous_notes[instrument])
+                    self.band_players[instrument].note_on(note)
+                    self.previous_notes[instrument] = note
