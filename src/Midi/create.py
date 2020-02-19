@@ -115,6 +115,7 @@ def converter_func(arr, mono=False, no_duration=False):
     :param no_duration:
     :return:
     """
+    print('mono', mono)
     if mono:
         arr = converter_func_mono(arr)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     else:
@@ -233,3 +234,13 @@ def print_informations(nb_steps, matrix, notes_list, verbose):
     elif verbose == 1:
         print('notes in seed :', colored(nb_notes_seed, 'magenta'), 'notes generated :',
               colored(nb_notes_generated, 'magenta'), 'for length', colored(matrix.shape[2], 'magenta'))
+
+
+def midinote_to_note(midinote, notes_range=(0, 88)):
+    """
+
+    :param midinote:
+    :param notes_range:
+    :return:
+    """
+    return midinote - (21 + notes_range[0])

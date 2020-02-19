@@ -167,6 +167,10 @@ class MGInit:
     def save_midis_path(self):
         return Path('generated_midis', f'{self.full_name}-generation({self.save_midis_path_i})')
 
+    @property
+    def input_size(self):
+        return self.input_param['input_size']
+
     def __del__(self, *args, **kwargs):
         del self.keras_nn
         del self.sequence

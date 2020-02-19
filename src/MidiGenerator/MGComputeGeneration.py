@@ -141,7 +141,8 @@ class MGComputeGeneration(MGInit):
             subtitles=subtitles
         )
 
-    def get_mask(self, nb_instruments, batch_size=1):
+    def get_mask(self, nb_instruments=None, batch_size=1):
+        nb_instruments = self.nb_instruments if nb_instruments is None else nb_instruments
         if Models.needs_mask[self.model_name]:
             mask = [np.ones((batch_size, nb_instruments, self.nb_steps))]
         else:

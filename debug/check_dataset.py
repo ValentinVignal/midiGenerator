@@ -71,7 +71,7 @@ def main(args):
 
         # matrix_midi = np.transpose(matrix_midi, , 3))
         output_notes = Midi.create.matrix_to_midi(matrix_midi, instruments=args.instruments,
-                                                  notes_range=args.notes_range)
+                                                  notes_range=args.notes_range, mono=args.mono)
         Midi.create.save_midi(output_notes, args.instruments, checked_file_name.as_posix())
         Images.pianoroll.save_array_as_pianoroll(
             array=matrix_midi,

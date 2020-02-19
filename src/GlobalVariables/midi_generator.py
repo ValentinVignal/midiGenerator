@@ -39,3 +39,21 @@ def letter2work_on(letter):
         return None
     else:
         raise Exception('Unknow work_on letter :{0}'.format(letter))
+
+
+def work_on_nb(wo):
+    """
+
+    :param wo:
+    :return:
+    """
+    if isinstance(wo, int):
+        return wo
+    elif isinstance(wo, str):
+        if len(wo) == 1:
+            wo = letter2work_on(wo)
+        return work_on2nb(wo)
+    else:
+        raise TypeError(f'Type of work_on must be an int or a str but got "{type(wo)}"')
+
+
