@@ -1,3 +1,6 @@
+"""
+To play midi in real time
+"""
 import pygame.midi
 
 from .. import instruments
@@ -7,6 +10,7 @@ class MidiPlayer:
     pygame.midi.init()
     player = pygame.midi.Output(0)
 
+    # Can't have 2 different instruments on the same channel
     taken_channels = [False for _ in range(16)]
 
     def __init__(self, instrument=0):

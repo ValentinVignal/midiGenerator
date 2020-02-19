@@ -37,9 +37,7 @@ class Controller(MidiPlayer):
         :param key:
         :return:
         """
-        # print('self', self, 'key', key)
         try:
-            # print(f'alphanumeric key {key.char} pressed')
             if not key.char in self.already_pressed:
                 self.already_pressed[key.char] = False
             if not self.already_pressed[key.char]:
@@ -50,7 +48,6 @@ class Controller(MidiPlayer):
         except KeyError:
             pass
         except AttributeError:
-            # print(f'special key {key} pressed')
             pass
 
     def on_release(self, key):
@@ -59,7 +56,6 @@ class Controller(MidiPlayer):
         :param key:
         :return:
         """
-        # print(f'{key} released')
         try:
             self.note_off(kb.key_to_note[key.char])
             self.already_pressed[key.char] = False

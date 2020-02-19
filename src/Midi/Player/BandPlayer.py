@@ -25,6 +25,7 @@ class BandPlayer(Controller):
         :param played_voice: The voice the player wants to played < model.nb_instruments
         :param include_output: Whether the model should use its previous outputs as a input
         :param instrument_mask: Whether we want to mask some instruments, If not provided, nothing if masked
+        :param max_plotted: the number of step to plot
         :param args:
         :param kwargs:
         """
@@ -33,11 +34,13 @@ class BandPlayer(Controller):
         self.played_voice = played_voice
         self.include_output = include_output
         self.nn_mask = self.get_nn_mask(instrument_mask=instrument_mask)  # (batch=1, nb_instruments, nb_steps)
+        # nn_mask will be used as an input of the model
         self.instrument_mask = [1 for _ in
                                 range(self.model.nb_instruments)] if instrument_mask is None else instrument_mask
+        # instrument_mask will be used to plot the right instrument on the pianoroll
         self.max_plotted = model.nb_steps if max_plotted is None else max_plotted
 
-        self.band_players = []
+        self.band_players = []      # All the Midi player (=nb_instruments)
         self.set_band_players(instrument=instrument, played_voice=played_voice)
         instrument = self.band_players[played_voice].instrument if instrument is None else instrument
 
@@ -47,6 +50,7 @@ class BandPlayer(Controller):
         self.arrays.extend([np.zeros((self.step_length, 128)) for _ in range(self.model.nb_steps)])
 
         # ---------- Create the objects to save what it producing the model ----------
+        # All the output of the model (=self.arrays but for the model)
         self.model_outputs = [
             np.zeros((self.model.nb_instruments, 1, 1, self.step_length, self.model.input_size, 1)) for _ in
             range(self.model.nb_steps)
@@ -65,8 +69,8 @@ class BandPlayer(Controller):
                                  note_to_midinote(self.model.notes_range[1]))
 
         # ---------- To plot the played notes ----------
-        self.real_time_pianoroll = None
-        self.colors = None
+        self.real_time_pianoroll = None     # The object to plot the pianoroll as fast as possible
+        self.colors = None          # The colors associated to each instruments
 
     def set_band_players(self, instrument=None, played_voice=0):
         """
@@ -102,6 +106,7 @@ class BandPlayer(Controller):
 
         self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
         self.colors = Images.colors.get_colors(self.model.nb_instruments)
+        self.show_pianoroll_beat()
         super(BandPlayer, self).play(
             on_time_step_end_callbacks=on_time_step_end_callbacks,
             on_step_end_callbacks=[self.feed_model, self.show_pianoroll_beat] + on_step_end_callbacks,
@@ -139,6 +144,7 @@ class BandPlayer(Controller):
             played_model = played_model[:, :, :-1, :]
         played_inputs = np.concatenate(self.arrays[-self.max_plotted:], axis=0)[:, :, np.newaxis]
         # played_inputs: (length, 128, 1)
+        # Put the played instrument where it should be
         played_model[self.played_voice] = played_inputs[:, self.midi_notes_range[0]: self.midi_notes_range[1], :]
         # played_model: (nb_instruments, length, input_size, 1)
         played_model = np.transpose(played_model, axes=[0, 2, 1, 3])

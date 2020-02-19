@@ -8,6 +8,9 @@ from src import GlobalVariables as g
 
 
 class Metronome(MidiPlayer):
+    """
+    Class to do metronome while playing. Also trigger the callbacks at the right time
+    """
     def __init__(self, tempo, *args,
                  step_length=g.mg.work_on,
                  on_time_step_begin_callbacks=[],
@@ -25,6 +28,7 @@ class Metronome(MidiPlayer):
         self.keep_playing = False
         self.hard_stop = True
         self.thread = None
+        self.bip_thread = None
 
         self.on_time_step_begin_callbacks = on_time_step_begin_callbacks
         self.on_time_step_end_callbacks = on_time_step_end_callbacks
@@ -33,10 +37,10 @@ class Metronome(MidiPlayer):
         self.on_exact_time_step_begin_callbacks = on_exact_time_step_begin_callbacks
         self.on_exact_time_step_end_callbacks = on_exact_time_step_end_callbacks
 
-        self.current_time_step = None
-        self.current_exact_time_step = None
-        self.current_step = None
-        self.current_beat = None
+        self.current_exact_time_step = None     # Exact time step (usually quarter of beat)
+        self.current_time_step = None       # Time step rounded to the closest one
+        self.current_step = None            # The step (usually measure)
+        self.current_beat = None            # The beat (to do tic tac)
 
     @property
     def current_time_step_mod(self):
@@ -57,6 +61,12 @@ class Metronome(MidiPlayer):
         """
 
         :param start_time:
+        :param on_time_step_begin_callbacks:
+        :param on_time_step_end_callbacks:
+        :param on_step_begin_callbacks:
+        :param on_step_end_callbacks:
+        :param on_exact_time_step_begin_callbacks:
+        :param on_exact_time_step_end_callbacks:
         :return:
         """
         self.start_time = time.perf_counter() if start_time is None else start_time
@@ -67,31 +77,38 @@ class Metronome(MidiPlayer):
         self.on_step_end_callbacks.extend(on_step_end_callbacks)
         self.on_exact_time_step_begin_callbacks.extend(on_exact_time_step_begin_callbacks)
         self.on_exact_time_step_end_callbacks.extend(on_exact_time_step_end_callbacks)
-        # Start the thread
+        # Start the thread to not block the script
         self.thread = threading.Thread(target=self.play, args=())
         self.thread.start()
+
+    def bip(self, note):
+        self.note_on(note)
+        time.sleep(self.tempo / (8 * 60))
+        self.note_off(note)
 
     def play(self):
         """
 
         :return:
         """
-        self.keep_playing = True
-        self.hard_stop = False
-        current_half_time_step = -1  # Number of the half time step
+        # Reset everything
+        self.keep_playing = True        # While true: continue
+        self.hard_stop = False          # If we need urgent stop
+        current_half_time_step = -1  # Number of the half time step (to be able to round exact time step)
         self.current_time_step = -1  # Number of the time step
-        self.current_exact_time_step = -1
+        self.current_exact_time_step = -1       # Number of the exact time step
         self.current_beat = -1  # Number of the beat (for bip bip)
         self.current_step = -1  # Number of the step
         while not self.hard_stop:
-            t = time.perf_counter()
+            t = time.perf_counter()     # Get the time
             half_time_step_number_float = ((t - self.start_time) * self.tempo * g.midi.step_per_beat * 2 / 60)
             half_time_step_number = np.floor(half_time_step_number_float)
-            if half_time_step_number > current_half_time_step:
+            if half_time_step_number > current_half_time_step:      # If this is a new half_time_step
                 # Do action for the new time step
                 current_half_time_step += 1
                 if current_half_time_step % 2 == 0:
-
+                    # Do to the action exactly on time
+                    # (Like playing a note)
                     threading.Thread(
                         target=self.call_callbacks,
                         args=(self.on_exact_time_step_end_callbacks, self.current_exact_time_step)
@@ -104,14 +121,14 @@ class Metronome(MidiPlayer):
                         args=(self.on_exact_time_step_begin_callbacks, self.current_exact_time_step)
                     ).start()
 
-                    # Do all the actions exactly on time
+                    # To do Tic tac of metronome
                     beat_number = half_time_step_number // (2 * g.midi.step_per_beat)
                     if beat_number > self.current_beat:
                         self.current_beat += 1
                         note = 72 if self.current_beat % 4 == 0 else 60
-                        self.note_on(note)
-                        time.sleep(self.tempo / (8 * 60))
-                        self.note_off(note)
+                        self.bip_thread = threading.Thread(target=self.bip, args=(note,))
+                        self.bip_thread.start()
+
                 else:
                     # Do the action with offset of half a time_step
 
@@ -163,4 +180,5 @@ class Metronome(MidiPlayer):
         self.keep_playing = False
         self.hard_stop = hard
         self.thread.join()
+        self.bip_thread.join()
         self.hard_stop = True

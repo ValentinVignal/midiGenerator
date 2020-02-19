@@ -31,6 +31,7 @@ class RealTimePianoroll:
         return np.flip(piano, axis=0)
 
     def show_pianoroll(self, pianoroll):
+        print('real time')
         if self.piano is not None:
             pianoroll = np.concatenate([self.piano, pianoroll], axis=1)
         self.plot_pipe.send(pianoroll)
@@ -40,6 +41,11 @@ class RealTimePianoroll:
 
 
 class ProcessPlotter:
+    """
+    We need to use this class because matplotlib doesn't support multi processing. the functions .plot()/.show()/.draw()
+    need to be all in the same Thread...
+    This class creates a pipe to communicate and a different Thread to draw all the images there.
+    """
     def __init__(self):
         self.array = np.zeros((10, 10, 3)).astype(np.int)
 
@@ -48,15 +54,15 @@ class ProcessPlotter:
 
     def call_back(self):
         while self.pipe.poll():
+            print('ProcessPlotter')
             command = self.pipe.recv()
-            if command is None:
+            if command is None:     # Special value to close the pipe and delete the class
                 self.terminate()
-                return False
+                break
             else:
                 self.array = command
                 self.ax.imshow(self.array)
-        self.fig.canvas.draw()
-        return True
+            self.fig.canvas.draw()
 
     def __call__(self, pipe):
 
