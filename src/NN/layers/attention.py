@@ -12,7 +12,7 @@ class TutoSA(KerasLayer):
     """
     def __init__(self, *args, **kwargs):
         super(TutoSA, self).__init__(*args, **kwargs)
-        self.dense = layers.dense(1, activation='tanh')(x)
+        self.dense = layers.dense(1, activation='tanh')
         self.flatten = layers.Flatten()
         self.activation = layers.Softmax()
         self.repeat_vector = None

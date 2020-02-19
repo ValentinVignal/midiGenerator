@@ -1,4 +1,4 @@
-from pathlib import Path
+from epicpath import EPath
 import pickle
 from termcolor import colored, cprint
 
@@ -14,7 +14,7 @@ class MGData(MGInit):
 
         :return: load the data
         """
-        self.data_transformed_path = Path(
+        self.data_transformed_path = EPath(
             data_transformed_path) if data_transformed_path is not None else self.data_transformed_path
         self.input_param = {}
         with open(str(self.data_transformed_path / 'infos_dataset.p'), 'rb') as dump_file:

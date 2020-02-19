@@ -3,7 +3,7 @@ Faster sequence: save all the data in a temporary folder and then delete it
 Only load the files and give the inputs, doesn't do any processing for a faster training
 """
 import tensorflow as tf
-from pathlib import Path
+from epicpath import EPath
 import shutil
 import numpy as np
 import math
@@ -41,7 +41,7 @@ class FastSequence(tf.keras.utils.Sequence):
             # Find it from the given sequence
             data_temp_folder = sequence.path.parent / 'temp'
         else:
-            data_temp_folder = Path(dataset_folder_path) / 'temp'
+            data_temp_folder = EPath(dataset_folder_path) / 'temp'
         data_temp_folder.mkdir(exist_ok=True, parents=True)
         self.folder_path, self.token_path = self.get_token_path_file(data_temp_folder)
 

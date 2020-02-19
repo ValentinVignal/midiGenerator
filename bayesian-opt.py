@@ -415,7 +415,7 @@ def main(args):
         **vars(args)
     )
     checkpoint_callback = skopt.callbacks.CheckpointSaver(
-        checkpoint_path=checkpoint_folder / 'search_result.pkl',
+        checkpoint_path=(checkpoint_folder / 'search_result.pkl').path,
         store_objective=False
     )
 

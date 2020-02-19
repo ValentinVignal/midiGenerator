@@ -1,5 +1,5 @@
 import numpy as np
-from pathlib import Path
+from epicpath import EPath
 import pickle
 
 from .KerasCallback import KerasCallback
@@ -15,7 +15,7 @@ class CheckPoint(KerasCallback):
 
         :param filepath:
         """
-        self.filepath = Path(filepath)
+        self.filepath = EPath(filepath)
         super(CheckPoint, self).__init__()
 
         self.best_acc = -np.Inf

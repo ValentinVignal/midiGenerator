@@ -1,4 +1,3 @@
-
 from termcolor import colored, cprint
 
 from src import GlobalVariables as g

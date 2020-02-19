@@ -1,5 +1,5 @@
 from termcolor import colored, cprint
-from pathlib import Path
+from epicpath import EPath
 
 from .MGInit import MGInit
 
@@ -15,8 +15,8 @@ class MGLogistic(MGInit):
         create a token in the temp file for the save folder
         :return:
         """
-        Path('temp').mkdir(exist_ok=True, parents=True)
-        with open(Path('temp', 'token_' + self.full_name), 'w') as f:
+        EPath('temp').mkdir(exist_ok=True, parents=True)
+        with open(EPath('temp', 'token_' + self.full_name), 'w') as f:
             f.write(f'token for the model {self.full_name}')
 
     def delete_token(self):
@@ -25,7 +25,7 @@ class MGLogistic(MGInit):
         :return:
         """
         if self.full_name_i is not None:
-            token_path = Path('temp', f'token_{self.full_name}')
+            token_path = EPath('temp', f'token_{self.full_name}')
             if token_path.exists():
                 token_path.unlink()
 
@@ -37,9 +37,9 @@ class MGLogistic(MGInit):
         self.delete_tokens()
         i = 0
         full_name = self.full_name_no_i + '-({0})'
-        saved_model_path = Path('saved_models')
-        while Path(saved_model_path, full_name.format(i)).exists() or Path('temp',
-                                                                           'token_' + full_name.format(i)).exists():
+        saved_model_path = EPath('saved_models')
+        while EPath(saved_model_path, full_name.format(i)).exists() or EPath('temp',
+                                                                             'token_' + full_name.format(i)).exists():
             i += 1
         self.full_name_i = i
         print('Got new full_name :', colored(self.full_name, 'blue'))
@@ -53,8 +53,8 @@ class MGLogistic(MGInit):
         self.delete_token_midis_path()
         i = 0
         name = self.full_name + '-generation({0})'
-        while Path('generated_midis', name.format(i)).exists() or Path('temp',
-                                                                       ('token_' + name + '.txt').format(i)).exists():
+        while EPath('generated_midis', name.format(i)).exists() or EPath('temp',
+                                                                         ('token_' + name + '.txt').format(i)).exists():
             i += 1
         self.save_midis_path_i = i
         print('new save path for Midi files :', colored(str(self.save_midis_path), 'cyan'))
@@ -64,8 +64,8 @@ class MGLogistic(MGInit):
 
         :return:
         """
-        Path('temp').mkdir(exist_ok=True, parents=True)
-        with open(Path('temp', 'token_' + self.full_name + f'-generation({self.save_midis_path_i}).txt'), 'w') as f:
+        EPath('temp').mkdir(exist_ok=True, parents=True)
+        with open(EPath('temp', 'token_' + self.full_name + f'-generation({self.save_midis_path_i}).txt'), 'w') as f:
             f.write(f'token for the generation folder at {self.save_midis_path}')
 
     def delete_token_midis_path(self):
@@ -74,7 +74,7 @@ class MGLogistic(MGInit):
         :return:
         """
         if self._save_midis_path_i is not None:
-            path = Path('temp', f'token_{self.full_name}-generation({self._save_midis_path_i}).txt')
+            path = EPath('temp', f'token_{self.full_name}-generation({self._save_midis_path_i}).txt')
             if path.exists():
                 path.unlink()
 
@@ -93,6 +93,3 @@ class MGLogistic(MGInit):
         """
         self.create_token()
         self.create_token_midis_path()
-
-
-

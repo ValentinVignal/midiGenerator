@@ -1,7 +1,7 @@
 import os
 import pickle
 import numpy as np
-from pathlib import Path
+from epicpath import EPath
 import progressbar
 import shutil
 from termcolor import colored, cprint
@@ -35,7 +35,7 @@ def check_args(args):
     if not os.path.exists(data_transformed_path):
         os.mkdir(data_transformed_path)
 
-    return args, Path(data_path), Path(data_transformed_path)
+    return args, EPath(data_path), EPath(data_transformed_path)
 
 
 def main(args):
@@ -48,7 +48,7 @@ def main(args):
 
     # ----- All the paths -----
     dataset_p = data_transformed_path / 'dataset.p'  # Pickle file with the information of the data set kept
-    infos_dataset_p = Path(
+    infos_dataset_p = EPath(
         data_transformed_path) / 'infos_dataset.p'  # pickle file with the information of the dataset (smaller file)
     all_midi_paths_dataset = midi.open.all_midi_files(data_path.as_posix(), False)
 
