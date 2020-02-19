@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
-from pathlib import Path
+from epicpath import EPath
 
 from .. import colors as mcolors
 
@@ -23,7 +23,7 @@ def save_img(array, path):
     activations = array[:, :, :, 0]  # (nb_instruments, 128, nb_steps)
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
-    path = Path(path)
+    path = EPath(path)
     path.mkdir(exist_ok=True, parents=True)
     for i in range(len(activations)):
         save_path = (path / 'inst({0}).jpg'.format(i)).as_posix()

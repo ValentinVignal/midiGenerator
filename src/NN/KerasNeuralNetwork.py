@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from pathlib import Path
+from epicpath import EPath
 import pickle
 import dill
 import json
@@ -66,7 +66,7 @@ class KerasNeuralNetwork:
 
         :return:
         """
-        checkpoint_path = Path('temp')
+        checkpoint_path = EPath('temp')
         checkpoint_path.mkdir(exist_ok=True, parents=True)
         i = 0
         while (checkpoint_path / f'token_checkpoint_weights_{i}.txt').exists() \
@@ -88,7 +88,7 @@ class KerasNeuralNetwork:
         if self.checkpoint_path.exists():
             self.checkpoint_path.unlink()
         # Find back the token name
-        folder, name = self.checkpoint_path.parent, Path('token_' + self.checkpoint_path.name).with_suffix('.txt')
+        folder, name = self.checkpoint_path.parent, EPath('token_' + self.checkpoint_path.name).with_suffix('.txt')
         token_path = folder / name
         # Delete the token checkpoint temporary file
         if token_path.exists():
@@ -327,7 +327,7 @@ class KerasNeuralNetwork:
         :param path:
         :return:
         """
-        path = Path(path)
+        path = EPath(path)
         # shutil.rmtree(path.as_posix(), ignore_errors=True)
         path.mkdir(exist_ok=True, parents=True)
         with open(path / 'MyNN.p', 'wb') as dump_file:
@@ -381,7 +381,7 @@ class KerasNeuralNetwork:
         :param path:
         :return:
         """
-        path = Path(path)
+        path = EPath(path)
         path.mkdir(exist_ok=True, parents=True)
         with open(path / 'weights.p', 'wb') as dump_file:
             pickle.dump(
@@ -407,7 +407,7 @@ class KerasNeuralNetwork:
         :param path:
         :return:
         """
-        path = Path(path)
+        path = EPath(path)
         with open(str(path / 'MyNN.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
             model_id = d['model_id']
@@ -428,7 +428,7 @@ class KerasNeuralNetwork:
         :param path:
         :return:
         """
-        path = Path(path)
+        path = EPath(path)
         if (path / 'checkpoint_weights.p').exists():
             file_path = path / 'checkpoint_weights.p'
         else:

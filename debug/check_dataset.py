@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import shutil
+from epicpath import EPath
 from termcolor import colored
 import sys
 
@@ -20,10 +20,10 @@ def main(args):
     """
 
     if args.pc:
-        data_path = Path(os.path.join('../Dataset', args.data))
+        data_path = EPath(os.path.join('../Dataset', args.data))
     else:
-        data_path = Path(os.path.join('../../../../../../storage1/valentin', args.data))
-    data_checked_path = Path(data_path.as_posix() + '_checked')
+        data_path = EPath(os.path.join('../../../../../../storage1/valentin', args.data))
+    data_checked_path = EPath(data_path.as_posix() + '_checked')
     if data_checked_path.exists():  # Delete the folder of the transformed data
         shutil.rmtree(data_checked_path.as_posix())
     shutil.copytree(src=data_path.as_posix(), dst=data_checked_path)
@@ -40,9 +40,9 @@ def main(args):
     nb_files = len(all_midi_paths)
     print('note_range:', colored(args.notes_range, 'magenta'))
     for i in range(nb_files):
-        midi_path = Path(all_midi_paths[i])
-        checked_file_name = Path(midi_path.parent, midi_path.stem + '_checked' + midi_path.suffix)
-        checked_file_name_image = Path(midi_path.parent, midi_path.stem + '_checked.jpg')
+        midi_path = EPath(all_midi_paths[i])
+        checked_file_name = EPath(midi_path.parent, midi_path.stem + '_checked' + midi_path.suffix)
+        checked_file_name_image = EPath(midi_path.parent, midi_path.stem + '_checked.jpg')
         print(colored("-- {0}/{1} ----- : ----- Checking {2} ----------".format(i + 1, nb_files, midi_path), 'white',
                       'on_blue'))
         if args.bach:

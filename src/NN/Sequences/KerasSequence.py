@@ -1,5 +1,5 @@
 import tensorflow as tf
-from pathlib import Path
+from epicpath import EPath
 import pickle
 import functools
 import numpy as np
@@ -24,7 +24,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         """
         # -------------------- Attribut --------------------
         self.predict_offset = 0 if replicate else predict_offset  # The next step as y
-        self.path = Path(path)  # Path to the dataset
+        self.path = EPath(path)  # Path to the dataset
         self.npy_path = self.path / 'npy'  # npy folder path
         self.nb_steps = nb_steps  # Number of steps in the x
         self.work_on = work_on  # measure/beat/note

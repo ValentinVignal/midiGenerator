@@ -1,4 +1,4 @@
-from pathlib import Path
+from epicpath import EPath
 
 
 def summarize(path, title=None, file_name='Summary', **d):
@@ -10,7 +10,7 @@ def summarize(path, title=None, file_name='Summary', **d):
     :param d: All the parameters to put in the summary
     :return:
     """
-    path = Path(path)
+    path = EPath(path)
     path.mkdir(exist_ok=True, parents=True)
     text = ''
     if title is not None:

@@ -1,4 +1,4 @@
-from pathlib import Path
+from epicpath import EPath
 import warnings
 
 from src import GlobalVariables as g
@@ -101,7 +101,7 @@ class MGInit:
 
     @property
     def saved_model_path(self):
-        return Path('saved_models', self.full_name)
+        return EPath('saved_models', self.full_name)
 
     @property
     def full_name_no_i(self):
@@ -165,7 +165,7 @@ class MGInit:
 
     @property
     def save_midis_path(self):
-        return Path('generated_midis', f'{self.full_name}-generation({self.save_midis_path_i})')
+        return EPath('generated_midis', f'{self.full_name}-generation({self.save_midis_path_i})')
 
     @property
     def input_size(self):

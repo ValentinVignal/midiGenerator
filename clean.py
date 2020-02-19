@@ -1,7 +1,7 @@
 """
 File to clean environment
 """
-from pathlib import Path
+from epicpath import EPath
 import shutil
 
 from src import Args
@@ -26,10 +26,10 @@ def main(args):
     if not args.temp:
         shutil.rmtree(path='temp', ignore_errors=True)
     if not args.data_temp:
-        data_temp = Path(g.path.get_data_folder_path(args)) / 'temp'
+        data_temp = EPath(g.path.get_data_folder_path(args)) / 'temp'
         shutil.rmtree(path=data_temp, ignore_errors=True)
     if not args.zip:
-        zip_path = Path('my_zip.zip')
+        zip_path = EPath('my_zip.zip')
         if zip_path.exists():
             zip_path.unlink()
     print('Done cleaning')

@@ -29,7 +29,7 @@ def save_array_pil(file_name, array):
     :param array: (a, b, 3)         # RGB
     :return:
     """
-    Image.fromarray(array.astype(np.uint8), mode='RGB').save(file_name)
+    Image.fromarray(array.astype(np.uint8), mode='RGB').save(str(file_name))
 
 
 def save_array_plt(file_name, array):

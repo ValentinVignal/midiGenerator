@@ -4,7 +4,7 @@ This script is a solution to this issue. It run several time the bayesian-opt.py
 it is loading the result of the previous one at the beginning
 """
 import os
-from pathlib import Path
+from epicpath import EPath
 from termcolor import colored, cprint
 
 from src import Args
@@ -31,7 +31,7 @@ def main(args):
             name = 'bayesian_opt' if args.bo_name is None else f'bayesian_opt_{args.bo_name}'
         cprint('This script will need the next paths to be available:', 'red')
         for i in range(i_start, i_start + args.nscripts):
-            path = Path('hp_search', name + f'_{i}')
+            path = EPath('hp_search', name + f'_{i}')
             cprint('path ' + path.as_posix(), 'yellow')
             if path.exists():
                 raise FileExistsError(f'The folder "{path}" already exists')

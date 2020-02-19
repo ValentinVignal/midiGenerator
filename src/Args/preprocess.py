@@ -1,4 +1,4 @@
-from pathlib import Path
+from epicpath import EPath
 import warnings
 import pickle
 
@@ -19,7 +19,7 @@ def bayesian_opt(args):
     if args.from_checkpoint is not None:
         # It means the bayesian optimization continues a previous one, hence, some args must be the same the
         # the optimization stays coherent
-        with open(Path('hp_search', f'bayesian_opt_{"_".join([str(s) for s in args.from_checkpoint.split("-")])}', 'checkpoint', 'args.p'), 'rb') as dump_file:
+        with open(EPath('hp_search', f'bayesian_opt_{"_".join([str(s) for s in args.from_checkpoint.split("-")])}', 'checkpoint', 'args.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
             saved_args = d['args']
             for k, value in vars(saved_args).items():
@@ -130,7 +130,7 @@ def hp_summary(args):
     :param args:
     :return:
     """
-    args.folder = Path('hp_search', f'bayesian_opt_{args.folder}')
+    args.folder = EPath('hp_search', f'bayesian_opt_{args.folder}')
     return args
 
 

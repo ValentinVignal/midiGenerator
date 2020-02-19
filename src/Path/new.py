@@ -1,4 +1,4 @@
-from pathlib import Path
+from epicpath import EPath
 
 
 def unique(path, ext='_{0}', mandatory_ext=False):
@@ -9,7 +9,7 @@ def unique(path, ext='_{0}', mandatory_ext=False):
     :param ext:
     :return:
     """
-    path = Path(path)
+    path = EPath(path)
     if not path.exists() and not mandatory_ext:
         return path
     else:
@@ -17,7 +17,7 @@ def unique(path, ext='_{0}', mandatory_ext=False):
         suffixes = path.suffixes
         stem = path.stem
         for s in range(len(suffixes) - 1):
-            stem = Path(stem).stem
+            stem = EPath(stem).stem
         i = 0
         while (folder_path / ''.join([stem + ext.format(i)] + suffixes)).exists():
             i += 1
@@ -33,11 +33,11 @@ def unique_filename(folder_path, name, ext='_{0}', with_extension=True, mandator
     :param with_extension:
     :return:
     """
-    folder_path = Path(folder_path)
-    suffixes = Path(name).suffixes
-    stem = Path(name).stem
+    folder_path = EPath(folder_path)
+    suffixes = EPath(name).suffixes
+    stem = EPath(name).stem
     for s in range(len(suffixes) - 1):
-        stem = Path(stem).stem
+        stem = EPath(stem).stem
     if not (folder_path / name).exists() and not mandatory_ext:
         return name if with_extension else stem
     else:

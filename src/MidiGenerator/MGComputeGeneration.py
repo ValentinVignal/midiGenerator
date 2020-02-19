@@ -1,6 +1,6 @@
 from termcolor import colored, cprint
 import numpy as np
-from pathlib import Path
+from epicpath import EPath
 
 import src.Midi as midi
 from src.NN import Models
@@ -64,7 +64,7 @@ class MGComputeGeneration(MGInit):
         :param name
         :param no_duration:
         """
-        folder_path = Path(folder_path)
+        folder_path = EPath(folder_path)
 
         # if files exist -> find new name
         if (folder_path / name).with_suffix('.mid').exists() or \
@@ -127,7 +127,7 @@ class MGComputeGeneration(MGInit):
         :param folder_path
         :param name
         """
-        folder_path = Path(folder_path)
+        folder_path = EPath(folder_path)
         # file_name = self.get_unique_path(folder_path / (name + '.jpg'))  # From MGLogistic
         file_name = mPath.new.unique(folder_path / (name + '.jpg'))
 

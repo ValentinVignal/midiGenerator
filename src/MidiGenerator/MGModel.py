@@ -1,4 +1,4 @@
-from pathlib import Path
+from epicpath import EPath
 import pickle
 from termcolor import cprint, colored
 import shutil
@@ -63,7 +63,7 @@ class MGModel(MGInit):
         :return:
         """
         name, model_id, total_epochs, indice = id.split('-')
-        path_to_load = Path('saved_models',
+        path_to_load = EPath('saved_models',
                             f'{name}-m({model_id})-e({total_epochs})-({indice})')
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
@@ -97,7 +97,7 @@ class MGModel(MGInit):
         name, model_id, total_epochs, i = id.split('-')
         self.total_epochs = int(total_epochs)
         self.get_new_i()
-        path_to_load = Path('saved_models',
+        path_to_load = EPath('saved_models',
                             self.full_name)
         self.keras_nn.load_weights(str(path_to_load / 'MyNN'))
         self.print_model()
@@ -115,7 +115,7 @@ class MGModel(MGInit):
         :return:
         """
         # Where to save the model
-        path_to_save = self.saved_model_path if path is None else Path(path)
+        path_to_save = self.saved_model_path if path is None else EPath(path)
         # Clean the folder if already in use
         shutil.rmtree(path_to_save.as_posix(), ignore_errors=True)     # Delete it if it exists
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
