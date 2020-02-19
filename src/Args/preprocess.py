@@ -23,7 +23,8 @@ def bayesian_opt(args):
             d = pickle.load(dump_file)
             saved_args = d['args']
             for k, value in vars(saved_args).items():
-                if k not in ['in_place', 'from_checkpoint', 'n_calls', 'gpu', 'debug']:
+                # if k not in ['in_place', 'from_checkpoint', 'n_calls', 'gpu', 'debug']:
+                if k not in ['from_checkpoint']:
                     setattr(args, k, value)
 
     return args

@@ -408,14 +408,14 @@ class MGGenerate(MGComputeGeneration, MGInit):
             for step in range(length):
                 inputs = np.take(generated, axis=2, indices=range(step, step + self.nb_steps))
                 # inputs = (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
-                mask = np.ones((1, self.nb_instruments, self.nb_steps))  # (batch=1, nb_instruments, nb_steps)
+                mask = self.get_mask()      # (batch=1, nb_instruments, nb_steps)
                 # Remove the instrument from the input
-                mask[:, instrument_to_remove] = 0
+                mask[0][:, instrument_to_remove] = 0
                 inputs[instrument_to_remove] = 0
-                preds = np.asarray(self.keras_nn.generate(input=list(inputs) + [mask])).astype('float64')
+                preds = np.asarray(self.keras_nn.generate(input=list(inputs) + mask)).astype('float64')
                 # preds: (nb_instruments, batch=1, nb_steps=1, step_size, input_size, channels)
                 preds = midi.create.normalize_activation(preds, mono=self.mono)
-                generated[instrument_to_remove, :, step + self.nb_steps] = preds[instrument_to_remove]
+                generated[instrument_to_remove, :, step:step + self.nb_steps] = preds[instrument_to_remove]
 
                 bar.update(instrument * length + step)
 

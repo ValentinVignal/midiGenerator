@@ -91,7 +91,7 @@ def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.
                                           cost_value=l_scale_cost, has_instruments_dim=False)
         loss += l_rhythm * cost.rhythm_loss(y_true_a, y_pred_a,
                                             cost_value=l_rhythm_cost,
-                                            take_all_steps_rhythm=take_all_steps_rhythm, has_instruments=False)
+                                            take_all_steps_rhythm=take_all_steps_rhythm, has_instruments_dim=False)
         return loss
 
     return _mono_scale
