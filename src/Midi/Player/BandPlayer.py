@@ -61,11 +61,11 @@ class BandPlayer(Controller):
         # To know what note we have to stop when a new not is played
         self.previous_notes = [None for _ in range(self.model.nb_instruments)]
         # to be able to switch between 128 midi note to the ones used by the model
-        self.midi_notes_range = (note_to_midinote(self.model.notes_range[0], self.model.notes_range),
-                                 note_to_midinote(self.model.notes_range[1], self.model.notes_range))
+        self.midi_notes_range = (note_to_midinote(self.model.notes_range[0]),
+                                 note_to_midinote(self.model.notes_range[1]))
 
         # ---------- To plot the played notes ----------
-        self.real_time_pianoroll = Images.RealTimePianoroll()
+        self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
 
     def set_band_players(self, instrument=None, played_voice=0):
         """
@@ -86,41 +86,27 @@ class BandPlayer(Controller):
                 nn_mask[0][:, i] = instrument_mask[i]
         return nn_mask
 
-    def play(self, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], **kwargs):
+    def play(self, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], on_time_step_end_callbacks=[],
+             **kwargs):
         """
 
         :return:
         """
         super(BandPlayer, self).play(
-            on_step_end_callbacks=[self.feed_model, self.show_pianoroll] + on_step_end_callbacks,
+            on_time_step_end_callbacks=on_time_step_end_callbacks,
+            on_step_end_callbacks=[self.feed_model, self.show_pianoroll_beat] + on_step_end_callbacks,
             on_exact_time_step_begin_callbacks=[self.play_current_model_part] + on_exact_time_step_begin_callbacks,
             **kwargs
         )
 
-    def show_pianoroll(self, *args, **kwargs):
-        played_model = np.concatenate(self.model_outputs[-self.max_plotted:], axis=2)
-        # played_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
-        played_model = played_model[:, 0, :, :, :, 0]
-        # played_model: (nb_instruments, nb_steps, step_length, input_size)
-        if self.model.mono:
-            played_model = played_model[:, :, :, :-1]
-        played_inputs = np.stack(self.arrays[-self.max_plotted:], axis=0)[
-            :, :, self.midi_notes_range[0]: self.midi_notes_range[1]
-        ]        # (nb_steps, step_length, input_size)
-        played_model[self.played_voice] = played_inputs     # (nb_instruments, nb_steps, step_length, input_size)
-        played_model = np.expand_dims(played_model, axis=-1)
-        # played_model: (nb_instruments, nb_steps, step_length, input_size, 1)
-        played_model = np.transpose(played_model, axes=[0, 3, 1, 2, 4])
-        played_model_shape = played_model.shape
-        # played_model : (nb_instruments, input_size, nb_steps, step_length, 1)
-        played_model = np.reshape(
-            played_model,
-            newshape=(*played_model.shape[:2], played_model_shape[2] * played_model_shape[3], *played_model_shape[4:])
-        )
-        for inst in range(self.model.nb_instruments):
-            if self.instrument_mask[inst] == 0:
-                played_model[inst] = 0
-        # played_model: (nb_instruments, input_size, length, 1)
+    def show_pianoroll_beat(self, *args, **kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        played_model = self.get_played_model()  # (nb_instruments, input_size, length, 1)
         arr_pianoroll = Images.pianoroll.array_to_pianoroll(
             array=played_model,
             seed_length=self.step_length,
@@ -128,6 +114,67 @@ class BandPlayer(Controller):
             replicate=True,
             colors=None
         )
+        self.real_time_pianoroll.show_pianoroll(arr_pianoroll.astype(np.int))
+
+    def get_played_model(self):
+        """
+
+        :return: nb_instruments, input_size, length, 1)
+        """
+        # self.model_outputs[i]: (nb_instruments, batch=1, nb_steps=1, step_length, input_size, channels)
+        played_model = np.concatenate(self.model_outputs[-self.max_plotted:], axis=3)
+        # played_model: (nb_instruments, batch=1, nb_steps=1, length, input_size, channels)
+        played_model = played_model[:, 0, 0, :, :, 0:1]  # (nb_instruments, length, input_size, 1)
+        if self.model.mono:
+            played_model = played_model[:, :, :-1, :]
+        played_inputs = np.concatenate(self.arrays[-self.max_plotted:], axis=0)[:, :, np.newaxis]
+        # played_inputs: (length, 128, 1)
+        played_model[self.played_voice] = played_inputs[:, self.midi_notes_range[0]: self.midi_notes_range[1], :]
+        # played_model: (nb_instruments, length, input_size, 1)
+        played_model = np.transpose(played_model, axes=[0, 2, 1, 3])
+        # played_model: (nb_instruments, input_size, length, 1)
+        played_model = self.apply_mask_on_array(played_model)
+        return played_model
+
+    def apply_mask_on_array(self, array):
+        """
+
+        :param array:
+        :return:
+        """
+        for inst, m in enumerate(self.instrument_mask):
+            if m == 0:
+                array[inst] = 0
+        return array
+
+    def show_pianoroll_time_step(self, time_step, *args, **kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        time_step = time_step % self.step_length
+        played_model = self.get_played_model()  # (nb_instruments, input_size, length, 1)
+        current_played_model = self.current_model_part[:, 0, 0, :time_step + 1, :, 0:1]
+        # current_played_model: (nb_instruments, time_step, input_size, 1)
+        current_played_model = self.apply_mask_on_array(current_played_model)
+        if self.model.mono:
+            current_played_model = current_played_model[:, :, :-1, :]
+        current_input_played = self.current_array[
+                               :time_step + 1, self.midi_notes_range[0]: self.midi_notes_range[1], None
+                               ]  # (length, input_size, 1)
+        current_played_model[self.played_voice] = current_input_played
+        current_played_model = np.transpose(current_played_model, [0, 2, 1, 3])
+        # current_played_model: (nb_instrument, input_size, time_step, 1)
+        played_model = np.concatenate([played_model, current_played_model], axis=2)
+        arr_pianoroll = Images.pianoroll.array_to_pianoroll(
+            array=played_model,
+            seed_length=self.step_length,
+            mono=False,
+            replicate=True,
+            colors=None
+        )[:, -self.max_plotted * self.step_length:, :]  # (input_size, length, 3)
         self.real_time_pianoroll.show_pianoroll(arr_pianoroll.astype(np.int))
 
     def feed_model(self, *args, **kwargs):

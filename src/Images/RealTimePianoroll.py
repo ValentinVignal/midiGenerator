@@ -8,14 +8,31 @@ class RealTimePianoroll:
     This class is used to plot some pianoroll to the user as fast as possible
 
     """
-    def __init__(self):
+    def __init__(self, notes_range=None):
+        """
+
+        :param notes_range: note range 0 <= x <= 88
+                0 : A
+                87 : C
+        """
+        self.piano = None if notes_range is None else self.get_piano(notes_range)
         self.plot_pipe, plotter_pipe = mp.Pipe()
         self.plotter = ProcessPlotter()
         self.plot_process = mp.Process(
             target=self.plotter, args=(plotter_pipe,), daemon=True)
         self.plot_process.start()
 
+    @staticmethod
+    def get_piano(notes_range):
+        piano = 255 * np.ones((notes_range[1] - notes_range[0], 4, 3), dtype=np.int)       # (input_size, l, 3)
+        for note in range(*notes_range):
+            if note % 12 in [1, 4, 6, 9, 11]:   # (A#, C#, D#, F#, G#)
+                piano[note - notes_range[0]] = 0
+        return np.flip(piano, axis=0)
+
     def show_pianoroll(self, pianoroll):
+        if self.piano is not None:
+            pianoroll = np.concatenate([self.piano, pianoroll], axis=1)
         self.plot_pipe.send(pianoroll)
 
     def __del__(self):

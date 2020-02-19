@@ -33,7 +33,7 @@ def array_to_pianoroll(array, seed_length=0, mono=False, replicate=False, colors
             for j in range(nb_steps):
                 if activations[inst, i, j] == 1:
                     all[i, j] = colors[inst]
-    all = np.flip(all, axis=0)
+    all = np.flip(all, axis=0)      # (input_size, length, 3)
     return all
 
 

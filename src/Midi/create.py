@@ -236,11 +236,11 @@ def print_informations(nb_steps, matrix, notes_list, verbose):
               colored(nb_notes_generated, 'magenta'), 'for length', colored(matrix.shape[2], 'magenta'))
 
 
-def midinote_to_note(note, notes_range=(0, 88)):
+def midinote_to_note(midinote, notes_range=(0, 88)):
     """
 
-    :param note:
+    :param midinote:
     :param notes_range:
     :return:
     """
-    return note - (21 + notes_range[0])
+    return midinote - (21 + notes_range[0])
