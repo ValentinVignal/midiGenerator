@@ -66,6 +66,7 @@ class BandPlayer(Controller):
 
         # ---------- To plot the played notes ----------
         self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
+        self.colors = Images.colors.get_colors(self.model.nb_instruments)
 
     def set_band_players(self, instrument=None, played_voice=0):
         """
@@ -112,7 +113,7 @@ class BandPlayer(Controller):
             seed_length=self.step_length,
             mono=False,
             replicate=True,
-            colors=None
+            colors=self.colors
         )
         self.real_time_pianoroll.show_pianoroll(arr_pianoroll.astype(np.int))
 
@@ -173,7 +174,7 @@ class BandPlayer(Controller):
             seed_length=self.step_length,
             mono=False,
             replicate=True,
-            colors=None
+            colors=self.colors
         )[:, -self.max_plotted * self.step_length:, :]  # (input_size, length, 3)
         self.real_time_pianoroll.show_pianoroll(arr_pianoroll.astype(np.int))
 
