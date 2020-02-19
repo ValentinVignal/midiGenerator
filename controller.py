@@ -22,10 +22,6 @@ def main(args):
                             max_plotted=args.nb_steps_shown
                             )
     controller.play()
-    """
-    for i, arr in enumerate(controller.arrays):
-        print(f'Step {i} --> {arr[:, 60:92]}')
-    """
     MidiPlayer.player.close()
     pygame.midi.quit()
 
