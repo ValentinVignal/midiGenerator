@@ -65,8 +65,8 @@ class BandPlayer(Controller):
                                  note_to_midinote(self.model.notes_range[1]))
 
         # ---------- To plot the played notes ----------
-        self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
-        self.colors = Images.colors.get_colors(self.model.nb_instruments)
+        self.real_time_pianoroll = None
+        self.colors = None
 
     def set_band_players(self, instrument=None, played_voice=0):
         """
@@ -87,12 +87,21 @@ class BandPlayer(Controller):
                 nn_mask[0][:, i] = instrument_mask[i]
         return nn_mask
 
-    def play(self, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], on_time_step_end_callbacks=[],
+    def play(self, played_voice=None, include_output=None, instrument_mask=None, max_plotted=None, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], on_time_step_end_callbacks=[],
              **kwargs):
         """
 
         :return:
         """
+        self.played_voice = self.played_voice if played_voice is None else played_voice
+        self.include_output = self.include_output if include_output is None else include_output
+        if instrument_mask is not None:
+            self.nn_mask = self.get_nn_mask(instrument_mask=instrument_mask)  # (batch=1, nb_instruments, nb_steps)
+            self.instrument_mask = instrument_mask
+        self.max_plotted = self.max_plotted if max_plotted is None else max_plotted
+
+        self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
+        self.colors = Images.colors.get_colors(self.model.nb_instruments)
         super(BandPlayer, self).play(
             on_time_step_end_callbacks=on_time_step_end_callbacks,
             on_step_end_callbacks=[self.feed_model, self.show_pianoroll_beat] + on_step_end_callbacks,

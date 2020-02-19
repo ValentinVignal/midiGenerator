@@ -19,7 +19,7 @@ def main(args):
                             played_voice=args.played_voice,
                             include_output=not args.no_include_output,
                             instrument_mask=args.inst_mask,
-                            max_plotted=10
+                            max_plotted=args.nb_steps_shown
                             )
     controller.play()
     """
@@ -38,6 +38,8 @@ def preprocess(args):
             args.inst = int(args.inst)
         except ValueError:
             args.inst = Midi.instruments.all_midi_instruments.index(args.inst)
+    if args.nb_steps_shown == -1:
+        args.nb_steps_shown = None
     args.inst_mask = eval(args.inst_mask)
     return args
 
@@ -56,6 +58,8 @@ if __name__ == '__main__':
                         help='The number of the voice played')
     parser.add_argument('--inst-mask', default=str(None), type=str,
                         help='Mask to hide some data, as a list of 0 and 1, 0=hide, 1=keep')
+    parser.add_argument('--nb-steps-shown', type=int, default=-1,
+                        help='Number of steps shown in the image, if -1 -> nb_steps model')
     args = parser.parse_args()
     args = preprocess(args)
 
