@@ -120,30 +120,22 @@ class GCN(KerasLayer):
     """
 
     """
-    def __init__(self, nfeat, nhid, nclass, *args, dropout=0, indep_weights=True, **kwargs):
+    def __init__(self, sizes, *args, dropout=0, indep_weights=True, **kwargs):
         """
 
-        :param nfeat:
-        :param nhid:
-        :param nclass:
+        :param sizes: List()[int]
         :param dropout:
         :param indep_weights:
         """
         super(GCN, self).__init__(*args, **kwargs)
         # Raw params
-        self.nfeat = nfeat
-        self.nhid = nhid
-        self.nclass = nclass
+        self.sizes = sizes
         self.dropout = dropout,
         self.indep_weights = indep_weights
 
         # NN
-        self.gc1 = GraphConv(nfeat, nhid, indep_weights=indep_weights)
-        self.relu_1 = layers.ReLU()
+        self.gc_list = [GraphConv(size) for size in sizes]
         self.dropout_layer = layers.Dropout(dropout=dropout)
-        self.gc2 = GraphConv(nhid, nhid, indep_weights=indep_weights)
-        self.relu_2 = layers.ReLU
-        self.gc3 = GraphConv(nhid, nclass, indep_weights=indep_weights)
 
     def get_config(self):
         config = super(GCN, self).get_config()
@@ -162,14 +154,11 @@ class GCN(KerasLayer):
         :return:
         """
         x_shape, adj_shape, labels_shape = input_shape
-        self.gc1.build([x_shape, adj_shape, labels_shape])
-        x_shape = self.gc1.compute_output_shape([x_shape, adj_shape, labels_shape])
-        self.relu_1.build(x_shape)
-        self.dropout_layer.build(x_shape)
-        self.gc2.build([x_shape, adj_shape, labels_shape])
-        x_shape = self.gc2.compute_output_shape([x_shape, adj_shape, labels_shape])
-        self.relu_2.build(x_shape)
-        self.gc3.build([x_shape, adj_shape, labels_shape])
+        for index, gc in enumerate(self.gc_list):
+            gc.build([x_shape, adj_shape, labels_shape])
+            x_shape = gc.compute_output_shape([x_shape, adj_shape, labels_shape])
+            if index == 0:
+                self.dropout_layer.build(x_shape)
 
     def compute_output_shape(self, input_shape):
         """
@@ -178,9 +167,8 @@ class GCN(KerasLayer):
         :return:
         """
         x_shape, adj_shape, labels_shape = input_shape
-        x_shape = self.gc1.compute_output_shape([x_shape, adj_shape, labels_shape])
-        x_shape = self.gc2.compute_output_shape([x_shape, adj_shape, labels_shape])
-        x_shape = self.gc3.compute_output_shape([x_shape, adj_shape, labels_shape])
+        for gc in self.gc_list:
+            x_shape = gc.compute_output_shape([x_shape, adj_shape, labels_shape])
         return x_shape
 
     def call(self, inputs):
@@ -190,12 +178,12 @@ class GCN(KerasLayer):
         :return:
         """
         x, adj, labels = inputs
-        x = self.gc1([x, adj, labels])
-        x = self.relu1(x)
-        x = self.dropout_layer(x)
-        x = self.gc2([x, adj, labels])
-        x = self.relu2(x)
-        x = self.gc3([x, adj, labels])
+        for index, gc in enumerate(self.gc_list):
+            x = gc([x, adj, labels])
+            if index < len(self.gc_list) - 1:
+                x = tf.nn.relu(x)
+            if index == 0:
+                x = self.dropout_layer(x)
         return x
 
 
