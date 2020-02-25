@@ -10,19 +10,15 @@ from . import utils
 from src import GlobalVariables as g
 
 
-def scale_loss(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None, has_instruments_dim=True):
+def scale_loss(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None):
     """
 
-    :param has_instruments_dim:
     :param max_reward:
     :param cost_value:
-    :param y_true_a: activation, no loss (batch, [nb_instruments], nb_steps, step_size, input_size)
-    :param y_pred_a: activation, no loss (batch, [nb_instruments], nb_steps, step_size, input_size)
+    :param y_true_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
+    :param y_pred_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
     :return:
     """
-    if not has_instruments_dim:
-        y_true_a = tf.expand_dims(y_true_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-        y_pred_a = tf.expand_dims(y_pred_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
     # projection
     true_projection = tf.reduce_sum(y_true_a, axis=[1, 3], keepdims=True)  # (batch, 1, nb_steps, 1, input_size)
     pred_projection = tf.reduce_sum(y_pred_a, axis=[1, 3], keepdims=True)  # (batch, 1, nb_steps, 1, input_size)
@@ -68,22 +64,16 @@ def scale_loss(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=No
 
 
 def rhythm_loss(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
-                take_all_steps_rhythm=g.loss.take_all_step_rhythm, has_instruments_dim=True):
+                take_all_steps_rhythm=g.loss.take_all_step_rhythm):
     """
 
-    :param has_instruments_dim:
     :param take_all_steps_rhythm:
     :param max_reward:
     :param cost_value:
-    :param y_true_a: activation, no loss (batch, nb_steps, step_size, input_size)
-    :param y_pred_a: activation, no loss (batch, nb_steps, step_size, input_size)
+    :param y_true_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
+    :param y_pred_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
     :return:
     """
-    if not has_instruments_dim:
-        y_true_a = tf.expand_dims(y_true_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-        y_pred_a = tf.expand_dims(y_pred_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-    y_true_a = tf.expand_dims(y_true_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-    y_pred_a = tf.expand_dims(y_pred_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
     # projection
     sum_axis = (1, 2, 4) if take_all_steps_rhythm else (1, 4)
     # (if take_all_steps_axis then nb_steps = 1 after these 2 lines)
