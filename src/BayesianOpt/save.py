@@ -1,9 +1,8 @@
 from skopt.plots import plot_objective, plot_evaluations
 from matplotlib import pyplot as plt
-from pathlib import Path
+from epicpath import EpicPath as EPath
 from termcolor import colored
 
-from src import Path as mPath
 from src import BayesianOpt as BO
 
 
@@ -17,11 +16,11 @@ def get_folder_path(id=None, name=None):
     if id is None:
         # Then it has to be a new folder
         name_str = f'_{name}' if name is not None else ''
-        return mPath.new.unique(Path('hp_search', f'bayesian_opt{name_str}'), mandatory_ext=True)
+        return EPath('hp_search', f'bayesian_opt{name_str}').get_unique(always_ext=True)
     else:
         id_list = id.split('-')
         id_str = '_' + '_'.join([str(s) for s in id_list])
-        return Path('hp_search', f'bayesian_opt{id_str}')
+        return EPath('hp_search', f'bayesian_opt{id_str}')
 
 
 def save_evaluations(search_result, folder_path):
