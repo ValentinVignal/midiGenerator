@@ -10,6 +10,11 @@ from . import utils
 from src import GlobalVariables as g
 
 
+# --------------------------------------------------
+# ------------------- Scale  --------------------
+# --------------------------------------------------
+
+
 def scale(y_true_a, y_pred_a):
     """
 
@@ -51,6 +56,11 @@ def scale(y_true_a, y_pred_a):
     return tf.reduce_mean(loss)
 
 
+# --------------------------------------------------
+# ------------------- Rhythm --------------------
+# --------------------------------------------------
+
+
 def rhythm(y_true_a, y_pred_a,
            take_all_steps_rhythm=g.loss.take_all_step_rhythm):
     """
@@ -88,7 +98,12 @@ def rhythm(y_true_a, y_pred_a,
     return tf.reduce_mean(loss)
 
 
-def harmony(tensor, interval):
+# --------------------------------------------------
+# ------------------- Harmony --------------------
+# --------------------------------------------------
+
+
+def n_tone(tensor, interval):
     """
 
     :param tensor: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
@@ -109,7 +124,7 @@ def semitone(tensor):
     :param tensor:
     :return:
     """
-    return harmony(tensor, interval=1)
+    return n_tone(tensor, interval=1)
 
 
 def tone(tensor):
@@ -118,7 +133,7 @@ def tone(tensor):
     :param tensor:
     :return:
     """
-    return harmony(tensor, interval=2)
+    return n_tone(tensor, interval=2)
 
 
 def tritone(tensor):
@@ -127,7 +142,31 @@ def tritone(tensor):
     :param tensor:
     :return:
     """
-    return harmony(tensor, interval=6)
+    return n_tone(tensor, interval=6)
+
+
+def harmony(*args, l_semitone=g.loss.l_semitone, l_tone=g.loss.l_tone, l_tritone=g.loss.l_tritone, **kwargs):
+    """
+
+    :param args:
+    :param l_semitone:
+    :param l_tone:
+    :param l_tritone:
+    :param kwargs:
+    :return:
+    """
+    def _harmony(tensor):
+        """
+
+        :param tensor:
+        :return:
+        """
+        loss = l_semitone * semitone(tensor)
+        loss += l_tone * tone(tensor)
+        loss += l_tritone * tritone(tensor)
+        return loss
+
+    return _harmony
 
 
 # --------------------------------------------------

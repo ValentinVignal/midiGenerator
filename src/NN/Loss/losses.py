@@ -65,14 +65,11 @@ def mono(*args, **kwargs):
     return _mono
 
 
-def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.loss.l_scale_cost,
-               l_rhythm_cost=g.loss.l_rhythm_cost, take_all_steps_rhythm=g.loss.take_all_step_rhythm,
+def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, take_all_steps_rhythm=g.loss.take_all_step_rhythm,
                *args, **kwargs):
     """
     Add the scale and rhythm reward/cost
     :param take_all_steps_rhythm:
-    :param l_rhythm_cost:
-    :param l_scale_cost:
     :param l_scale:
     :param l_rhythm:
     :param args:
@@ -94,11 +91,9 @@ def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.
 
         loss = mono()(y_true, y_pred)
         loss += l_scale * cost.scale(tf.expand_dims(y_true_a[:, :-1], axis=1),
-                                     tf.expand_dims(y_pred_a[:, :-1], axis=1),
-                                     cost_value=l_scale_cost)
+                                     tf.expand_dims(y_pred_a[:, :-1], axis=1))
         loss += l_rhythm * cost.rhythm(tf.expand_dims(y_true_a[:, :-1], axis=1),
                                        tf.expand_dims(y_pred_a[:, :-1], axis=1),
-                                       cost_value=l_rhythm_cost,
                                        take_all_steps_rhythm=take_all_steps_rhythm)
         return loss
 
