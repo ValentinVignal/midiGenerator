@@ -10,44 +10,21 @@ from . import utils
 from src import GlobalVariables as g
 
 
-def scale_loss(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None, has_instruments_dim=True):
+def scale(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None):
     """
 
-    :param has_instruments_dim:
     :param max_reward:
     :param cost_value:
-    :param y_true_a: activation, no loss (batch, [nb_instruments], nb_steps, step_size, input_size)
-    :param y_pred_a: activation, no loss (batch, [nb_instruments], nb_steps, step_size, input_size)
+    :param y_true_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
+    :param y_pred_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
     :return:
     """
-    if not has_instruments_dim:
-        y_true_a = tf.expand_dims(y_true_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-        y_pred_a = tf.expand_dims(y_pred_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
     # projection
     true_projection = tf.reduce_sum(y_true_a, axis=[1, 3], keepdims=True)  # (batch, 1, nb_steps, 1, input_size)
     pred_projection = tf.reduce_sum(y_pred_a, axis=[1, 3], keepdims=True)  # (batch, 1, nb_steps, 1, input_size)
     # on scale
-    input_size = K.shape(true_projection)[-1]  # nb of notes used
-    scale_projector = math.mod(tf.range(0, input_size), 12)  # [0, 1, 2, ..., 10, 11, 0, 1, ...]
-    num_segments = math.reduce_max(scale_projector) + 1  # min(12, input_size)
-    true_scale_projection = tf.transpose(
-        math.unsorted_segment_sum(  # unsorted sum works only on the 1st axis
-            data=tf.transpose(true_projection, perm=[4, 0, 1, 2, 3]),
-            # (input_size, batch, 1=nb_instruments, nb_steps, 1=step_size)
-            segment_ids=scale_projector,
-            num_segments=num_segments
-        ),
-        perm=[1, 2, 3, 4, 0]
-    )  # (batch, 1=nb_instruments, nb_steps, 1=step_size, 12)
-    pred_scale_projection = tf.transpose(
-        math.unsorted_segment_sum(  # unsorted sum works only on the 1st axis
-            data=tf.transpose(pred_projection, perm=[4, 0, 1, 2, 3]),
-            # (input_size, batch, 1=nb_instruments, nb_steps, 1=step_size)
-            segment_ids=scale_projector,
-            num_segments=num_segments
-        ),
-        perm=[1, 2, 3, 4, 0]
-    )  # (batch, 1=nb_instruments, nb_steps, 1=step_size, 12)
+    true_scale_projection = utils.to_scale(true_projection, axis=-1)
+    pred_scale_projection = utils.to_scale(pred_projection, axis=-1)
 
     if max_reward is None:
         w = 1 / tf.reduce_sum(true_scale_projection, axis=4, keepdims=True)  # (batch, 1, nb_steps, 1, 1) (can be nan)
@@ -67,23 +44,17 @@ def scale_loss(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=No
     return tf.reduce_mean(loss)
 
 
-def rhythm_loss(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
-                take_all_steps_rhythm=g.loss.take_all_step_rhythm, has_instruments_dim=True):
+def rhythm(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
+           take_all_steps_rhythm=g.loss.take_all_step_rhythm):
     """
 
-    :param has_instruments_dim:
     :param take_all_steps_rhythm:
     :param max_reward:
     :param cost_value:
-    :param y_true_a: activation, no loss (batch, nb_steps, step_size, input_size)
-    :param y_pred_a: activation, no loss (batch, nb_steps, step_size, input_size)
+    :param y_true_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
+    :param y_pred_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
     :return:
     """
-    if not has_instruments_dim:
-        y_true_a = tf.expand_dims(y_true_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-        y_pred_a = tf.expand_dims(y_pred_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-    y_true_a = tf.expand_dims(y_true_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
-    y_pred_a = tf.expand_dims(y_pred_a, axis=1)  # (batch, nb_instruments, nb_steps, step_size, input_size)
     # projection
     sum_axis = (1, 2, 4) if take_all_steps_rhythm else (1, 4)
     # (if take_all_steps_axis then nb_steps = 1 after these 2 lines)
@@ -107,6 +78,48 @@ def rhythm_loss(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=
     loss = pred_projection * cost_reward
     loss = tf.reduce_sum(loss, axis=(1, 2, 3, 4))  # (batch,)
     return tf.reduce_mean(loss)
+
+
+def harmony(tensor, interval):
+    """
+
+    :param tensor: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
+    :param interval:
+    :return:
+    """
+    tensor = utils.to_scale(tensor, axis=-1)        # (batch, nb_instruments, nb_steps, step_size, 12)
+    tensor = math.reduce_sum(tensor, axis=(1, 2, 3))        # (batch, 12)
+    tensor_shift = tf.roll(tensor, shift=interval, axis=1)      # (batch, 12)
+    # Scalar product
+    loss = math.reduce_sum(tensor * tensor_shift, axis=1)       # batch
+    return math.reduce_mean(loss)
+
+
+def semitone(tensor):
+    """
+
+    :param tensor:
+    :return:
+    """
+    return harmony(tensor, interval=1)
+
+
+def tone(tensor):
+    """
+
+    :param tensor:
+    :return:
+    """
+    return harmony(tensor, interval=2)
+
+
+def tritone(tensor):
+    """
+
+    :param tensor:
+    :return:
+    """
+    return harmony(tensor, interval=6)
 
 
 # --------------------------------------------------

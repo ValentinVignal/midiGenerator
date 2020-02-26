@@ -81,17 +81,25 @@ def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.
     """
 
     def _mono_scale(y_true, y_pred):
+        """
+
+        :param y_true: (batch, nb_steps, step_length, input_size, channels)
+        :param y_pred: (batch, nb_steps, step_length, input_size, channels)
+        :return:
+        """
         y_true_a = utils.get_activation(y_true)
         y_pred_a = utils.get_activation(y_pred)
         y_pred_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
         y_true_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
 
         loss = mono()(y_true, y_pred)
-        loss += l_scale * cost.scale_loss(y_true_a, y_pred_a,
-                                          cost_value=l_scale_cost, has_instruments_dim=False)
-        loss += l_rhythm * cost.rhythm_loss(y_true_a, y_pred_a,
-                                            cost_value=l_rhythm_cost,
-                                            take_all_steps_rhythm=take_all_steps_rhythm, has_instruments_dim=False)
+        loss += l_scale * cost.scale(tf.expand_dims(y_true_a[:, :-1], axis=1),
+                                     tf.expand_dims(y_pred_a[:, :-1], axis=1),
+                                     cost_value=l_scale_cost)
+        loss += l_rhythm * cost.rhythm(tf.expand_dims(y_true_a[:, :-1], axis=1),
+                                       tf.expand_dims(y_pred_a[:, :-1], axis=1),
+                                       cost_value=l_rhythm_cost,
+                                       take_all_steps_rhythm=take_all_steps_rhythm)
         return loss
 
     return _mono_scale
@@ -99,9 +107,11 @@ def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.
 
 def scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.loss.l_scale_cost,
           l_rhythm_cost=g.loss.l_rhythm_cost, take_all_steps_rhythm=g.loss.take_all_step_rhythm,
+          mono=False,
           *args, **kwargs):
     """
     Add the scale and rhythm reward/cost
+    :param mono:
     :param take_all_steps_rhythm:
     :param l_rhythm_cost:
     :param l_scale_cost:
@@ -121,15 +131,18 @@ def scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, l_scale_cost=g.loss.
         """
         y_true_a = utils.get_activation(y_true)
         y_pred_a = utils.get_activation(y_pred)
+        if mono:
+            y_true_a = y_true_a[:, :-1]
+            y_pred_a = y_pred_a[:, :-1]
         # y_a: (batch, nb_instruments, nb_steps, step_size, input_size)
         y_pred_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
         y_true_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
 
-        loss = l_scale * cost.scale_loss(y_true_a, y_pred_a,
-                                         cost_value=l_scale_cost)
-        loss += l_rhythm * cost.rhythm_loss(y_true_a, y_pred_a,
-                                            cost_value=l_rhythm_cost,
-                                            take_all_steps_rhythm=take_all_steps_rhythm)
+        loss = l_scale * cost.scale(y_true_a, y_pred_a,
+                                    cost_value=l_scale_cost)
+        loss += l_rhythm * cost.rhythm(y_true_a, y_pred_a,
+                                       cost_value=l_rhythm_cost,
+                                       take_all_steps_rhythm=take_all_steps_rhythm)
         return loss
 
     return _scale

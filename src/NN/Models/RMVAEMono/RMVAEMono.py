@@ -250,7 +250,7 @@ def create(
         )
         metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
     if scale:
-        losses['All_outputs'] = Loss.scale(**loss_options)
+        losses['All_outputs'] = Loss.scale(**loss_options, mono=True)
 
     # Define kld
     if model_options['kld']:
