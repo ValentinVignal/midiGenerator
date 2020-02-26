@@ -59,7 +59,10 @@ def main(args):
             loss_name=args.loss_name,
             l_scale=args.l_scale,
             l_rhythm=args.l_rhythm,
-            take_all_step_rhythm=not args.no_all_step_rhythm
+            take_all_step_rhythm=not args.no_all_step_rhythm,
+            l_semitone=args.l_semitone,
+            l_tone=args.l_tone,
+            l_tritone=args.l_tritone
         )
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,

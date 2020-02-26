@@ -191,6 +191,12 @@ class Parser(argparse.ArgumentParser):
                           help='Lambda for the rhythm loss')
         self.add_store_true(name='--no-all-step-rhythm', argtype=argtype,
                             help='Not taking all the output steps for rhythm')
+        self.add_argument('--l-semitone', type=self.get_type(argtype, float),
+                          help='the Lambda for the semitone loss')
+        self.add_argument('--l-tone', type=self.get_type(argtype, float),
+                          help='the Lambda for the tone loss')
+        self.add_argument('--l-tritone', type=self.get_type(argtype, float),
+                          help='the Lambda for the tritone loss')
 
         self.set_defaults(
             loss_name=g.loss.loss_name,
@@ -200,12 +206,18 @@ class Parser(argparse.ArgumentParser):
             self.set_defaults(
                 l_scale=g.loss.l_scale,
                 l_rhythm=g.loss.l_rhythm,
+                l_semitone=g.loss.l_semitone,
+                l_tone=g.loss.l_tone,
+                l_tritone=g.loss.l_tritone
             )
         else:
             self.set_defaults(
                 l_scale='0:4',
                 l_rhythm='0:4',
-                no_all_step_rhythm='False'
+                no_all_step_rhythm='False',
+                l_semitone='0:5',
+                l_tone='0:5',
+                l_tritone='0:5'
             )
 
     def add_create_model_args(self, argtype=ArgType.ALL):

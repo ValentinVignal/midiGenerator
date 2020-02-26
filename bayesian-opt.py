@@ -101,6 +101,15 @@ def create_dimensions(args):
     # sah
     sah_tuple = string_to_tuple(args.sah, t=string_to_bool, separator=',')
     dimensions.add_Categorical(sah_tuple, name='sah')
+    # lambda semitone
+    l_semitone_tuple = string_to_tuple(args.l_semitone, t=ten_power, separator=':')
+    dimensions.add_Real(l_semitone_tuple, name='l_semitone', prior='log-uniform')
+    # lambda tone
+    l_tone_tuple = string_to_tuple(args.l_tone, t=ten_power, separator=':')
+    dimensions.add_Real(l_tone_tuple, name='l_tone', prior='log-uniform')
+    # lambda tritone
+    l_tritone_tuple = string_to_tuple(args.l_tritone, t=ten_power, separator=':')
+    dimensions.add_Real(l_tritone_tuple, name='l_tritone', prior='log-uniform')
 
     return dimensions
 
@@ -208,7 +217,7 @@ def main(args):
 
     def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                      model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
-                     l_rhythm, take_all_step_rhythm, sah):
+                     l_rhythm, take_all_step_rhythm, sah, l_semitone, l_tone, l_tritone):
         """
         Creates a model from all the inputs == dimensions of the bayesian optimization
         """
@@ -242,7 +251,10 @@ def main(args):
             loss_name=loss_name,
             l_scale=l_scale,
             l_rhythm=l_rhythm,
-            take_all_step_rhythm=take_all_step_rhythm
+            take_all_step_rhythm=take_all_step_rhythm,
+            l_semitone=l_semitone,
+            l_tone=l_tone,
+            l_tritone=l_tritone
         )
 
         midi_generator.new_nn_model(
@@ -286,6 +298,9 @@ def main(args):
         l_rhythm = dimensions.get_value_param('l_rhythm', l)
         take_all_step_rhythm = dimensions.get_value_param('take_all_step_rhythm', l)
         sah = dimensions.get_value_param('sah', l)
+        l_semitone = dimensions.get_value_param('l_semitone', l)
+        l_tone = dimensions.get_value_param('l_tone', l)
+        l_tritone = dimensions.get_value_param('l_tritone', l)
 
         # ------------------------------ Print the information to the user ------------------------------
         s = 'Iteration ' + colored(f'{iteration}/{max_iterations}', 'yellow')
@@ -308,6 +323,9 @@ def main(args):
         s += str_hp_to_print('l_rhythm', l_rhythm, exp_format=True)
         s += str_hp_to_print('take_all_step_rhythm', take_all_step_rhythm)
         s += str_hp_to_print('sah', sah)
+        s += str_hp_to_print('l_semitone', l_semitone)
+        s += str_hp_to_print('l_tone', l_tone)
+        s += str_hp_to_print('l_tritone', l_tritone)
         print(s)
 
         # -------------------- Create the model --------------------
@@ -331,7 +349,10 @@ def main(args):
             l_scale=l_scale,
             l_rhythm=l_rhythm,
             take_all_step_rhythm=take_all_step_rhythm,
-            sah=sah
+            sah=sah,
+            l_semitone=l_semitone,
+            l_tone=l_tone,
+            l_tritone=l_tritone
         )
 
         # -------------------- Train the model --------------------
