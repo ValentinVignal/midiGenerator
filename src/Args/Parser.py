@@ -322,7 +322,7 @@ class Parser(argparse.ArgumentParser):
                 kld_annealing_start='0:0.5',
                 kld_annealing_stop='0.5:1',
                 no_kld_sum='False',
-                sah='False,True'
+                sah='False'
             )
 
     def add_generation_args(self, artype=ArgType.ALL):
