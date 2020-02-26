@@ -11,8 +11,6 @@ def get_lambdas_loss(lambdas_loss):
 lambda_loss_activation, lambda_loss_duration = get_lambdas_loss(lambdas_loss)
 l_scale = 1e-0
 l_rhythm = 1e-1
-l_scale_cost = 1e-3
-l_rhythm_cost = 1e-5
 take_all_step_rhythm = False
 
 

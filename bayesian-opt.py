@@ -94,12 +94,6 @@ def create_dimensions(args):
     # lambda rhythm
     l_rhythm_tuple = string_to_tuple(args.l_rhythm, t=ten_power, separator=':')
     dimensions.add_Real(l_rhythm_tuple, name='l_rhythm', prior='log-uniform')
-    # lambda scale cost
-    l_scale_cost_tuple = string_to_tuple(args.l_scale_cost, t=ten_power, separator=':')
-    dimensions.add_Real(l_scale_cost_tuple, name='l_scale_cost', prior='log-uniform')
-    # lambda rhythm cost
-    l_rhythm_cost_tuple = string_to_tuple(args.l_rhythm_cost, t=ten_power, separator=':')
-    dimensions.add_Real(l_rhythm_cost_tuple, name='l_rhythm_cost', prior='log-uniform')
     # No all step rhythm
     take_all_step_rhythm_tuple = string_to_tuple(args.no_all_step_rhythm, t=lambda x: not string_to_bool(x),
                                                  separator=',')
@@ -214,7 +208,7 @@ def main(args):
 
     def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                      model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
-                     l_rhythm, l_scale_cost, l_rhythm_cost, take_all_step_rhythm, sah):
+                     l_rhythm, take_all_step_rhythm, sah):
         """
         Creates a model from all the inputs == dimensions of the bayesian optimization
         """
@@ -248,8 +242,6 @@ def main(args):
             loss_name=loss_name,
             l_scale=l_scale,
             l_rhythm=l_rhythm,
-            l_scale_cost=l_scale_cost,
-            l_rhythm_cost=l_rhythm_cost,
             take_all_step_rhythm=take_all_step_rhythm
         )
 
@@ -292,8 +284,6 @@ def main(args):
         loss_name = dimensions.get_value_param('loss_name', l)
         l_scale = dimensions.get_value_param('l_scale', l)
         l_rhythm = dimensions.get_value_param('l_rhythm', l)
-        l_scale_cost = dimensions.get_value_param('l_scale_cost', l)
-        l_rhythm_cost = dimensions.get_value_param('l_rhythm_cost', l)
         take_all_step_rhythm = dimensions.get_value_param('take_all_step_rhythm', l)
         sah = dimensions.get_value_param('sah', l)
 
@@ -316,8 +306,6 @@ def main(args):
         s += str_hp_to_print('loss_name', loss_name)
         s += str_hp_to_print('l_scale', l_scale, exp_format=True)
         s += str_hp_to_print('l_rhythm', l_rhythm, exp_format=True)
-        s += str_hp_to_print('l_scale_cost', l_scale_cost, exp_format=True)
-        s += str_hp_to_print('l_rhythm_cost', l_rhythm_cost, exp_format=True)
         s += str_hp_to_print('take_all_step_rhythm', take_all_step_rhythm)
         s += str_hp_to_print('sah', sah)
         print(s)
@@ -342,8 +330,6 @@ def main(args):
             loss_name=loss_name,
             l_scale=l_scale,
             l_rhythm=l_rhythm,
-            l_scale_cost=l_scale_cost,
-            l_rhythm_cost=l_rhythm_cost,
             take_all_step_rhythm=take_all_step_rhythm,
             sah=sah
         )

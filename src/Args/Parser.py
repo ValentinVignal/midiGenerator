@@ -189,10 +189,6 @@ class Parser(argparse.ArgumentParser):
                           help='Lambda for scale loss')
         self.add_argument('--l-rhythm', type=self.get_type(argtype, float),
                           help='Lambda for the rhythm loss')
-        self.add_argument('--l-scale-cost', type=self.get_type(argtype, float),
-                          help='The cost for an out of scale note')
-        self.add_argument('--l-rhythm-cost', type=self.get_type(argtype, float),
-                          help='The cost for an out of rhythm note')
         self.add_store_true(name='--no-all-step-rhythm', argtype=argtype,
                             help='Not taking all the output steps for rhythm')
 
@@ -204,15 +200,11 @@ class Parser(argparse.ArgumentParser):
             self.set_defaults(
                 l_scale=g.loss.l_scale,
                 l_rhythm=g.loss.l_rhythm,
-                l_scale_cost=g.loss.l_scale_cost,
-                l_rhythm_cost=g.loss.l_rhythm_cost
             )
         else:
             self.set_defaults(
                 l_scale='0:4',
                 l_rhythm='0:4',
-                l_scale_cost='0:4',
-                l_rhythm_cost='0:4',
                 no_all_step_rhythm='False'
             )
 

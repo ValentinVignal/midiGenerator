@@ -10,7 +10,7 @@ from . import utils
 from src import GlobalVariables as g
 
 
-def scale(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None):
+def scale(y_true_a, y_pred_a):
     """
 
     :param max_reward:
@@ -23,19 +23,26 @@ def scale(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None):
     true_projection = tf.reduce_sum(y_true_a, axis=[1, 3], keepdims=True)  # (batch, 1, nb_steps, 1, input_size)
     pred_projection = tf.reduce_sum(y_pred_a, axis=[1, 3], keepdims=True)  # (batch, 1, nb_steps, 1, input_size)
     # on scale
-    true_scale_projection = utils.to_scale(true_projection, axis=-1)
-    pred_scale_projection = utils.to_scale(pred_projection, axis=-1)
+    true_scale_projection = utils.to_scale(
+        true_projection, axis=-1
+    )        # (batch, 1=nb_instruments, nb_steps, 1=step_length, 12)
+    pred_scale_projection = utils.to_scale(
+        pred_projection, axis=-1
+    )        # (batch, 1=nb_instruments, nb_steps, 1=step_length, 12)
 
-    if max_reward is None:
-        w = 1 / tf.reduce_sum(true_scale_projection, axis=4, keepdims=True)  # (batch, 1, nb_steps, 1, 1) (can be nan)
-    else:
-        w = max_reward / math.reduce_max(true_scale_projection, axis=4,
-                                         keepdims=True)  # (batch, 1, nb_steps, 1, 1) (can be nan)
+    nb_zeros = utils.count(
+        true_scale_projection, 0, axis=[-1], keepdims=True
+    )       # (batch, 1=nb_instruments, nb_steps, 1=step_length, 1)
+    cost_value = 1 / nb_zeros       # Nan/inf values won't be used
+
+    w = 1 / tf.reduce_sum(true_scale_projection, axis=4, keepdims=True)  # (batch, 1, nb_steps, 1, 1) (can be inf)
+    # If there is an inf value, it means there is no note played in truth
+    # No note played in truth -> Can't construct a scale -> no loss
+
     cost_reward = - true_scale_projection * w  # (batch, 1, nb_steps, 1, 1)  (can be nan)
-    cost_reward = utils.replace_value(tensor=cost_reward,
-                                      old_value=float(0),
-                                      new_value=float(cost_value))  # (batch, 1, nb_steps, 1, 1)  (can be nan)
+    cost_reward = tf.where(tf.equal(float(0), cost_reward), tf.cast(cost_value, tf.float32), cost_reward)
     # If w is nan, it means there were no notes in the step, then, there is no loss or reward to add for this step
+    cost_reward = utils.non_inf(with_nan=cost_reward, var_to_change=cost_reward)
     cost_reward = utils.non_nan(with_nan=cost_reward, var_to_change=cost_reward)
 
     # Loss
@@ -44,7 +51,7 @@ def scale(y_true_a, y_pred_a, cost_value=g.loss.l_scale_cost, max_reward=None):
     return tf.reduce_mean(loss)
 
 
-def rhythm(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
+def rhythm(y_true_a, y_pred_a,
            take_all_steps_rhythm=g.loss.take_all_step_rhythm):
     """
 
@@ -60,19 +67,20 @@ def rhythm(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
     # (if take_all_steps_axis then nb_steps = 1 after these 2 lines)
     true_projection = tf.reduce_sum(y_true_a, axis=sum_axis, keepdims=True)  # (batch, 1, nb_steps, step_size, 1)
     pred_projection = tf.reduce_sum(y_pred_a, axis=sum_axis, keepdims=True)  # (batch, 1, nb_steps, step_size, 1)
-    # on scale
-    if max_reward is None:
-        w = 1 / tf.reduce_sum(true_projection, axis=3,
-                              keepdims=True)  # (batch, 1, nb_steps, 1=step_size, 1) (can be nan)
-    else:
-        w = max_reward / math.reduce_max(true_projection, axis=3,
-                                         keepdims=True)  # (batch, 1, nb_steps, 1, 1) (can be nan)
+
+    nb_zeros = utils.count(
+        true_projection, 0, axis=[-2], keepdims=True
+    )       # (batch, 1=nb_instruments, nb_steps, 1=step_length, 1)
+    cost_value = 1 / nb_zeros       # Nan/inf values won't be used
+
+    # on rhythm
+    w = 1 / tf.reduce_sum(true_projection, axis=3,
+                          keepdims=True)  # (batch, 1, nb_steps, 1=step_size, 1) (can be nan)
     cost_reward = - true_projection * w  # (batch, 1, nb_steps, 1, 1)  (can be nan)
-    cost_reward = utils.replace_value(tensor=cost_reward,
-                                      old_value=float(0),
-                                      new_value=float(cost_value))  # (batch, 1, nb_steps, 1, 1)  (can be nan)
+    cost_reward = tf.where(tf.equal(float(0), cost_reward), tf.cast(cost_value, tf.float32), cost_reward)
     # If w is nan, it means there were no notes in the step, then, there is no loss or reward to add for this step
     cost_reward = utils.non_nan(with_nan=cost_reward, var_to_change=cost_reward)
+    cost_reward = utils.non_inf(with_nan=cost_reward, var_to_change=cost_reward)
 
     # Los
     loss = pred_projection * cost_reward

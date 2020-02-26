@@ -17,6 +17,10 @@ def non_nan(with_nan, var_to_change):
     return tf.where(math.is_nan(with_nan), tf.zeros_like(var_to_change), var_to_change)
 
 
+def non_inf(with_nan, var_to_change):
+    return tf.where(math.is_inf(with_nan), tf.zeros_like(var_to_change), var_to_change)
+
+
 def replace_value(tensor, old_value, new_value):
     return tf.where(tf.equal(old_value, tensor), new_value * tf.ones_like(tensor), tensor)
 
@@ -47,3 +51,10 @@ def to_scale(tensor, axis=-1):
     )  # (batch, 1=nb_instruments, nb_steps, 1=step_size, 12)
 
     return scale
+
+
+def count(tensor, val, axis=None, keepdims=False):
+    elements_equal_to_value = tf.equal(tensor, val)
+    as_ints = tf.cast(elements_equal_to_value, tf.int32)
+    count = tf.reduce_sum(as_ints, axis=axis, keepdims=keepdims)
+    return count
