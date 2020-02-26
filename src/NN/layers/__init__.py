@@ -8,5 +8,6 @@ from . import rnn
 from . import vae
 from . import shapes
 from . import wrapper
+from . import music
 
 from .KerasLayer import KerasLayer

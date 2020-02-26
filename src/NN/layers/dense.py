@@ -32,6 +32,7 @@ class DenseBlock(KerasLayer):
             units=self.units,
             dropout=self.dropout
         ))
+        return config
 
     def build(self, input_shape):
         """

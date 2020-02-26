@@ -18,8 +18,6 @@ from src import GlobalVariables as g
 def scale(y_true_a, y_pred_a):
     """
 
-    :param max_reward:
-    :param cost_value:
     :param y_true_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
     :param y_pred_a: activation, no loss (batch, nb_instruments, nb_steps, step_size, input_size)
     :return:
@@ -115,7 +113,8 @@ def n_tone(tensor, interval):
     tensor_shift = tf.roll(tensor, shift=interval, axis=1)      # (batch, 12)
     # Scalar product
     loss = math.reduce_sum(tensor * tensor_shift, axis=1)       # batch
-    return math.reduce_mean(loss)
+    loss = math.reduce_mean(loss)
+    return loss
 
 
 def semitone(tensor):
@@ -164,7 +163,7 @@ def harmony(*args, l_semitone=g.loss.l_semitone, l_tone=g.loss.l_tone, l_tritone
         loss = l_semitone * semitone(tensor)
         loss += l_tone * tone(tensor)
         loss += l_tritone * tritone(tensor)
-        return loss
+        return math.reduce_mean(loss)
 
     return _harmony
 

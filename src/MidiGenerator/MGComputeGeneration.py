@@ -42,7 +42,6 @@ class MGComputeGeneration(MGInit):
         if mono:
             argmax = np.argmax(array, axis=1)  # (nb_instruments, length, channels)
             argmax_truth = np.argmax(truth, axis=1)  # (nb_instruments, length, channels)
-            print('argmax', argmax.shape, argmax_truth.shape)
             accuracies_inst = np.count_nonzero(argmax == argmax_truth, axis=(1, 2)) / argmax[0].size
         else:
             accuracies_inst = np.count_nonzero(array == truth, axis=(1, 2, 3)) / array[0].size
@@ -94,7 +93,6 @@ class MGComputeGeneration(MGInit):
                                               seed_length=self.nb_steps * self.step_length,
                                               mono=self.mono,
                                               replicate=replicate)
-        print('generated_array', generated_array.shape)
         if array_truth is not None:
             accuracy, accuracies_inst = self.accuracy_generation(generated_array, array_truth, mono=self.mono)
             print(f'Accuracy of the generation {name} :', colored(accuracies_inst, 'magenta'), ', overall :',

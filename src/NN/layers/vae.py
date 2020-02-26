@@ -219,7 +219,7 @@ class KLD(KerasLayer):
         return self.weigth * Loss.cost.kld(mean, std, sum_axis=self.sum_axis_with_batch)
 
     def compute_output_shape(self, input_shape):
-        return 1,
+        return 0,
 
 
 class KLDAnnealing(KerasLayer):

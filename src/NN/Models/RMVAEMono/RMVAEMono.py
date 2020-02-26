@@ -84,7 +84,10 @@ def create(
         loss_name='mono',
         l_scale=g.loss.l_scale,
         l_rhythm=g.loss.l_rhythm,
-        take_all_step_rhythm=g.loss.take_all_step_rhythm
+        take_all_step_rhythm=g.loss.take_all_step_rhythm,
+        l_semiton=g.loss.l_semitone,
+        l_tone=g.loss.l_tone,
+        l_tritone=g.loss.l_tritone
     )
     dictionaries.set_default(loss_options, loss_options_default)
 
@@ -234,7 +237,13 @@ def create(
         all_outputs = mlayers.shapes.Stack(name='All_outputs', axis=0)(outputs)
         # all_outputs: (batch, nb_instruments, nb_steps, step_size, input_size, channels=1)
         outputs = outputs + [all_outputs]
-        harmony_loss = Loss.cost.harmony(**loss_options)(all_outputs[:, :, :, :, :-1, 0])
+        # harmony_loss = Loss.cost.harmony(**loss_options)(all_outputs[:, :, :, :, :-1, 0])
+        harmony = mlayers.music.Harmony(
+            l_semitone=loss_options['l_semitone'],
+            l_tone=loss_options['l_tone'],
+            l_tritone=loss_options['l_tritone'],
+            mono=True
+        )(all_outputs)
 
     model = RMVAEMono(inputs=inputs_midi + [input_mask], outputs=outputs,
                       scale=scale, replicate=replicate)
@@ -257,7 +266,7 @@ def create(
 
     # harmony
     if scale:
-        model.add_loss(harmony_loss)
+        model.add_loss(harmony)
 
     # ------------------ Metrics -----------------
 
@@ -271,7 +280,7 @@ def create(
     if model_options['kld']:
         model.add_metric(kld, name='kld', aggregation='mean')
     if scale:
-        model.add_metric(harmony_loss, name='harmony', aggregation='mean')
+        model.add_metric(harmony, name='harmony', aggregation='mean')
 
     return dict(
         model=model,
