@@ -33,9 +33,8 @@ def to_scale(tensor, axis=-1):
     absolute_axis = axis if axis >= 0 else nb_axis + axis  # absolute_axis >= 0
     scale_projector = math.mod(tf.range(0, input_size), 12)  # [0, 1, 2, ..., 10, 11, 0, 1, ...]
     num_segments = math.reduce_max(scale_projector) + 1  # min(12, input_size)
-    first_transpose_axis = math.mod(tf.range(absolute_axis, absolute_axis + nb_axis), nb_axis)  # [4, 0, 1, 2, 3]
-    second_transpose_axis = math.mod(tf.range(nb_axis - absolute_axis, 2 * nb_axis - absolute_axis),
-                                     nb_axis)  # [1, 2, 3, 4, 0]
+    first_transpose_axis = tf.roll(tf.range(nb_axis), shift=-absolute_axis, axis=0)     # [4, 0, 1, 2, 3]
+    second_transpose_axis = tf.roll(tf.range(nb_axis), shift=absolute_axis, axis=0)     # [1, 2, 3, 4, 0]
 
     scale = tf.transpose(
         math.unsorted_segment_sum(  # unsorted sum works only on the 1st axis

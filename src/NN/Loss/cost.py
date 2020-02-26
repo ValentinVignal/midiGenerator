@@ -80,6 +80,21 @@ def rhythm(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
     return tf.reduce_mean(loss)
 
 
+def harmony(y_true_a, y_pred_a, interval):
+    """
+
+    :param y_true_a: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
+    :param y_pred_a: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
+    :param interval:
+    :return:
+    """
+    y_true_scale = utils.to_scale(y_true_a, axis=-1)        # (batch, nb_instruments, nb_steps, step_size, 12)
+    y_pred_scale = utils.to_scale(y_pred_a, axis=-1)        # (batch, nb_instruments, nb_steps, step_size, 12)
+
+
+
+
+
 
 # --------------------------------------------------
 # ------------------- KL Divergence --------------------
