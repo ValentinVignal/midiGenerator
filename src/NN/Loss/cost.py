@@ -80,20 +80,46 @@ def rhythm(y_true_a, y_pred_a, cost_value=g.loss.l_rhythm_cost, max_reward=None,
     return tf.reduce_mean(loss)
 
 
-def harmony(y_true_a, y_pred_a, interval):
+def harmony(tensor, interval):
     """
 
-    :param y_true_a: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
-    :param y_pred_a: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
+    :param tensor: activation, (batch, nb_instruments, nb_steps, step_size, input_size) (no mono silent note)
     :param interval:
     :return:
     """
-    y_true_scale = utils.to_scale(y_true_a, axis=-1)        # (batch, nb_instruments, nb_steps, step_size, 12)
-    y_pred_scale = utils.to_scale(y_pred_a, axis=-1)        # (batch, nb_instruments, nb_steps, step_size, 12)
+    tensor = utils.to_scale(tensor, axis=-1)        # (batch, nb_instruments, nb_steps, step_size, 12)
+    tensor = math.reduce_sum(tensor, axis=(1, 2, 3))        # (batch, 12)
+    tensor_shift = tf.roll(tensor, shift=interval, axis=1)      # (batch, 12)
+    # Scalar product
+    loss = math.reduce_sum(tensor * tensor_shift, axis=1)       # batch
+    return math.reduce_mean(loss)
 
 
+def semitone(tensor):
+    """
+
+    :param tensor:
+    :return:
+    """
+    return harmony(tensor, interval=1)
 
 
+def tone(tensor):
+    """
+
+    :param tensor:
+    :return:
+    """
+    return harmony(tensor, interval=2)
+
+
+def tritone(tensor):
+    """
+
+    :param tensor:
+    :return:
+    """
+    return harmony(tensor, interval=6)
 
 
 # --------------------------------------------------
