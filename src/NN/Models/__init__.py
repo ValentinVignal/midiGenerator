@@ -10,8 +10,8 @@ from_name = dict(
     AEMonoRep=AEMonoRep.create_model,
     RMVAEMono=RMVAEMono.get_create(replicate=False, scale=False),
     RMVAEMonoRep=RMVAEMono.get_create(replicate=True, scale=False),
-    RMVAEScaleMono=RMVAEMono.get_create(replicate=False, scale=True),
-    RMVAEScaleMonoRep=RMVAEMono.get_create(replicate=True, scale=True)
+    RMVAESMono=RMVAEMono.get_create(replicate=False, scale=True),
+    RMVAESMonoRep=RMVAEMono.get_create(replicate=True, scale=True)
 
 )
 
@@ -20,8 +20,8 @@ param_folder_from_name = dict(
     AEMonoRep='AEMono',
     RMVAEMono=os.path.join('RMVAEMono', 'params'),
     RMVAEMonoRep=os.path.join('RMVAEMono', 'params'),
-    RMVAEScaleMono=os.path.join('RMVAEMono', 'params'),
-    RMVAEScaleMonoRep=os.path.join('RMVAEMono', 'params')
+    RMVAESMono=os.path.join('RMVAEMono', 'params'),
+    RMVAESMonoRep=os.path.join('RMVAEMono', 'params')
 )
 
 sequences = dict(
@@ -29,8 +29,8 @@ sequences = dict(
     AEMonoRep=Sequences.AllInstSequence.getter(replicate=True),
     RMVAEMono=Sequences.MissingInstSequence.getter(replicate=False),
     RMVAEMonoRep=Sequences.MissingInstSequence.getter(replicate=True),
-    RMVAEScaleMono=Sequences.MissingInstSequence.getter(replicate=False, scale=True),
-    RMVAEScaleMonoRep=Sequences.MissingInstSequence.getter(replicate=True, scale=True)
+    RMVAESMono=Sequences.MissingInstSequence.getter(replicate=False, scale=True),
+    RMVAESMonoRep=Sequences.MissingInstSequence.getter(replicate=True, scale=True)
 )
 
 needs_mask = dict(
@@ -38,7 +38,7 @@ needs_mask = dict(
     AEMonoRep=False,
     RMVAEMono=True,
     RMVAEMonoRep=True,
-    RMVAEScaleMono=True,
-    RMVAEScaleMonoRep=True
+    RMVAESMono=True,
+    RMVAESMonoRep=True
 )
 
