@@ -50,7 +50,8 @@ class KerasNeuralNetwork:
             write_graph=True,
             write_images=True,
             # embedding_freq=0.5,
-            # write_grad=True
+            histogram_freq=0.2,
+            write_grads=True
         )
         if checkpoint:
             self.checkpoint_path = self.get_checkpoint_path()
