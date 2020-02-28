@@ -14,7 +14,7 @@ def get_colors(n):
     for i in range(len(colors_rgb)):  # Make a light color
         m = min(colors_rgb[i])
         M = max(colors_rgb[i])
-        if M <= 100:  # If the color is too dark
+        if M <= 120:  # If the color is too dark
             for j in range(3):
                 if colors_rgb[i][j] == M:
                     colors_rgb[i][j] = min(50 + 3 * colors_rgb[i][j], 255)

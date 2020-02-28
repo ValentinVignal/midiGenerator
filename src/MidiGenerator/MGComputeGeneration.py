@@ -92,7 +92,9 @@ class MGComputeGeneration(MGInit):
                                               name=name,
                                               seed_length=self.nb_steps * self.step_length,
                                               mono=self.mono,
-                                              replicate=replicate)
+                                              replicate=replicate,
+                                              notes_range=self.notes_range,
+                                              step_length=self.step_length)
         if array_truth is not None:
             accuracy, accuracies_inst = self.accuracy_generation(generated_array, array_truth, mono=self.mono)
             print(f'Accuracy of the generation {name} :', colored(accuracies_inst, 'magenta'), ', overall :',
@@ -110,7 +112,9 @@ class MGComputeGeneration(MGInit):
                                                       name=f'{name}_truth',
                                                       seed_length=self.nb_steps * self.step_length,
                                                       mono=self.mono,
-                                                      replicate=replicate)
+                                                      replicate=replicate,
+                                                      notes_range=self.notes_range,
+                                                      step_length=self.step_length)
             return accuracy, accuracies_inst
         return None, [None for _ in range(self.nb_instruments)]
 
@@ -137,7 +141,9 @@ class MGComputeGeneration(MGInit):
             mono=self.mono,
             replicate=replicate,
             titles=titles,
-            subtitles=subtitles
+            subtitles=subtitles,
+            notes_range=self.notes_range,
+            step_length=self.step_length
         )
 
     def get_mask(self, nb_instruments=None, batch_size=1):

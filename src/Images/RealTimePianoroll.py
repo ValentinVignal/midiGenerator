@@ -2,12 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing as mp
 
+from src import Images
+
 
 class RealTimePianoroll:
     """
     This class is used to plot some pianoroll to the user as fast as possible
 
     """
+
     def __init__(self, notes_range=None):
         """
 
@@ -15,13 +18,14 @@ class RealTimePianoroll:
                 0 : A
                 87 : C
         """
-        self.piano = None if notes_range is None else self.get_piano(notes_range)
+        self.piano = None if notes_range is None else Images.pianoroll.piano(notes_range)  # self.get_piano(notes_range)
         self.plot_pipe, plotter_pipe = mp.Pipe()
         self.plotter = ProcessPlotter()
         self.plot_process = mp.Process(
             target=self.plotter, args=(plotter_pipe,), daemon=True)
         self.plot_process.start()
 
+    """
     @staticmethod
     def get_piano(notes_range):
         piano = 255 * np.ones((notes_range[1] - notes_range[0], 4, 3), dtype=np.int)       # (input_size, l, 3)
@@ -29,6 +33,7 @@ class RealTimePianoroll:
             if note % 12 in [1, 4, 6, 9, 11]:   # (A#, C#, D#, F#, G#)
                 piano[note - notes_range[0]] = 0
         return np.flip(piano, axis=0)
+    """
 
     def show_pianoroll(self, pianoroll):
         if self.piano is not None:
@@ -45,6 +50,7 @@ class ProcessPlotter:
     need to be all in the same Thread...
     This class creates a pipe to communicate and a different Thread to draw all the images there.
     """
+
     def __init__(self):
         self.array = np.zeros((10, 10, 3)).astype(np.int)
 
@@ -54,7 +60,7 @@ class ProcessPlotter:
     def call_back(self):
         while self.pipe.poll():
             command = self.pipe.recv()
-            if command is None:     # Special value to close the pipe and delete the class
+            if command is None:  # Special value to close the pipe and delete the class
                 self.terminate()
                 break
             else:

@@ -42,6 +42,7 @@ def save_array_plt(file_name, array):
     plt.imshow(array.astype(np.int))
     plt.title(file_name.stem)
     plt.savefig(file_name)
+    plt.close()
 
 
 def save_arrays(arrays, file_name, titles=None, subtitles=None):
@@ -60,9 +61,10 @@ def save_arrays(arrays, file_name, titles=None, subtitles=None):
         if titles is not None:
             title = titles[i]
             if subtitles is not None:
-                title += f'\n{subtitles[i]}'
-            axs[i].set_title(title)
+                title += f'  ;  {subtitles[i]}'
+            axs[i].set_title(title, fontsize='small')
     plt.savefig(file_name)
+    plt.close()
 
 
 
