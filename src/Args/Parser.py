@@ -281,6 +281,8 @@ class Parser(argparse.ArgumentParser):
                             help='To not sum through time for the KLD')
         self.add_store_true(name='--sah', argtype=argtype,
                             help='use an attention head after the first layer of LSTM')
+        self.add_store_true(name='--no-rpoe', argtype=argtype,
+                            help='To disable to give previous poe to next step')
 
         self.set_defaults(
             epochs_drop=g.nn.epochs_drop,
@@ -300,12 +302,13 @@ class Parser(argparse.ArgumentParser):
                 dropout_r=g.nn.dropout_r,
                 all_sequence=g.nn.all_sequence,
                 lstm_state=g.nn.lstm_state,
-                no_sampling=False,
-                no_kld=False,
+                no_sampling=not g.nn.sampling,
+                no_kld=not g.nn.kld,
                 kld_annealing_start=g.nn.kld_annealing_start,
                 kld_annealing_stop=g.nn.kld_annealing_stop,
-                no_kld_sum=False,
-                sah=g.nn.sah
+                no_kld_sum=not g.nn.kld_sum,
+                sah=g.nn.sah,
+                no_rpoe=not g.nn.rpoe
             )
         else:
             self.set_defaults(
@@ -322,7 +325,8 @@ class Parser(argparse.ArgumentParser):
                 kld_annealing_start='0:0.5',
                 kld_annealing_stop='0.5:1',
                 no_kld_sum='False',
-                sah='False'
+                sah='False',
+                no_rpoe='False,True'
             )
 
     def add_generation_args(self, artype=ArgType.ALL):

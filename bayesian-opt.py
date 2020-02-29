@@ -110,6 +110,9 @@ def create_dimensions(args):
     # lambda tritone
     l_tritone_tuple = string_to_tuple(args.l_tritone, t=ten_power, separator=':')
     dimensions.add_Real(l_tritone_tuple, name='l_tritone', prior='log-uniform')
+    # rpoe
+    rpoe_tuple = string_to_tuple(args.no_rpoe, t=lambda x: not string_to_bool(x), separator=',')
+    dimensions.add_Categorical(rpoe_tuple, name='rpoe')
 
     return dimensions
 
@@ -217,7 +220,7 @@ def main(args):
 
     def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                      model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
-                     l_rhythm, take_all_step_rhythm, sah, l_semitone, l_tone, l_tritone):
+                     l_rhythm, take_all_step_rhythm, sah, l_semitone, l_tone, l_tritone, rpoe):
         """
         Creates a model from all the inputs == dimensions of the bayesian optimization
         """
@@ -244,7 +247,8 @@ def main(args):
             kld_annealing_start=kld_annealing_start,
             kld_annealing_stop=kld_annealing_stop,
             kld_sum=kld_sum,
-            sah=sah
+            sah=sah,
+            rpoe=rpoe
         )
 
         loss_options = dict(
@@ -301,6 +305,7 @@ def main(args):
         l_semitone = dimensions.get_value_param('l_semitone', l)
         l_tone = dimensions.get_value_param('l_tone', l)
         l_tritone = dimensions.get_value_param('l_tritone', l)
+        rpoe = dimensions.get_value_param('rpoe', l)
 
         # ------------------------------ Print the information to the user ------------------------------
         s = 'Iteration ' + colored(f'{iteration}/{max_iterations}', 'yellow')
@@ -323,9 +328,10 @@ def main(args):
         s += str_hp_to_print('l_rhythm', l_rhythm, exp_format=True)
         s += str_hp_to_print('take_all_step_rhythm', take_all_step_rhythm)
         s += str_hp_to_print('sah', sah)
-        s += str_hp_to_print('l_semitone', l_semitone)
-        s += str_hp_to_print('l_tone', l_tone)
-        s += str_hp_to_print('l_tritone', l_tritone)
+        s += str_hp_to_print('l_semitone', l_semitone, exp_format=True)
+        s += str_hp_to_print('l_tone', l_tone, exp_format=True)
+        s += str_hp_to_print('l_tritone', l_tritone, exp_format=True)
+        s += str_hp_to_print('rpoe', rpoe)
         print(s)
 
         # -------------------- Create the model --------------------
@@ -352,7 +358,8 @@ def main(args):
             sah=sah,
             l_semitone=l_semitone,
             l_tone=l_tone,
-            l_tritone=l_tritone
+            l_tritone=l_tritone,
+            rpoe=rpoe
         )
 
         # -------------------- Train the model --------------------

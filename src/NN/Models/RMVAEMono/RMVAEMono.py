@@ -76,7 +76,8 @@ def create(
         kld_annealing_start=g.nn.kld_annealing_start,
         kld_annealing_stop=g.nn.kld_annealing_stop,
         kld_sum=g.nn.kld_sum,
-        sah=g.nn.sah
+        sah=g.nn.sah,
+        rpoe=g.nn.rpoe
     )
     dictionaries.set_default(model_options, model_options_default)
 
@@ -179,7 +180,7 @@ def create(
     means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)  # (batch, nb_instruments, nb_steps, size)
     stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)  # (batch, nb_instruments, nb_steps, size)
 
-    if True:
+    if model_options['rpoe']:
         poe = mlayers.vae.RPoeMask(axis=0)([means, stds, input_mask])       # List(2)[(batch, nb_steps, size)]
     else:
         poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
