@@ -127,6 +127,90 @@ class ProductOfExpertMask(KerasLayer):
         product_mean = math.reduce_sum(mean * T, axis=self.axis_with_batch) / (
                 math.reduce_sum(T, axis=self.axis_with_batch) + self.eps)
         product_std = math.sqrt(1 / (math.reduce_sum(T, axis=self.axis_with_batch) + self.eps))
+        return [product_mean, product_std]      # List(2)[(batch, nb_steps?, size)]
+
+
+class RPoeMask(KerasLayer):
+    """
+    Give the previous PoE to the next step
+    """
+    def __init__(self, axis=0, eps=1e-8, *args, **kwargs):
+        """
+
+        :param axis: (not batch in it)
+        """
+        super(RPoeMask, self).__init__(*args, **kwargs)
+        # ---------- Raw parameters ----------
+        self.axis = axis
+        self.eps = eps
+
+        self.axis_with_batch = axis + 1
+        self.poe_mask = ProductOfExpertMask(axis=axis, eps=eps)
+        self.nb_steps = None
+
+    def get_config(self):
+        config = super(RPoeMask, self).get_config()
+        config.update(dict(
+            axis=self.axis,
+            eps=self.eps
+        ))
+        return config
+
+    def build(self, input_shape):
+        """
+        :param input_shape: List(2)[
+                            (batch, modalities, nb_steps, size)
+                        ] + List[1](batch, modalities, nb_steps)
+        :return:
+        """
+        super(RPoeMask, self).build(input_shape)
+        self.poe_mask.build(input_shape)
+        self.nb_steps = input_shape[0][2]
+
+    def compute_output_shape(self, input_shape):
+        """
+
+        :param input_shape: List(2)[
+                            (batch, modalities, nb_steps?, size)
+                        ] + List[1](batch, modalities, nb_steps?)
+        :return: List(2)[
+                    (batch, nb_steps?, size)
+                ]
+        """
+        input_shape = input_shape[0]
+        return [(*input_shape[:self.axis_with_batch], *input_shape[self.axis_with_batch + 1:]) for i in range(2)]
+
+    def call(self, inputs):
+        """
+
+        :param inputs: List(2)[(batch, modalities, nb_steps, size)] + List(1)[(batch, modalities, nb_steps)]
+            ([means, std])
+        :return:
+        """
+        mean_list = [tf.zeros_like(inputs[0][:, 0, 0])]     # List(nb_steps + 1)[(batch, size)]
+        std_list = [tf.zeros_like(inputs[1][:, 0, 0])]      # List(nb_steps + 1)[(batch, size)]
+        for step in range(self.nb_steps):
+            input_mean, input_std, input_mask = inputs[0][:, :, step], inputs[1][:, :, step], inputs[2][:, :, step]
+            # (batch, modalities, size) * 2 , (batch, modalities)
+            input_mean = tf.concat(
+                [tf.expand_dims(mean_list[-1], axis=1), input_mean],
+                axis=1
+            )      # (batch, modalities+1, size)
+            input_std = tf.concat(
+                [tf.expand_dims(std_list[-1], axis=1), input_std],
+                axis=1
+            )        # (batch, modalities+1, size)
+            if step == 0:
+                input_mask = tf.concat([tf.zeros_like(inputs[2][:, 0:1, 0]), input_mask], axis=1)
+                # (batch, modalities+1)
+            else:
+                input_mask = tf.concat([tf.ones_like(inputs[2][:, 0:1, 0]), input_mask], axis=1)
+                # (batch, modalities+1)
+            mean, std = self.poe_mask([input_mean, input_std, input_mask])      # 2 * (batch, size)
+            mean_list.append(mean)
+            std_list.append(std)
+        product_mean = tf.stack(mean_list[1:], axis=1)      # (batch, nb_steps, size)
+        product_std = tf.stack(std_list[1:], axis=1)      # (batch, nb_steps, size)
         return [product_mean, product_std]
 
 

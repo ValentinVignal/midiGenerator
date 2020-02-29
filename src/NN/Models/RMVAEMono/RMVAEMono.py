@@ -179,7 +179,10 @@ def create(
     means = mlayers.shapes.Stack(axis=(1, 0))(means_step_inst)  # (batch, nb_instruments, nb_steps, size)
     stds = mlayers.shapes.Stack(axis=(1, 0))(stds_step_inst)  # (batch, nb_instruments, nb_steps, size)
 
-    poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
+    if True:
+        poe = mlayers.vae.RPoeMask(axis=0)([means, stds, input_mask])       # List(2)[(batch, nb_steps, size)]
+    else:
+        poe = mlayers.vae.ProductOfExpertMask(axis=0)([means, stds, input_mask])  # List(2)[(batch, nb_steps, size)]
     if model_options['kld']:
         sum_axis = 0 if model_options['kld_sum'] else None
         kld = mlayers.vae.KLDAnnealing(

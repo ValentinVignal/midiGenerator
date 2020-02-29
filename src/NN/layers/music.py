@@ -36,7 +36,7 @@ class Harmony(KerasLayer):
         return config
 
     def build(self, inputs_shape):
-        pass
+        super(Harmony, self).build(inputs_shape)
 
     def call(self, inputs):
         """
