@@ -43,7 +43,7 @@ def create(
         # Mandatory arguments
         input_param, model_param, nb_steps, step_length, optimizer, model_options={}, loss_options={},
         # Hidden arguments
-        replicate=False, scale=False
+        replicate=False, music=False
     ):
     """
 
@@ -62,7 +62,7 @@ def create(
 
     # Hidden_arguments
     :param replicate: Bool: Indicates if this is a model to replicate the input
-    :param scale: Bool, indicate if we want to use the concatenated outputs at the end
+    :param music: Bool, indicate if we want to use the concatenated outputs at the end
 
     :return: the neural network:
     """
@@ -237,7 +237,7 @@ def create(
                outputs_inst_steps]  # List(nb_instruments)[(batch, nb_steps, step_length, size, channel=1)]
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]
 
-    if scale:
+    if music:
         all_outputs = mlayers.shapes.Stack(name='All_outputs', axis=0)(outputs)
         # all_outputs: (batch, nb_instruments, nb_steps, step_size, input_size, channels=1)
         outputs = outputs + [all_outputs]
@@ -250,7 +250,7 @@ def create(
         )(all_outputs)
 
     model = RMVAEMono(inputs=inputs_midi + [input_mask], outputs=outputs,
-                      scale=scale, replicate=replicate)
+                      scale=music, replicate=replicate)
 
     # ------------------ Losses -----------------
     # Define losses dict for outputs and metric
@@ -261,7 +261,7 @@ def create(
             **loss_options
         )
         metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
-    if scale:
+    if music:
         losses['All_outputs'] = Loss.scale(**loss_options, mono=True)
 
     # Define kld
@@ -269,7 +269,7 @@ def create(
         model.add_loss(kld)
 
     # harmony
-    if scale:
+    if music:
         model.add_loss(harmony)
 
     # ------------------ Metrics -----------------
@@ -283,7 +283,7 @@ def create(
                   metrics=metrics)
     if model_options['kld']:
         model.add_metric(kld, name='kld', aggregation='mean')
-    if scale:
+    if music:
         model.add_metric(harmony, name='harmony', aggregation='mean')
 
     return dict(
@@ -292,15 +292,15 @@ def create(
     )
 
 
-def get_create(replicate=False, scale=False):
+def get_create(replicate=False, music=False):
     """
 
     :param replicate:
-    :param scale:
+    :param music:
     :return:
     """
     def _create(*args, **kwargs):
-        return create(*args, replicate=replicate, scale=scale, **kwargs)
+        return create(*args, replicate=replicate, music=music, **kwargs)
     return _create
 
 
