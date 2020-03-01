@@ -6,6 +6,6 @@ validation = 0.1
 max_queue_size = 32
 workers = 8
 # --- Data ---
-noise = 0
+noise = 1e-4
 predict_offset = 1
 
