@@ -10,8 +10,8 @@ from_name = dict(
     AEMonoRep=AEMonoRep.create_model,
     RMVAEMono=RMVAEMono.get_create(replicate=False, music=False),
     RMVAEMonoRep=RMVAEMono.get_create(replicate=True, music=False),
-    RMVAESMono=RMVAEMono.get_create(replicate=False, music=True),
-    RMVAESMonoRep=RMVAEMono.get_create(replicate=True, music=True)
+    MRMVAEMono=RMVAEMono.get_create(replicate=False, music=True),
+    MRMVAEMonoRep=RMVAEMono.get_create(replicate=True, music=True)
 
 )
 
