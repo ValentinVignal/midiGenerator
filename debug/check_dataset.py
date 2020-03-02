@@ -63,7 +63,7 @@ def main(args):
             matrix_midi = Midi.open.to_mono_matrix(matrix_midi)
 
         # Update stats
-        matrix_bound_min, matrix_bound_max = Midi.common.range_notes_in_matrix(matrix_midi)
+        matrix_bound_min, matrix_bound_max = Midi.common.range_notes_in_matrix(matrix_midi, mono=args.mono)
         min_notes_range = min(min_notes_range, matrix_bound_min)
         max_notes_range = max(max_notes_range, matrix_bound_max)
         nb_correct_files += 1

@@ -4,12 +4,14 @@ import numpy as np
 from src import GlobalVariables as g
 
 
-def range_notes_in_matrix(matrix):
+def range_notes_in_matrix(matrix, mono=False):
     """
 
+    :param mono:
     :param matrix: (nb_instruments, input_size, max_length, 2)
     :return: max and min note
     """
+    matrix = matrix[:, :-1] if mono else matrix
     m, M = 0, matrix.shape[1]
     while m < M and np.all(matrix[:, m] == 0):
         m += 1

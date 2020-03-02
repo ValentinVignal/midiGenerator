@@ -28,13 +28,13 @@ Use the option `--bach`
 | **Small** | 3 | 2 | 22:54 | 23 | :heavy_check_mark: |
 | **Medium** | 15 | 11 | 19:58 | 155 | :heavy_check_mark: |
 | **Medium2** | 30 | 21 | 18:61 | 322 | :heavy_check_mark: |
-| **Big** | 100 | 74 | 17:89 | 1127 | :heavy_check_mark: |
+| **Big** | 100 | 74 | 17:61 | 1127 | :heavy_check_mark: |
 
 # Other Dataset
 
 | Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Scale** | 1 | Trombone, Flute | 1 | 27:52 | 32 | :heavy_check_mark: |
-| **MyDatasetMono** | 9 | Flute, Piano, Trombone, Bass | 9 | 7:89 | 578 | :heavy_check_mark: 
+| **MyDatasetMono** | 9 | Flute, Piano, Trombone, Bass | 9 | 7:75 | 578 | :heavy_check_mark: 
 
 
