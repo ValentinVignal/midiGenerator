@@ -9,12 +9,12 @@ def get_lambdas_loss(lambdas_loss):
 
 
 lambda_loss_activation, lambda_loss_duration = get_lambdas_loss(lambdas_loss)
-l_scale = 1e-0
+l_scale = 1e-1
 l_rhythm = 1e-1
 take_all_step_rhythm = False
-l_semitone = 1e-1
-l_tone = 1e-1
-l_tritone = 1e-1
+l_semitone = 1e-2
+l_tone = 1e-2
+l_tritone = 1e-2
 
 
 
