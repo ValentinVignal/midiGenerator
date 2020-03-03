@@ -152,7 +152,8 @@ class KerasSequence(tf.keras.utils.Sequence):
             # For the next step of the batch, we increment the index
             index += 1
             # If this is the end of the song, we take the next one
-            if index >= self.nb_elements_available_per_song[file][song]:
+            while index >= self.nb_elements_available_per_song[file][song]:
+                # Handle the case when the song is very short and the number of steps is very big
                 index = 0
                 song += 1
                 # if this is the end of the file, we take the next one
@@ -276,7 +277,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         :param length:
         :return:
         """
-        return (length // self.step_size) - (self.nb_steps + self.predict_offset) + 1
+        return max((length // self.step_size) - (self.nb_steps + self.predict_offset) + 1, 0)
 
     def __del__(self, *args, **kwargs):
         del self.npy_loaded
