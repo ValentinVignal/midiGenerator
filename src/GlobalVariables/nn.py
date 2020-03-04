@@ -1,5 +1,6 @@
 # ----- Optimizer -----
 lr = 1e-3
+opt_name = 'adam'
 # dropout = 1e-2
 dropout_d = 2e-1        # For dense layers
 dropout_c = 1e-2        # For convolutional layers

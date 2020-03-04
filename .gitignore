@@ -4,6 +4,9 @@
 # Pycharm
 .idea/
 
+# Jupyter
+.ipynb_checkpoints/
+
 # Personnal
 test/
 

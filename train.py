@@ -106,12 +106,12 @@ def main(args):
     # -------------------- Redo song generate --------------------
     if args.redo_generate:
         midi_generator.redo_song_generate(song_number=args.song_number, save_images=True, no_duration=args.no_duration,
-                                          noise=args.noise, )
+                                          noise=args.noise)
 
     # -------------------- Redo song replicate --------------------
     if args.redo_replicate:
         midi_generator.redo_song_replicate(song_number=args.song_number, save_images=True, no_duration=args.no_duration,
-                                           noise=args.noise, )
+                                           noise=args.noise)
 
     # -------------------- Debug batch generation --------------------
     if args.check_batch > -1:

@@ -152,8 +152,9 @@ class KerasSequence(tf.keras.utils.Sequence):
             # For the next step of the batch, we increment the index
             index += 1
             # If this is the end of the song, we take the next one
-            while index >= self.nb_elements_available_per_song[file][song]:
-                # Handle the case when the song is very short and the number of steps is very big
+            while s < self.batch_size - 1 and index >= self.nb_elements_available_per_song[file][song]:
+                # s < self.batch_size - 1 : no need to find new index if this is the last element of the batch
+                # While : Handle the case when the song is very short and the number of steps is very big
                 index = 0
                 song += 1
                 # if this is the end of the file, we take the next one
