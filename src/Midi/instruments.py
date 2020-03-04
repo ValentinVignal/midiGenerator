@@ -70,7 +70,7 @@ all_midi_instruments = [
     'Tubular-Bells',
     'Dulcimer',
     # Organ
-    'Drawbar Organ',
+    'Drawbar-Organ',
     'Perc.Organ',
     'Rock-Organ',
     'Church-Organ',

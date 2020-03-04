@@ -15,10 +15,12 @@ class BandPlayer(Controller):
 
     def __init__(self, model,
                  instrument=None, played_voice=0, include_output=True, instrument_mask=None, max_plotted=None,
+                 plot_pianoroll=True,
                  *args,
                  **kwargs):
         """
 
+        :type plot_pianoroll: Boolean
         :param model: The model to generate the notes
         :param instrument: The instrument the player wants to play, if None, it will be the one of the voice played of
                             the model
@@ -30,6 +32,7 @@ class BandPlayer(Controller):
         :param kwargs:
         """
         # ---------- Raw parameters ----------
+        self.plot_pianoroll = plot_pianoroll
         self.model = model
         self.played_voice = played_voice
         self.include_output = include_output
@@ -104,12 +107,15 @@ class BandPlayer(Controller):
             self.instrument_mask = instrument_mask
         self.max_plotted = self.max_plotted if max_plotted is None else max_plotted
 
-        self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
-        self.colors = Images.colors.get_colors(self.model.nb_instruments)
-        self.show_pianoroll_beat()
+        _on_step_end_call_back = [self.feed_model]
+        if self.plot_pianoroll:
+            self.real_time_pianoroll = Images.RealTimePianoroll(self.model.notes_range)
+            self.colors = Images.colors.get_colors(self.model.nb_instruments)
+            self.show_pianoroll_beat()
+            _on_step_end_call_back.append(self.show_pianoroll_beat)
         super(BandPlayer, self).play(
             on_time_step_end_callbacks=on_time_step_end_callbacks,
-            on_step_end_callbacks=[self.feed_model, self.show_pianoroll_beat] + on_step_end_callbacks,
+            on_step_end_callbacks=_on_step_end_call_back + on_step_end_callbacks,
             on_exact_time_step_begin_callbacks=[self.play_current_model_part] + on_exact_time_step_begin_callbacks,
             **kwargs
         )

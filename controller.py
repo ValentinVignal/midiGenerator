@@ -19,7 +19,8 @@ def main(args):
                             played_voice=args.played_voice,
                             include_output=not args.no_include_output,
                             instrument_mask=args.inst_mask,
-                            max_plotted=args.nb_steps_shown
+                            max_plotted=args.nb_steps_shown,
+                            plot_pianoroll=True
                             )
     controller.play()
     MidiPlayer.player.close()
