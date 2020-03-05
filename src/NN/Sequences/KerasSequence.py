@@ -325,7 +325,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         # First add all the steps of the preceding files
         for file in range(file_number):
             index += self.nb_elements_available_per_file[file]
-            song_index += len(self.nb_elements_available_per_file[file])
+            song_index += len(self.nb_elements_available_per_song[file])
         # Add the steps of all the preceding songs
         song_index = song_number - song_index
         for song in range(song_index):
