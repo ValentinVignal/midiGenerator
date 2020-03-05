@@ -140,7 +140,8 @@ class BandPlayer(Controller):
             seed_length=self.step_length,
             mono=False,
             replicate=True,
-            colors=self.colors
+            colors=self.colors,
+            notes_range=self.model.notes_range
         )
         self.real_time_pianoroll.show_pianoroll(arr_pianoroll.astype(np.int))
 
