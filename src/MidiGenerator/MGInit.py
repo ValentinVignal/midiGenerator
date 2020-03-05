@@ -171,6 +171,10 @@ class MGInit:
     def input_size(self):
         return self.input_param['input_size']
 
+    @property
+    def nb_channels(self):
+        return 1 if self.mono else 2
+
     def __del__(self, *args, **kwargs):
         del self.keras_nn
         del self.sequence

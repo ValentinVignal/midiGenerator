@@ -113,6 +113,13 @@ class BandPlayer(Controller):
             self.colors = Images.colors.get_colors(self.model.nb_instruments)
             self.show_pianoroll_beat()
             _on_step_end_call_back.append(self.show_pianoroll_beat)
+            # Call the model for the first time so we don't have to wait for it while it we are player
+            input_model = list(np.zeros(
+                (self.model.nb_instruments, 1, self.model.nb_steps, self.model.step_length,
+                 self.model.input_size, self.model.nb_channels)
+            )) + self.model.get_mask()
+            self.model.keras_nn.generate(input_model)
+
         super(BandPlayer, self).play(
             on_time_step_end_callbacks=on_time_step_end_callbacks,
             on_step_end_callbacks=_on_step_end_call_back + on_step_end_callbacks,
