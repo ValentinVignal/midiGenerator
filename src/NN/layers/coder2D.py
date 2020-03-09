@@ -168,9 +168,12 @@ class ConvDecoder2D(KerasLayer):
     nb_instance = 0
 
     def __init__(self, filters_list: type_filters_list, dropout: float = g.nn.dropout_c, time_stride: int = 1,
-                 shapes_after_upsize: type_shapes_after_upsize = None, first_pool: bool = False, *args, **kwargs):
+                 shapes_after_upsize: type_shapes_after_upsize = None, first_pool: bool = False,
+                 last_activation=None,
+                 *args, **kwargs):
         """
 
+        :type last_activation: object
         :param filters_list: List[List[int]]:
         :param dropout: float:
         :param time_stride: int:
@@ -179,6 +182,7 @@ class ConvDecoder2D(KerasLayer):
         """
         super(ConvDecoder2D, self).__init__(*args, **kwargs)
         # ---------- Raw parameters ----------
+        self.last_activation = last_activation
         self.filters_list = filters_list
         self.dropout = dropout
         self.time_stride = time_stride
@@ -202,10 +206,14 @@ class ConvDecoder2D(KerasLayer):
                 else:
                     strides = (1, 1)
                     final_shape = None
+                activation = None
+                if index == len(size_list) - 1 and index_list == len(filters_list) - 1:
+                    activation = self.last_activation
                 self.conv_blocks.append(conv.ConvTransposedBlock2D(filters=size,
                                                                    strides=strides,
                                                                    dropout=dropout,
-                                                                   final_shape=final_shape))
+                                                                   final_shape=final_shape,
+                                                                   activation=activation))
 
     def get_config(self):
         config = super(ConvDecoder2D, self).get_config()
@@ -214,7 +222,8 @@ class ConvDecoder2D(KerasLayer):
             dropout=self.dropout,
             time_stride=self.time_stride,
             shapes_after_upvize=self.shapes_after_upsize,
-            first_pool=self.first_pool
+            first_pool=self.first_pool,
+            last_activation=self.last_activation
         ))
         return config
 
@@ -250,7 +259,9 @@ class Decoder2D(KerasLayer):
 
     def __init__(self, decoder_param: type_decoder_param, shape_before_conv: t.shape, dropout_c: float = g.nn.dropout_c,
                  dropout_d: float = g.nn.dropout_d, time_stride: int = 1,
-                 shapes_after_upsize: type_shapes_after_upsize = None, first_upsize: bool = False, *args, **kwargs):
+                 shapes_after_upsize: type_shapes_after_upsize = None, first_upsize: bool = False,
+                 last_activation=None,
+                 *args, **kwargs):
         """
 
         :param decoder_param: {
@@ -266,6 +277,7 @@ class Decoder2D(KerasLayer):
         """
         super(Decoder2D, self).__init__(*args, **kwargs)
         # ---------- Raw parameters ----------
+        self.last_activation = last_activation
         self.decoder_param = decoder_param
         self.shape_before_conv = shape_before_conv
         self.dropout_c = dropout_c
@@ -281,7 +293,8 @@ class Decoder2D(KerasLayer):
                                       dropout=dropout_c,
                                       time_stride=time_stride,
                                       shapes_after_upsize=shapes_after_upsize,
-                                      first_pool=first_upsize)
+                                      first_pool=first_upsize,
+                                      last_activation=self.last_activation)
 
     @staticmethod
     def compute_shape_before_conv(last_filter: int, shapes_after_upsize: type_shapes_after_upsize,
@@ -298,7 +311,8 @@ class Decoder2D(KerasLayer):
             dropout_c=self.dropout_c,
             time_stride=self.time_stride,
             shapes_after_upsize=self.shapes_after_upsize,
-            first_upsize=self.first_upsize
+            first_upsize=self.first_upsize,
+            last_activation=self.last_activation
         ))
         return config
 

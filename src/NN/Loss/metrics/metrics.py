@@ -51,16 +51,51 @@ def mae_duration():
 def acc_mono():
     def acc(y_true, y_pred):
         """
-        y_true_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_true)
-        y_pred_a = Lambda(lambda x: tf.gather(x, axis=4, indices=0))(y_pred)
+        :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
         """
         y_true_a = utils.get_activation(y_true)
         y_pred_a = utils.get_activation(y_pred)
-        y_true_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_true_a), y_true_a)
-        y_pred_a_no_nan = tf.where(math.is_nan(y_true_a), tf.zeros_like(y_pred_a), y_pred_a)     # To apply loss only on non nan value in true Tensor
+        y_pred_a_no_nan = utils.non_nan(y_true_a, y_pred_a)
+        y_true_a_no_nan = utils.non_nan(y_true_a, y_true_a)
 
-        acc = tf.keras.metrics.categorical_accuracy(y_true_a_no_nan, y_pred_a_no_nan)
-
-        return tf.reduce_mean(acc, axis=None)
+        acc_ = tf.keras.metrics.categorical_accuracy(y_true_a_no_nan, y_pred_a_no_nan)
+        acc_ = tf.reduce_mean(acc_)
+        return acc_
     return acc
 
+
+def acc_mono_cat():
+    def acc_cat(y_true, y_pred):
+        """
+        :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
+        """
+        y_true_a = utils.get_activation(y_true)
+        y_pred_a = utils.get_activation(y_pred)
+        y_pred_a_no_nan = utils.non_nan(y_true_a, y_pred_a)[:, :, :, :-1]
+        y_true_a_no_nan = utils.non_nan(y_true_a, y_true_a)[:, :, :, :-1]
+
+        acc = tf.keras.metrics.categorical_accuracy(y_true_a_no_nan, y_pred_a_no_nan)
+        acc = tf.reduce_mean(acc)
+        return acc
+
+    return acc_cat
+
+
+def acc_mono_bin():
+    def acc_bin(y_true, y_pred):
+        """
+        :param y_true: (batch, nb_steps=1, step_size, input_size, channels=1)
+        :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
+        """
+        y_true_a = utils.get_activation(y_true)
+        y_pred_a = utils.get_activation(y_pred)
+        y_pred_a_no_nan = utils.non_nan(y_true_a, y_pred_a)[:, :, :, -1:]
+        y_true_a_no_nan = utils.non_nan(y_true_a, y_true_a)[:, :, :, -1:]
+
+        acc = tf.keras.metrics.binary_accuracy(y_true_a_no_nan, y_pred_a_no_nan)
+        acc = tf.reduce_mean(acc)
+        return acc
+
+    return acc_bin

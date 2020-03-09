@@ -219,7 +219,8 @@ def create(
         dropout_c=model_options['dropout_c'],
         dropout_d=model_options['dropout_d'],
         time_stride=time_stride,
-        shapes_after_upsize=shapes_before_pooling
+        shapes_after_upsize=shapes_before_pooling,
+        last_activation='tanh'
     ) for _ in range(nb_instruments)]
     decoded_steps_inst = mlayers.wrapper.func.apply_same_on_list(
         layer=mlayers.wrapper.func.apply_different_layers(layers=decoders)
@@ -260,7 +261,8 @@ def create(
         losses[f'Output_{inst}'] = Loss.from_names[loss_options['loss_name']](
             **loss_options
         )
-        metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
+        # metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
+        metrics[f'Output_{inst}'] = [Loss.metrics.acc_mono_bin(), Loss.metrics.acc_mono_cat()]
     if music:
         losses['All_outputs'] = Loss.scale(**loss_options, mono=True)
 
