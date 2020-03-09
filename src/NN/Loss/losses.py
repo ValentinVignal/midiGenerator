@@ -52,15 +52,31 @@ def mono(*args, **kwargs):
         :param y_pred: (batch, nb_steps=1, step_size, input_size, channels=1)
         :return:
         """
-        y_true_a = utils.get_activation(y_true)
-        y_pred_a = utils.get_activation(y_pred)
+        y_true_a = utils.get_activation(y_true)  # (batch, nb_steps, step_size, input_size)
+        y_pred_a = utils.get_activation(y_pred)  # (batch, nb_steps, step_size, input_size)
         y_pred_a_no_nan = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
         y_true_a_no_nan = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
 
-        loss = tf.keras.losses.categorical_crossentropy(y_true_a_no_nan, y_pred_a_no_nan)
-        loss = tf.where(math.is_nan(loss), tf.zeros_like(loss), loss)
-        loss = tf.reduce_sum(loss, axis=(1, 2))
-        return tf.reduce_mean(loss)
+        # Binary cross entropy
+        y_true_binary = tf.expand_dims(y_true_a_no_nan[:, :, :, -1], axis=-1)  # (batch, nb_steps, step_size, 1)
+        y_pred_binary = tf.expand_dims(y_pred_a_no_nan[:, :, :, -1], axis=-1)  # (batch, nb_steps, step_size, 1)
+
+        loss_binary = tf.keras.losses.binary_crossentropy(y_true_binary, y_pred_binary)  # (batch, nb_steps, step_size)
+        loss_binary = math.reduce_sum(loss_binary, axis=[1, 2])  # (batch,)
+
+        # Categorial cross entropy
+        y_true_cat = y_true_a_no_nan[:, :, :, :-1]  # (batch, nb_steps, step_size, input_size - 1)
+        y_pred_cat = y_pred_a_no_nan[:, :, :, :-1]  # (batch, nb_steps, step_size, input_size - 1)
+        # No need to multiply by (1 - y_true_a_non_nan[:, :, :, -1:] because y_true_cat will be all 0 -> loss = 0
+
+        loss_cat = tf.keras.losses.categorical_crossentropy(y_true_cat, y_pred_cat)     # (batch, nb_steps, step_size)
+        loss_cat = utils.non_nan(loss_cat, loss_cat)
+        loss_cat = tf.reduce_sum(loss_cat, axis=[1, 2])     # (batch,)
+
+        # Loss
+        loss = loss_binary + loss_cat       # (batch,)
+        loss = tf.reduce_mean(loss)
+        return loss
 
     return _mono
 
@@ -85,15 +101,15 @@ def mono_scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm, take_all_steps_
         :return:
         """
         y_true_a = utils.get_activation(y_true)
-        y_pred_a = utils.get_activation(y_pred)
+        y_pred_a = utils.get_activation(y_pred)  # (batch, nb_steps, step_length, input_size)
         y_pred_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
         y_true_a = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
 
         loss = mono()(y_true, y_pred)
-        loss += l_scale * cost.scale(tf.expand_dims(y_true_a[:, :-1], axis=1),
-                                     tf.expand_dims(y_pred_a[:, :-1], axis=1))
-        loss += l_rhythm * cost.rhythm(tf.expand_dims(y_true_a[:, :-1], axis=1),
-                                       tf.expand_dims(y_pred_a[:, :-1], axis=1),
+        loss += l_scale * cost.scale(tf.expand_dims(y_true_a[:, :, :, :-1], axis=1),
+                                     tf.expand_dims(y_pred_a[:, :, :, :-1], axis=1))
+        loss += l_rhythm * cost.rhythm(tf.expand_dims(y_true_a[:, :, :, :-1], axis=1),
+                                       tf.expand_dims(y_pred_a[:, :, :, :-1], axis=1),
                                        take_all_steps_rhythm=take_all_steps_rhythm)
         return loss
 
@@ -122,8 +138,8 @@ def scale(l_scale=g.loss.l_scale, l_rhythm=g.loss.l_rhythm,
         :param y_pred: (batch, nb_instruments, nb_steps, step_size, input_size, channels)
         :return:
         """
-        y_true_a = utils.get_activation(y_true)     # (batch, nb_instruments, nb_steps, step_size, input_size)
-        y_pred_a = utils.get_activation(y_pred)     # (batch, nb_instruments, nb_steps, step_size, input_size)
+        y_true_a = utils.get_activation(y_true)  # (batch, nb_instruments, nb_steps, step_size, input_size)
+        y_pred_a = utils.get_activation(y_pred)  # (batch, nb_instruments, nb_steps, step_size, input_size)
         if mono:
             y_true_a = y_true_a[:, :, :, :, :-1]
             y_pred_a = y_pred_a[:, :, :, :, :-1]

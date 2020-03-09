@@ -24,7 +24,7 @@ class KerasNeuralNetwork:
 
     """
 
-    def __init__(self, checkpoint=True):
+    def __init__(self, checkpoint=True, mono=False):
         self.model_id = None
         self.input_param = None
         self.nb_steps = None
@@ -35,7 +35,8 @@ class KerasNeuralNetwork:
         self.loss_options = None
         self.decay = None
         self.callbacks = [
-            Callbacks.UpdateLayers()
+            Callbacks.UpdateLayers(),
+            Callbacks.AddAcc(mono=mono)
         ]
 
         self.model_options = None

@@ -42,7 +42,7 @@ class MGModel(MGInit):
 
         opt_param = {'lr': g.nn.lr, 'name': 'adam'} if opt_param is None else opt_param
 
-        self.keras_nn = KerasNeuralNetwork()
+        self.keras_nn = KerasNeuralNetwork(mono=self.mono)
         self.keras_nn.new_model(
             model_id=self.model_id,
             step_length=step_length,

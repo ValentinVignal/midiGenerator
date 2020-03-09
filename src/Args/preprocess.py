@@ -44,7 +44,7 @@ def train(args):
     if args.song_number == -1:
         args.song_number = None
     if args.pc and not args.no_pc_arg:
-        args.epochs = 10
+        args.epochs = 2
         args.batch = 2
         args.max_queue_size = 10        # Default parameter of Keras
         args.workers = 4

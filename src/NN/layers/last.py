@@ -8,6 +8,7 @@ from . import shapes as shapes
 
 K = tf.keras.backend
 layers = tf.keras.layers
+math = tf.math
 
 
 class Split(KerasLayer):
@@ -102,6 +103,11 @@ class LastInstMono(KerasLayer):
         return config
 
     def build(self, input_shape):
+        """
+
+        :param input_shape: (batch, step_length, size, channels=1)
+        :return:
+        """
         self.flatten.build(input_shape)
         new_shape = self.flatten.compute_output_shape(input_shape)
         self.dense.build(new_shape)
@@ -111,16 +117,25 @@ class LastInstMono(KerasLayer):
             self.already_built = True
         self.reshape.build(new_shape)
         new_shape = self.reshape.compute_output_shape(new_shape)
+        new_shape = (*new_shape[:2], new_shape[2] - 1, *new_shape[3:])
+        # Removing activation for softmax function
         self.softmax.build(new_shape)
 
         self.set_weights_variables(self.dense)
         super(LastInstMono, self).build(input_shape)
 
     def call(self, inputs):
+        """
+
+        :param inputs: (batch, step_length, size, channels=1)
+        :return:
+        """
         x = self.flatten(inputs)
         x = self.dense(x)
-        x = self.reshape(x)
-        x = self.softmax(x)
+        x = self.reshape(x)     # (batch, step_length, size, channels)
+        x_c = self.softmax(x[:, :, :-1])      # (batch, step_length, size-1, channels=1)
+        x_b = math.sigmoid(x[:, :, -1:])    # (batch, step_length, 1, channels=1)
+        x = tf.concat([x_c, x_b], axis=2)
         return x
 
     def compute_output_shape(self, input_shape):

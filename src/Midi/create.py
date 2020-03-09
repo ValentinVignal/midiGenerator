@@ -15,12 +15,23 @@ def normalize_activation(arr, threshold=0.5, mono=False):
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
     if mono:
-        axis = len(arr.shape) - 2
-        argmax = np.argmax(arr, axis=axis)
-        new_arr = np.zeros(arr.shape)
-        idx = list(np.ogrid[[slice(arr.shape[ax]) for ax in range(arr.ndim) if ax != axis]])
+        if len(arr.shape) == 5:
+            np.expand_dims(arr, axis=1)     # (nb_instruments, batch, nb_steps, length, size, channels)
+        activations = arr[:, :, :, :, -1:]
+        np.place(activations, threshold <= activations, 1)
+        np.place(activations, activations < threshold, 0)
+
+        cat = arr[:, :, :, :, :-1]
+        axis = len(cat.shape) - 2
+        argmax = np.argmax(cat, axis=axis)
+        new_cat = np.zeros(cat.shape)
+        idx = list(np.ogrid[[slice(cat.shape[ax]) for ax in range(cat.ndim) if ax != axis]])
         idx.insert(axis, argmax)
-        new_arr[tuple(idx)] = 1
+        new_cat[tuple(idx)] = 1
+
+        new_arr = arr
+        new_arr[:, :, :, :, :-1] = new_cat * (1 - activations)
+        new_arr[:, :, :, :, -1:] = activations
     else:
         activations = np.take(arr, axis=-1, indices=0)
         np.place(activations, threshold <= activations, 1)
@@ -81,13 +92,22 @@ def converter_func_mono(arr):
     :return:
     """
 
-    argmax = np.argmax(arr, axis=1)
-    arr_norm = np.zeros(arr.shape)     # (nb_instruments, 88, nb_steps)
-    idx = list(np.ogrid[[slice(arr_norm.shape[ax]) for ax in range(arr_norm.ndim) if ax != 1]])
+    activations = arr[:, -1:]
+    np.place(activations, 0.5 <= activations, 1)
+    np.place(activations, activations < 0.5, 0)
+
+    cat = arr[:, :-1]
+    argmax = np.argmax(cat, axis=1)
+    cat_norm = np.zeros(cat.shape)     # (nb_instruments, 88, nb_steps)
+    idx = list(np.ogrid[[slice(cat_norm.shape[ax]) for ax in range(cat_norm.ndim) if ax != 1]])
     idx.insert(1, argmax)
-    arr_norm[tuple(idx)] = 1
-    arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])
+    cat_norm[tuple(idx)] = 1
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+
+    arr_norm = np.zeros_like(arr)
+    arr[:, :-1] = cat_norm * (1 - activations)
+    arr[:, -1:] = activations
+    arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])
 
     nb_instruments, nb_notes, nb_steps = arr_norm.shape
     matrix_norm = np.zeros((nb_instruments, nb_notes - 1, nb_steps))
