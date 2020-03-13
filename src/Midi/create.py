@@ -91,27 +91,27 @@ def converter_func_mono(arr):
     :param arr: (nb_instruments, 88, nb_steps, 1)
     :return:
     """
-
+    arr = arr[:, :, :, 0]
     activations = arr[:, -1:]
     np.place(activations, 0.5 <= activations, 1)
     np.place(activations, activations < 0.5, 0)
 
     cat = arr[:, :-1]
     argmax = np.argmax(cat, axis=1)
-    cat_norm = np.zeros(cat.shape)     # (nb_instruments, 88, nb_steps)
+    cat_norm = np.zeros(cat.shape)     # (nb_instruments, 88, nb_steps, 1)
     idx = list(np.ogrid[[slice(cat_norm.shape[ax]) for ax in range(cat_norm.ndim) if ax != 1]])
     idx.insert(1, argmax)
     cat_norm[tuple(idx)] = 1
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-    arr_norm = np.zeros_like(arr)
-    arr[:, :-1] = cat_norm * (1 - activations)
-    arr[:, -1:] = activations
-    arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])
+    arr_norm = np.zeros_like(arr)       # (nb_instruments, nb_notes + 1, nb_steps, 1)
+    arr_norm[:, :-1] = cat_norm * (1 - activations)
+    arr_norm[:, -1:] = activations
+    # arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])        # (nb_instruments, nb_notes + 1, nb_steps)
 
     nb_instruments, nb_notes, nb_steps = arr_norm.shape
     matrix_norm = np.zeros((nb_instruments, nb_notes - 1, nb_steps))
-    for instrument in range(nb_instruments - 1, -1, -1):
+    for instrument in range(nb_instruments):
         duration = 1
         for step in range(nb_steps - 1, -1, -1):
             if arr_norm[instrument, -1, step] == 1:
