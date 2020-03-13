@@ -34,6 +34,7 @@ class KerasNeuralNetwork:
         self.opt_param = None
         self.loss_options = None
         self.decay = None
+        self.mono = mono
         self.callbacks = [
             Callbacks.UpdateLayers(),
             Callbacks.AddAcc(mono=mono)
@@ -339,7 +340,8 @@ class KerasNeuralNetwork:
                     opt_param=self.opt_param,
                     step_length=self.step_length,
                     model_options=self.model_options,
-                    loss_options=self.loss_options
+                    loss_options=self.loss_options,
+                    mono=self.mono
                 ), dump_file
             )
         self.save_weights(path=path)
@@ -369,12 +371,11 @@ class KerasNeuralNetwork:
         else:
             cprint('No tensorboard found', 'red')
 
-    @staticmethod
-    def create_tensorboard_plots(log_dir, path):
+    def create_tensorboard_plots(self, log_dir, path):
         # Get the training data
         train_data = tb.get_tensorboard_data(path=log_dir)
         # Save the plot images
-        tb.save_tensorboard_plots(data=train_data, path=path)
+        tb.save_tensorboard_plots(data=train_data, path=path, mono=self.mono)
 
     def save_weights(self, path):
         """
@@ -417,6 +418,7 @@ class KerasNeuralNetwork:
             step_length = d['step_length']
             model_options = d['model_options']
             loss_options = d['loss_options']
+            self.mono = d['mono']
 
         self.new_model(model_id=model_id, input_param=input_param, opt_param=opt_param, step_length=step_length,
                        model_options=model_options, loss_options=loss_options)

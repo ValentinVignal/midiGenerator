@@ -42,9 +42,10 @@ def get_tensorboard_data(path, train=True, validation=True):
     return data
 
 
-def save_tensorboard_plots(data, path):
+def save_tensorboard_plots(data, path, mono=False):
     """
 
+    :param mono:
     :param data:
     :param path:
     :return:
@@ -61,7 +62,7 @@ def save_tensorboard_plots(data, path):
     # --------------------------------------------------
 
     # Accuracy and loss of instruments
-    suffixes = ['loss', 'acc']
+    suffixes = ['loss', 'acc_bin', 'acc_cat'] if mono else ['loss', 'acc']
     for s in suffixes:
         for i in range(nb_instrument):
             name = f'Output_{i}_{s}'
@@ -96,7 +97,7 @@ def save_tensorboard_plots(data, path):
     # --------------------------------------------------
 
     # Accuracy and loss
-    suffixes = ['loss', 'acc']
+    suffixes = ['loss', 'acc_bin', 'acc_cat'] if mono else ['loss', 'acc']
     for s in suffixes:
         name_file = f'Outputs_{s}'
         plt.figure()
