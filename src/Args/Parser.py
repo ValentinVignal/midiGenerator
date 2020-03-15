@@ -283,6 +283,8 @@ class Parser(argparse.ArgumentParser):
                             help='use an attention head after the first layer of LSTM')
         self.add_store_true(name='--no-rpoe', argtype=argtype,
                             help='To disable to give previous poe to next step')
+        self.add_store_true(name='--no-prior-expert', argtype=argtype,
+                            help='No prior expert in PoE')
 
         self.set_defaults(
             epochs_drop=g.nn.epochs_drop,
@@ -308,7 +310,8 @@ class Parser(argparse.ArgumentParser):
                 kld_annealing_stop=g.nn.kld_annealing_stop,
                 no_kld_sum=not g.nn.kld_sum,
                 sah=g.nn.sah,
-                no_rpoe=not g.nn.rpoe
+                no_rpoe=not g.nn.rpoe,
+                no_prior_expert=not g.nn.prior_expert
             )
         else:
             self.set_defaults(
@@ -326,7 +329,8 @@ class Parser(argparse.ArgumentParser):
                 kld_annealing_stop='0.5:1',
                 no_kld_sum='False',
                 sah='False',
-                no_rpoe='False,True'
+                no_rpoe='False,True',
+                no_prior_expert='False,True'
             )
 
     def add_generation_args(self, artype=ArgType.ALL):

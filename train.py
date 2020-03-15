@@ -54,7 +54,8 @@ def main(args):
             kld_annealing_stop=args.kld_annealing_stop,
             kld_sum=not args.no_kld_sum,
             sah=args.sah,
-            rpoe=not args.no_rpoe
+            rpoe=not args.no_rpoe,
+            prior_expert=not args.no_prior_expert
         )
         loss_options = dict(
             loss_name=args.loss_name,

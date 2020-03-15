@@ -113,6 +113,9 @@ def create_dimensions(args):
     # rpoe
     rpoe_tuple = string_to_tuple(args.no_rpoe, t=lambda x: not string_to_bool(x), separator=',')
     dimensions.add_Categorical(rpoe_tuple, name='rpoe')
+    # prior expert
+    prior_expert_tuple = string_to_tuple(args.no_prior_expert, t=lambda x: not string_to_bool(x), separator=',')
+    dimensions.add_Categorical(prior_expert_tuple, 'prior_expert')
 
     return dimensions
 
@@ -220,7 +223,7 @@ def main(args):
 
     def create_model(lr, optimizer, decay, dropout_d, dropout_c, dropout_r, sampling, kld, all_sequence, model_name,
                      model_param, nb_steps, kld_annealing_start, kld_annealing_stop, kld_sum, loss_name, l_scale,
-                     l_rhythm, take_all_step_rhythm, sah, l_semitone, l_tone, l_tritone, rpoe):
+                     l_rhythm, take_all_step_rhythm, sah, l_semitone, l_tone, l_tritone, rpoe, prior_expert):
         """
         Creates a model from all the inputs == dimensions of the bayesian optimization
         """
@@ -248,7 +251,8 @@ def main(args):
             kld_annealing_stop=kld_annealing_stop,
             kld_sum=kld_sum,
             sah=sah,
-            rpoe=rpoe
+            rpoe=rpoe,
+            prior_expert=prior_expert
         )
 
         loss_options = dict(
@@ -306,6 +310,7 @@ def main(args):
         l_tone = dimensions.get_value_param('l_tone', l)
         l_tritone = dimensions.get_value_param('l_tritone', l)
         rpoe = dimensions.get_value_param('rpoe', l)
+        prior_expert = dimensions.get_value_param('prior_expert', l)
 
         # ------------------------------ Print the information to the user ------------------------------
         s = 'Iteration ' + colored(f'{iteration}/{max_iterations}', 'yellow')
@@ -332,6 +337,7 @@ def main(args):
         s += str_hp_to_print('l_tone', l_tone, exp_format=True)
         s += str_hp_to_print('l_tritone', l_tritone, exp_format=True)
         s += str_hp_to_print('rpoe', rpoe)
+        s += str_hp_to_print('prior_expert', prior_expert)
         print(s)
 
         # -------------------- Create the model --------------------
@@ -359,7 +365,8 @@ def main(args):
             l_semitone=l_semitone,
             l_tone=l_tone,
             l_tritone=l_tritone,
-            rpoe=rpoe
+            rpoe=rpoe,
+            prior_expert=prior_expert
         )
 
         # -------------------- Train the model --------------------

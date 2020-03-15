@@ -399,3 +399,90 @@ class KLDAnnealing(KerasLayer):
             self.current_weight_value = self.final_value
         self.nb_epochs_already_trained += 1
         K.set_value(self.weight, self.current_weight_value)
+
+
+class AddPriorExper(KerasLayer):
+    """
+
+    """
+    def __init__(self, *args, **kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        """
+        super(AddPriorExper, self).__init__(*args, **kwargs)
+        # ----- Raw parameters -----
+
+        self.prior_mean = None
+        self.prior_std = None
+        self.prior_mask = None
+
+    def get_config(self):
+        config = super(AddPriorExper, self).get_config()
+        return config
+
+    def build(self, input_shape):
+        """
+
+        :param input_shape: List(2)[(batch, nb_instruments, nb_steps, size)] + List(1)[(batch, nb_instrument, nb_steps)]
+        :return:
+        """
+        size = input_shape[0][-1]
+        self.prior_mean = self.add_weight(
+            shape=(size,),
+            initializer='zeros',
+            trainable=True
+        )
+        self.prior_std = self.add_weight(
+            shape=(size,),
+            initializer='ones',
+            trainable=True
+        )
+        self.prior_mask = self.add_weight(
+            shape=(1,),
+            initializer='ones',
+            trainable=False
+        )
+
+    def compute_output_shape(self, input_shape):
+        """
+
+        :param input_shape: List(2)[(batch, nb_instruments, nb_steps, size)] + List(1)[(batch, nb_instrument, nb_steps)]
+        :return:
+        """
+        means, stds, mask = input_shape
+        means, stds, mask = list(means), list(stds), list(mask)
+        means[1] += 1
+        stds[1] += 1
+        mask[1] += 1
+        means, stds, mask = tuple(means), tuple(stds), tuple(mask)
+        return [means, stds, mask]
+
+    def call(self, x):
+        """
+
+        :param x: List(2)[(batch, nb_instruments, nb_steps, size)] + List(1)[(batch, nb_instrument, nb_steps)]
+        :return:
+        """
+        means, stds, mask = x
+        m = tf.ones_like(means[:, 0:1])
+        m = m * tf.reshape(self.prior_mean, (1, 1, 1, -1))
+        new_means = tf.concat(
+            values=[m, means],
+            axis=1
+        )
+        s = tf.ones_like(stds[:, 0:1])
+        s = s * tf.reshape(self.prior_std, (1, 1, 1, -1))       # (batch, 1, nb_steps, size)
+        new_stds = tf.concat(
+            values=[s, stds],
+            axis=1
+        )
+        ma = tf.ones_like(mask[:, 0:1])
+        ma = ma * tf.reshape(self.prior_mask, (1, 1, -1))
+        new_mask = tf.concat(
+            values=[ma, mask],
+            axis=1
+        )
+        return [new_means, new_stds, new_mask]
+

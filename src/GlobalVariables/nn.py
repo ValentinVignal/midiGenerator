@@ -20,3 +20,4 @@ kld_annealing_stop = 4e-1
 kld_sum = True
 sah = False
 rpoe = True
+prior_expert = True

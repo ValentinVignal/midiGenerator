@@ -27,12 +27,12 @@ class Harmony(KerasLayer):
 
     def get_config(self):
         config = super(Harmony, self).get_config()
-        config.update(
+        config.update(dict(
             l_semitone=self.l_semitone,
             l_tone=self.l_tone,
             l_tritone=self.l_tritone,
             mono=self.mono
-        )
+        ))
         return config
 
     def build(self, inputs_shape):
