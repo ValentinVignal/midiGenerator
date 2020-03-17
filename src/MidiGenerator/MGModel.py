@@ -141,6 +141,7 @@ class MGModel(MGInit):
                     full_name=self.full_name
                 ), dump_file)
         self.keras_nn.save_tensorboard_plots(path_to_save / 'plots')
+        self.keras_nn.save_tensorboard(path_to_save / 'tensorboard')
 
         summary.summarize(
             # Function params

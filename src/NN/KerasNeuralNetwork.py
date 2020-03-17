@@ -8,6 +8,7 @@ import math
 from time import time
 import gc
 from termcolor import colored, cprint
+import shutil
 
 from src import GlobalVariables as g
 from src.NN import Sequences
@@ -365,12 +366,23 @@ class KerasNeuralNetwork:
             # Get the folder where all the Tensorboard information are stored
             return EPath(self.tensorboard.log_dir)
 
+    def save_tensorboard(self, path):
+        if self.tensorboard_log_dir is not None and self.tensorboard_log_dir.exists():
+            try:
+                shutil.copytree(self.tensorboard_log_dir, path)
+            except Exception as e:
+                cprint('Could not copy the tensorboard\tThe following exception was raised:', 'yellow')
+                print(e)
+        else:
+            cprint('No tensorboard found to save', 'yellow')
+
     def save_tensorboard_plots(self, path):
         if self.tensorboard_log_dir is not None and self.tensorboard_log_dir.exists():
             try:
                 self.create_tensorboard_plots(log_dir=self.tensorboard_log_dir, path=path)
             except Exception as e:
-                cprint(f'Could not save tensorboard plots\nThe follow exception was raised:\n{e}', 'yellow')
+                cprint(f'Could not save tensorboard plots\tThe following exception was raised:', 'yellow')
+                print(e)
         else:
             cprint('No tensorboard found to save', 'yellow')
 
