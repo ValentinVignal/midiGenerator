@@ -363,13 +363,16 @@ class KerasNeuralNetwork:
             return None
         else:
             # Get the folder where all the Tensorboard information are stored
-            return self.tensorboard.log_dir
+            return EPath(self.tensorboard.log_dir)
 
     def save_tensorboard_plots(self, path):
-        if self.tensorboard_log_dir is not None:
-            self.create_tensorboard_plots(log_dir=self.tensorboard_log_dir, path=path)
+        if self.tensorboard_log_dir is not None and self.tensorboard_log_dir.exists():
+            try:
+                self.create_tensorboard_plots(log_dir=self.tensorboard_log_dir, path=path)
+            except Exception as e:
+                cprint(f'Could not save tensorboard plots\nThe follow exception was raised:\n{e}', 'yellow')
         else:
-            cprint('No tensorboard found', 'red')
+            cprint('No tensorboard found to save', 'yellow')
 
     def create_tensorboard_plots(self, log_dir, path):
         # Get the training data

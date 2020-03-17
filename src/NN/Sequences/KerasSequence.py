@@ -297,7 +297,7 @@ class KerasSequence(tf.keras.utils.Sequence):
         """
         file = 0
         acc = 0
-        while acc + len(self.nb_elements_available_per_song[file]) < song_number:
+        while acc + len(self.nb_elements_available_per_song[file]) <= song_number:
             acc += len(self.nb_elements_available_per_song[file])
             file += 1
         return file
@@ -309,6 +309,8 @@ class KerasSequence(tf.keras.utils.Sequence):
         :return: The number of steps available in this song
         """
         file_number = self.song_file(song_number)
+        for file in range(file_number):
+            song_number -= len(self.nb_elements_available_per_song[file])
         length = self.nb_elements_available_per_song[file_number][song_number]
         return length
 

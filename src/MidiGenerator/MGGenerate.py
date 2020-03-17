@@ -390,9 +390,17 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # x: (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
         # y: (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
         # x and y are the same except that in x, there is some noise
+        length = self.sequence.get_song_len(song_number)
+        if length == 0:
+            # It means the len of the song is < nb_steps
+            shape = (*(x.shape[:2]), self.nb_steps, *(x.shape[3:]))
+            zeros = np.zeros(shape)     # (nb_instruments, batch, nb_steps, step_size, input_size, channels)
+            zeros[:, :, -x.shape[2]:] = x
+            x = zeros
+            length = 1
         truth = x
         # truth: (nb_instruments, batch=1, len_song, step_size, input_size, channels)
-        length = self.sequence.get_song_len(song_number)
+
         all_arrays.append(truth)
         cprint('Start redoing song (generate) ...', 'blue')
         bar = progressbar.ProgressBar(maxval=length * self.nb_instruments,

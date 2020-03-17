@@ -79,6 +79,9 @@ def main(args):
     midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation,
                          sequence_to_numpy=args.seq2np, fast_sequence=args.fast_seq, memory_sequence=args.memory_seq)
 
+    # -------------------- Save the model --------------------
+    midi_generator.save_model()
+
     # -------------------- Test --------------------
     if args.evaluate:
         midi_generator.evaluate()
@@ -118,9 +121,6 @@ def main(args):
     if args.check_batch > -1:
         for i in range(len(midi_generator.sequence)):
             midi_generator.compare_test_predict_on_batch(i)
-
-    # -------------------- Save the model --------------------
-    midi_generator.save_model()
 
     cprint('---------- Done ----------', 'grey', 'on_green')
 
