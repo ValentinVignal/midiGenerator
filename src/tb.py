@@ -77,6 +77,7 @@ def save_tensorboard_plots(data, path, mono=False):
             plt.legend()
             plt.grid()
             plt.savefig((path / name).with_suffix('.png'))
+            plt.close()
     # Total loss and KLD
     loss_names = ['loss', 'kld']
     for name in loss_names:
@@ -91,6 +92,7 @@ def save_tensorboard_plots(data, path, mono=False):
         plt.legend()
         plt.grid()
         plt.savefig((path / name).with_suffix('.png'))
+        plt.close()
 
     # --------------------------------------------------
     #               Cross instruments
@@ -113,6 +115,7 @@ def save_tensorboard_plots(data, path, mono=False):
         plt.legend()
         plt.grid()
         plt.savefig((path / name_file).with_suffix('.png'))
+        plt.close()
 
     # Loss and KLD
     loss_names = ['loss', 'kld']
@@ -129,6 +132,7 @@ def save_tensorboard_plots(data, path, mono=False):
     plt.legend()
     plt.grid()
     plt.savefig((path / 'Loss_KLD').with_suffix('.png'))
+    plt.close()
 
 
 
