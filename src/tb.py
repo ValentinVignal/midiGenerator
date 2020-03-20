@@ -88,7 +88,7 @@ def save_tensorboard_plots(data, path, mono=False):
         plt.plot(validation[0], validation[1], label='Validation', color=colors[1], linestyle='-')
         plt.title(name)
         plt.xlabel('Epochs')
-        plt.ylabel(f'{s} value')
+        plt.ylabel(f'{name} value')
         plt.legend()
         plt.grid()
         plt.savefig((path / name).with_suffix('.png'))
