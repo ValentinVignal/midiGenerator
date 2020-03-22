@@ -393,7 +393,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
         length = self.sequence.get_song_len(song_number)
         if length == 0:
             # It means the len of the song is < nb_steps
-            shape = (*(x.shape[:2]), self.nb_steps, *(x.shape[3:]))
+            shape = (*(x.shape[:2]), self.nb_steps + 1, *(x.shape[3:]))
             zeros = np.zeros(shape)     # (nb_instruments, batch, nb_steps, step_size, input_size, channels)
             zeros[:, :, -x.shape[2]:] = x
             x = zeros
@@ -423,7 +423,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 preds = np.asarray(self.keras_nn.generate(input=list(inputs) + mask)).astype('float64')
                 # preds: (nb_instruments, batch=1, nb_steps=1, step_size, input_size, channels)
                 preds = midi.create.normalize_activation(preds, mono=self.mono)
-                generated[instrument_to_remove, :, step:step + self.nb_steps] = preds[instrument_to_remove]
+                preds_index = step + self.nb_steps + (self.predict_offset - 1)
+                generated[instrument_to_remove, :, preds_index: preds_index + 1] = preds[instrument_to_remove]
 
                 bar.update(instrument * length + step)
 
