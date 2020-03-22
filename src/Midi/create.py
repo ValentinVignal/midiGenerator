@@ -6,40 +6,49 @@ from . import instruments as midi_inst
 from src import GlobalVariables as g
 
 
-def normalize_activation(arr, threshold=0.5, mono=False):
+def normalize_activation(arr, threshold=0.5, mono=False, use_binary=g.loss.use_binary):
     """
 
+    :param use_binary:
     :param mono:
     :param arr: (nb_instruments, (batch=1), nb_steps=1, length, 88, 2)
     :param threshold:
     :return: the same array but only with one and zeros for the activation part ([:, :, :, 0])
     """
     if mono:
-        if len(arr.shape) == 5:
-            np.expand_dims(arr, axis=1)     # (nb_instruments, batch, nb_steps, length, size, channels)
-        activations = arr[:, :, :, :, -1:]
-        np.place(activations, threshold <= activations, 1)
-        np.place(activations, activations < threshold, 0)
+        if use_binary:
+            if len(arr.shape) == 5:
+                np.expand_dims(arr, axis=1)  # (nb_instruments, batch, nb_steps, length, size, channels)
+            activation_binary = arr[:, :, :, :, -1:]
+            np.place(activation_binary, threshold <= activation_binary, 1)
+            np.place(activation_binary, activation_binary < threshold, 0)
 
-        cat = arr[:, :, :, :, :-1]
-        axis = len(cat.shape) - 2
-        argmax = np.argmax(cat, axis=axis)
-        new_cat = np.zeros(cat.shape)
-        idx = list(np.ogrid[[slice(cat.shape[ax]) for ax in range(cat.ndim) if ax != axis]])
-        idx.insert(axis, argmax)
-        new_cat[tuple(idx)] = 1
+            cat = arr[:, :, :, :, :-1]
+            axis = len(cat.shape) - 2
+            argmax = np.argmax(cat, axis=axis)
+            new_cat = np.zeros_like(cat)
+            idx = list(np.ogrid[[slice(cat.shape[ax]) for ax in range(cat.ndim) if ax != axis]])
+            idx.insert(axis, argmax)
+            new_cat[tuple(idx)] = 1
 
-        new_arr = arr
-        new_arr[:, :, :, :, :-1] = new_cat * (1 - activations)
-        new_arr[:, :, :, :, -1:] = activations
+            new_arr = np.zeros_like(arr)
+            new_arr[:, :, :, :, :-1] = new_cat * (1 - activation_binary)
+            new_arr[:, :, :, :, -1:] = activation_binary
+        else:
+            axis = len(arr.shape) - 2
+            argmax = np.argmax(arr, axis=axis)
+            new_arr = np.zeros(arr.shape)
+            idx = list(np.ogrid[[slice(arr.shape[ax]) for ax in range(arr.ndim) if ax != axis]])
+            idx.insert(axis, argmax)
+            new_arr[tuple(idx)] = 1
     else:
-        activations = np.take(arr, axis=-1, indices=0)
-        np.place(activations, threshold <= activations, 1)
-        np.place(activations, activations < threshold, 0)
+        activation_binary = np.take(arr, axis=-1, indices=0)
+        np.place(activation_binary, threshold <= activation_binary, 1)
+        np.place(activation_binary, activation_binary < threshold, 0)
         np.put_along_axis(
             arr=arr,
             indices=np.zeros(tuple(1 for i in arr.shape), dtype=int),
-            values=np.expand_dims(activations, axis=-1),
+            values=np.expand_dims(activation_binary, axis=-1),
             axis=-1
         )
         new_arr = arr
@@ -85,29 +94,36 @@ def converter_func_poly(arr, no_duration=False):
     return matrix_norm
 
 
-def converter_func_mono(arr):
+def converter_func_mono(arr, use_binary=g.loss.use_binary):
     """
 
+    :param use_binary:
     :param arr: (nb_instruments, 88, nb_steps, 1)
     :return:
     """
     arr = arr[:, :, :, 0]
-    activations = arr[:, -1:]
-    np.place(activations, 0.5 <= activations, 1)
-    np.place(activations, activations < 0.5, 0)
+    if use_binary:
+        activations = arr[:, -1:]
+        np.place(activations, 0.5 <= activations, 1)
+        np.place(activations, activations < 0.5, 0)
+        cat = arr[:, :-1]
+    else:
+        cat = arr
 
-    cat = arr[:, :-1]
     argmax = np.argmax(cat, axis=1)
-    cat_norm = np.zeros(cat.shape)     # (nb_instruments, 88, nb_steps, 1)
+    cat_norm = np.zeros_like(cat)  # (nb_instruments, 88, nb_steps, 1)
     idx = list(np.ogrid[[slice(cat_norm.shape[ax]) for ax in range(cat_norm.ndim) if ax != 1]])
     idx.insert(1, argmax)
     cat_norm[tuple(idx)] = 1
     # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-    arr_norm = np.zeros_like(arr)       # (nb_instruments, nb_notes + 1, nb_steps, 1)
-    arr_norm[:, :-1] = cat_norm * (1 - activations)
-    arr_norm[:, -1:] = activations
-    # arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])        # (nb_instruments, nb_notes + 1, nb_steps)
+    if use_binary:
+        arr_norm = np.zeros_like(arr)  # (nb_instruments, nb_notes + 1, nb_steps, 1)
+        arr_norm[:, :-1] = cat_norm * (1 - activations)
+        arr_norm[:, -1:] = activations
+        # arr_norm = np.reshape(arr_norm, arr_norm.shape[:-1])        # (nb_instruments, nb_notes + 1, nb_steps)
+    else:
+        arr_norm = cat_norm
 
     nb_instruments, nb_notes, nb_steps = arr_norm.shape
     matrix_norm = np.zeros((nb_instruments, nb_notes - 1, nb_steps))
@@ -127,16 +143,18 @@ def converter_func_mono(arr):
     return matrix_norm
 
 
-def converter_func(arr, mono=False, no_duration=False):
+def converter_func(arr, mono=False, no_duration=False, use_binary=False):
     """
 
+    :param use_binary:
     :param arr:
     :param mono:
     :param no_duration:
     :return:
     """
     if mono:
-        arr = converter_func_mono(arr)  # Make it consistent      # (nb_instruments, 128, nb_steps)
+        arr = converter_func_mono(arr,
+                                  use_binary=use_binary)  # Make it consistent      # (nb_instruments, 128, nb_steps)
     else:
         arr = converter_func_poly(arr, no_duration=no_duration)
     return arr
@@ -154,9 +172,10 @@ def int_to_note(integer):
     return note
 
 
-def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False, mono=False):
+def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False, mono=False, use_binary=False):
     """
 
+    :param use_binary:
     :param mono:
     :param matrix: shape (nb_instruments, 128, nb_steps, 2)
     :param instruments: The instruments,
@@ -168,7 +187,7 @@ def matrix_to_midi(matrix, instruments=None, notes_range=None, no_duration=False
     instruments = ['Piano' for _ in range(nb_instuments)] if instruments is None else instruments
     notes_range = (0, 88) if notes_range is None else notes_range
 
-    matrix_norm = converter_func(matrix, mono=mono, no_duration=no_duration)
+    matrix_norm = converter_func(matrix, mono=mono, no_duration=no_duration, use_binary=use_binary)
     # ---- Delete silence in the beginning of the song ----
     how_many_in_start_zeros = 0
     for step in range(nb_steps):

@@ -57,7 +57,7 @@ def main(args):
             kld_sum=not args.no_kld_sum,
             sah=args.sah,
             rpoe=not args.no_rpoe,
-            prior_expert=not args.no_prior_expert
+            prior_expert=not args.no_prior_expert,
         )
         loss_options = dict(
             loss_name=args.loss_name,
@@ -66,11 +66,13 @@ def main(args):
             take_all_step_rhythm=not args.no_all_step_rhythm,
             l_semitone=args.l_semitone,
             l_tone=args.l_tone,
-            l_tritone=args.l_tritone
+            l_tritone=args.l_tritone,
+            use_binary=args.use_binary
         )
         midi_generator.new_nn_model(model_id=args.model_id,
                                     opt_param=opt_param,
                                     work_on=args.work_on,
+                                    use_binary=args.use_binary,
                                     model_options=model_options,
                                     loss_options=loss_options,
                                     predict_offset=args.predict_offset)

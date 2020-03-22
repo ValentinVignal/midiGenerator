@@ -144,7 +144,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer,
 
     decoded_inst = [decoders[inst](rnn_output) for inst in
                     range(nb_instruments)]  # List(nb_instruments)[(batch, step_length, size, channels)]
-    outputs = [mlayers.last.LastInstMono(softmax_axis=-2)(decoded_inst[inst]) for inst in
+    outputs = [mlayers.last.LastInstMonoBinary(softmax_axis=-2)(decoded_inst[inst]) for inst in
                range(nb_instruments)]  # List(nb_instruments)[(batch, step_size, size, channels=1)]
     outputs = [mlayers.shapes.ExpandDims(axis=0)(output) for output in outputs]  # Add the nb_steps=1
     outputs = [layers.Layer(name=f'Output_{inst}')(outputs[inst]) for inst in range(nb_instruments)]

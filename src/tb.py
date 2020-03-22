@@ -62,22 +62,23 @@ def save_tensorboard_plots(data, path, mono=False):
     # --------------------------------------------------
 
     # Accuracy and loss of instruments
-    suffixes = ['loss', 'acc_bin', 'acc_cat'] if mono else ['loss', 'acc']
+    suffixes = ['loss', 'acc', 'acc_bin', 'acc_cat']
     for s in suffixes:
-        for i in range(nb_instrument):
-            name = f'Output_{i}_{s}'
-            key = f'epoch_{name}'
-            plt.figure()
-            train, validation = data['train'][key], data['validation'][key]
-            plt.plot(train[0], train[1], label='Train', color=colors[0], linestyle='-')
-            plt.plot(validation[0], validation[1], label='Validation', color=colors[1], linestyle='-')
-            plt.title(name)
-            plt.xlabel('Epochs')
-            plt.ylabel(f'{s} value')
-            plt.legend()
-            plt.grid()
-            plt.savefig((path / name).with_suffix('.png'))
-            plt.close()
+        if f'epoch_Output_0_{s}' in data['train']:
+            for i in range(nb_instrument):
+                name = f'Output_{i}_{s}'
+                key = f'epoch_{name}'
+                plt.figure()
+                train, validation = data['train'][key], data['validation'][key]
+                plt.plot(train[0], train[1], label='Train', color=colors[0], linestyle='-')
+                plt.plot(validation[0], validation[1], label='Validation', color=colors[1], linestyle='-')
+                plt.title(name)
+                plt.xlabel('Epochs')
+                plt.ylabel(f'{s} value')
+                plt.legend()
+                plt.grid()
+                plt.savefig((path / name).with_suffix('.png'))
+                plt.close()
     # Total loss and KLD
     loss_names = ['loss', 'kld']
     for name in loss_names:
@@ -99,23 +100,24 @@ def save_tensorboard_plots(data, path, mono=False):
     # --------------------------------------------------
 
     # Accuracy and loss
-    suffixes = ['loss', 'acc_bin', 'acc_cat'] if mono else ['loss', 'acc']
+    suffixes = ['loss', 'acc' 'acc_bin', 'acc_cat']
     for s in suffixes:
         name_file = f'Outputs_{s}'
-        plt.figure()
-        for i in range(nb_instrument):
-            name_inst = f'Output_{i}'
-            key = f'epoch_{name_inst}_{s}'
-            train, validation = data['train'][key], data['validation'][key]
-            plt.plot(train[0], train[1], label=f'{name_inst} train', color=colors[i], linestyle='-')
-            plt.plot(validation[0], validation[1], label=f'{name_inst} val', color=colors[i], linestyle='--')
-        plt.title(name_file)
-        plt.xlabel('Epochs')
-        plt.ylabel(f'{s} value')
-        plt.legend()
-        plt.grid()
-        plt.savefig((path / name_file).with_suffix('.png'))
-        plt.close()
+        if f'epoch_Output_0_{s}' in data['train']:
+            plt.figure()
+            for i in range(nb_instrument):
+                name_inst = f'Output_{i}'
+                key = f'epoch_{name_inst}_{s}'
+                train, validation = data['train'][key], data['validation'][key]
+                plt.plot(train[0], train[1], label=f'{name_inst} train', color=colors[i], linestyle='-')
+                plt.plot(validation[0], validation[1], label=f'{name_inst} val', color=colors[i], linestyle='--')
+            plt.title(name_file)
+            plt.xlabel('Epochs')
+            plt.ylabel(f'{s} value')
+            plt.legend()
+            plt.grid()
+            plt.savefig((path / name_file).with_suffix('.png'))
+            plt.close()
 
     # Loss and KLD
     loss_names = ['loss', 'kld']

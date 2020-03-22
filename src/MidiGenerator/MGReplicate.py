@@ -69,7 +69,10 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 preds = preds[np.newaxis]
             if len(y.shape) == 5:
                 y = np.expand_dims(y, axis=0)
-            next_array = midi.create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
+            next_array = midi.create.normalize_activation(
+                preds,
+                mono=self.mono,
+                use_binary=self.use_binary)  # Normalize the activation part
             generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, 1, nb_steps, length, 88, 2)
             truth = np.concatenate((truth, y),
                                    axis=2)  # (nb_instruments, 1, nb_steps, step_length, size, channels)
@@ -173,7 +176,11 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 preds = preds[np.newaxis]
             if len(y.shape) == 5:
                 y = np.expand_dims(y, axis=0)
-            preds = midi.create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
+            preds = midi.create.normalize_activation(
+                preds,
+                mono=self.mono,
+                use_binary=self.use_binary
+            )  # Normalize the activation part
             for inst in range(nb_instruments):
                 p = np.copy(y)  # (nb_instruments, batch=1, nb_steps, step_length, size, channels)
                 p[inst] = np.take(preds, axis=1, indices=[inst])[inst]
@@ -298,7 +305,11 @@ class MGReplicate(MGComputeGeneration, MGInit):
                 inputs[instrument_to_remove] = 0
                 preds = np.asarray(self.keras_nn.generate(input=list(inputs) + [mask])).astype('float64')
                 # preds: (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)
-                preds = midi.create.normalize_activation(preds, mono=self.mono)
+                preds = midi.create.normalize_activation(
+                    preds,
+                    mono=self.mono,
+                    use_binary=self.use_binary
+                )
                 outputs = np.copy(inputs)
                 outputs[instrument_to_remove] = preds[instrument_to_remove]
                 generated.append(outputs)

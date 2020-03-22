@@ -81,7 +81,6 @@ class LastInstMono(KerasLayer):
 
     def __init__(self, softmax_axis: int, *args, **kwargs):
         """
-
         :param softmax_axis: int:
         """
         super(LastInstMono, self).__init__(*args, **kwargs)
@@ -97,6 +96,60 @@ class LastInstMono(KerasLayer):
 
     def get_config(self):
         config = super(LastInstMono, self).get_config()
+        config.update(dict(
+            softmax_axis=self.softmax_axis
+        ))
+        return config
+
+    def build(self, input_shape):
+        self.flatten.build(input_shape)
+        new_shape = self.flatten.compute_output_shape(input_shape)
+        self.dense.build(new_shape)
+        new_shape = self.dense.compute_output_shape(new_shape)
+        if not self.already_built:
+            self.reshape = layers.Reshape(input_shape[1:])
+            self.already_built = True
+        self.reshape.build(new_shape)
+        new_shape = self.reshape.compute_output_shape(new_shape)
+        self.softmax.build(new_shape)
+
+        self.set_weights_variables(self.dense)
+        super(LastInstMono, self).build(input_shape)
+
+    def call(self, inputs):
+        x = self.flatten(inputs)
+        x = self.dense(x)
+        x = self.reshape(x)
+        x = self.softmax(x)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+
+class LastInstMonoBinary(KerasLayer):
+    """
+    Last layer for a model
+    """
+
+    def __init__(self, softmax_axis: int, *args, **kwargs):
+        """
+
+        :param softmax_axis: int:
+        """
+        super(LastInstMonoBinary, self).__init__(*args, **kwargs)
+        # --------- Raw parameters ----------
+        self.softmax_axis = softmax_axis
+
+        self.already_built = False
+
+        self.flatten = layers.Flatten()
+        self.dense = l_dense.DenseSameShape()
+        self.reshape = None
+        self.softmax = layers.Softmax(axis=softmax_axis)
+
+    def get_config(self):
+        config = super(LastInstMonoBinary, self).get_config()
         config.update(dict(
             softmax_axis=self.softmax_axis
         ))
@@ -122,7 +175,7 @@ class LastInstMono(KerasLayer):
         self.softmax.build(new_shape)
 
         self.set_weights_variables(self.dense)
-        super(LastInstMono, self).build(input_shape)
+        super(LastInstMonoBinary, self).build(input_shape)
 
     def call(self, inputs):
         """
@@ -173,7 +226,7 @@ class LastMono(KerasLayer):
             self.split = Split(num_or_size_to_split=self.nb_instruments, axis=-1)
             for inst in range(self.nb_instruments):
                 self.last_inst_mono_list.append(
-                    LastInstMono(softmax_axis=self.softmax_axis))
+                    LastInstMonoBinary(softmax_axis=self.softmax_axis))
             self.already_build = True
         self.split.build(input_shape)
         new_shapes = self.split.compute_output_shape(input_shape)

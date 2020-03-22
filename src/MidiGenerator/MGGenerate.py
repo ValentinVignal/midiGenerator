@@ -64,7 +64,11 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
                 if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
                     preds = preds[np.newaxis]
-                next_array = midi.create.normalize_activation(preds)  # Normalize the activation part
+                next_array = midi.create.normalize_activation(
+                    preds,
+                    mono=self.mono,
+                    use_binary=self.use_binary
+                )  # Normalize the activation part
                 generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, nb_steps, length, 88, 2)
 
                 bar.update(l + 1)
@@ -150,7 +154,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 preds = np.expand_dims(preds, axis=0)
             if len(s_output.shape) == 5:  # Only one instrument : output of nn not a list
                 s_output = np.expand_dims(s_output)
-            preds = midi.create.normalize_activation(preds, mono=self.mono)
+            preds = midi.create.normalize_activation(preds, mono=self.mono, use_binary=self.use_binary)
             truth = np.concatenate((truth, s_output), axis=2)
             for inst in range(nb_instruments):
                 p = np.copy(s_output)
@@ -264,7 +268,8 @@ class MGGenerate(MGComputeGeneration, MGInit):
                 preds = np.expand_dims(preds, axis=0)
             if len(preds_truth.shape) == 5:  # Only one instrument : output of nn not a list
                 preds_truth = np.expand_dims(preds_truth)
-            preds = midi.create.normalize_activation(preds, mono=self.mono)  # Normalize the activation part
+            preds = midi.create.normalize_activation(preds, mono=self.mono,
+                                                     use_binary=self.use_binary)  # Normalize the activation part
             preds_helped = preds[:, [1]]  # (nb_instruments, 1, 1, length, 88, 2)
             preds = preds[:, [0]]
 
@@ -394,7 +399,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
         if length == 0:
             # It means the len of the song is < nb_steps
             shape = (*(x.shape[:2]), self.nb_steps + 1, *(x.shape[3:]))
-            zeros = np.zeros(shape)     # (nb_instruments, batch, nb_steps, step_size, input_size, channels)
+            zeros = np.zeros(shape)  # (nb_instruments, batch, nb_steps, step_size, input_size, channels)
             zeros[:, :, -x.shape[2]:] = x
             x = zeros
             length = 1
@@ -416,17 +421,21 @@ class MGGenerate(MGComputeGeneration, MGInit):
             for step in range(length):
                 inputs = np.take(generated, axis=2, indices=range(step, step + self.nb_steps))
                 # inputs = (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]
-                mask = self.get_mask()      # (batch=1, nb_instruments, nb_steps)
+                mask = self.get_mask()  # (batch=1, nb_instruments, nb_steps)
                 # Remove the instrument from the input
                 mask[0][:, instrument_to_remove] = 0
                 inputs[instrument_to_remove] = 0
                 preds = np.asarray(self.keras_nn.generate(input=list(inputs) + mask)).astype('float64')
                 # preds: (nb_instruments, batch=1, nb_steps=1, step_size, input_size, channels)
-                preds = midi.create.normalize_activation(preds, mono=self.mono)
+                preds = midi.create.normalize_activation(preds, mono=self.mono, use_binary=self.use_binary)
                 preds_index = step + self.nb_steps + (self.predict_offset - 1)
                 generated[instrument_to_remove, :, preds_index: preds_index + 1] = preds[instrument_to_remove]
 
                 bar.update(instrument * length + step)
+            if self.mono:
+                # If mono we say the first measures have no notes
+                generated[instrument_to_remove, :, :self.nb_steps, :, -1] = 1
+                # generated : (nb_instruments, batch=1, nb_steps, step_size, input_size, channels)
 
             all_arrays.append(generated)
             # all_arrays: List(nb_instruments + 1)[(nb_instruments, batch=1, nb_steps, step_size, input_size, channels)]

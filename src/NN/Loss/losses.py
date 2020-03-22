@@ -36,9 +36,10 @@ def basic(lambda_a, lambda_d, *args, **kwargs):
     return _basic
 
 
-def mono(*args, **kwargs):
+def mono(*args, use_binary=g.loss.use_binary, **kwargs):
     """
     Used for model which can predict only one note at the same time
+    :param use_binary: 
     :param args:
     :param kwargs:
     :return:
@@ -57,24 +58,30 @@ def mono(*args, **kwargs):
         y_pred_a_no_nan = utils.non_nan(with_nan=y_true_a, var_to_change=y_pred_a)
         y_true_a_no_nan = utils.non_nan(with_nan=y_true_a, var_to_change=y_true_a)
 
-        # Binary cross entropy
-        y_true_binary = tf.expand_dims(y_true_a_no_nan[:, :, :, -1], axis=-1)  # (batch, nb_steps, step_size, 1)
-        y_pred_binary = tf.expand_dims(y_pred_a_no_nan[:, :, :, -1], axis=-1)  # (batch, nb_steps, step_size, 1)
+        if use_binary:
+            # Binary cross entropy
+            y_true_binary = tf.expand_dims(y_true_a_no_nan[:, :, :, -1], axis=-1)  # (batch, nb_steps, step_size, 1)
+            y_pred_binary = tf.expand_dims(y_pred_a_no_nan[:, :, :, -1], axis=-1)  # (batch, nb_steps, step_size, 1)
 
-        loss_binary = tf.keras.losses.binary_crossentropy(y_true_binary, y_pred_binary)  # (batch, nb_steps, step_size)
-        loss_binary = math.reduce_sum(loss_binary, axis=[1, 2])  # (batch,)
+            loss_binary = tf.keras.losses.binary_crossentropy(y_true_binary,
+                                                              y_pred_binary)  # (batch, nb_steps, step_size)
+            loss_binary = math.reduce_sum(loss_binary, axis=[1, 2])  # (batch,)
 
         # Categorial cross entropy
-        y_true_cat = y_true_a_no_nan[:, :, :, :-1]  # (batch, nb_steps, step_size, input_size - 1)
-        y_pred_cat = y_pred_a_no_nan[:, :, :, :-1]  # (batch, nb_steps, step_size, input_size - 1)
+        y_true_cat = y_true_a_no_nan[:, :, :,
+                     :-1] if use_binary else y_true_a_no_nan  # (batch, nb_steps, step_size, input_size - 1)
+        y_pred_cat = y_pred_a_no_nan[:, :, :,
+                     :-1] if use_binary else y_pred_a_no_nan  # (batch, nb_steps, step_size, input_size - 1)
         # No need to multiply by (1 - y_true_a_non_nan[:, :, :, -1:] because y_true_cat will be all 0 -> loss = 0
 
-        loss_cat = tf.keras.losses.categorical_crossentropy(y_true_cat, y_pred_cat)     # (batch, nb_steps, step_size)
+        loss_cat = tf.keras.losses.categorical_crossentropy(y_true_cat, y_pred_cat)  # (batch, nb_steps, step_size)
         loss_cat = utils.non_nan(loss_cat, loss_cat)
-        loss_cat = tf.reduce_sum(loss_cat, axis=[1, 2])     # (batch,)
+        loss_cat = tf.reduce_sum(loss_cat, axis=[1, 2])  # (batch,)
 
         # Loss
-        loss = loss_binary + loss_cat       # (batch,)
+        loss = loss_cat  # (batch,)
+        if use_binary:
+            loss += loss_binary
         loss = tf.reduce_mean(loss)
         return loss
 

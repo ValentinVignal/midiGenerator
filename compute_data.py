@@ -95,7 +95,7 @@ def main(args):
             matrix_of_single_midi = midi.open.midi_to_matrix(single_midi_path, args.instruments,
                                                              length=args.length,
                                                              notes_range=args.notes_range,
-                                                             tranpose=not args.no_transpose
+                                                             transpose=not args.no_transpose
                                                              )  # (nb_instruments, 88, nb_steps, 2)
         if matrix_of_single_midi is None:  # It means an error happened
             continue

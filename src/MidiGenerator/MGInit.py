@@ -19,6 +19,7 @@ class MGInit:
         self._full_name_i = 0       # To complete the full name
         self.work_on = None
         self.predict_offset = None
+        self.use_binary = g.loss.use_binary
 
         # ----- Data -----
         self.data_transformed_path = None
@@ -145,7 +146,8 @@ class MGInit:
             instruments=self.instruments,
             notes_range=self.notes_range,
             mono=self.mono,
-            transposed=self.transposed
+            transposed=self.transposed,
+            use_binary=self.use_binary
         )
 
     @property

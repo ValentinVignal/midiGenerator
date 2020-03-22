@@ -143,7 +143,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
         ]
         for inst in range(nb_instruments)
     ]  # List(nb_instruments)[List(nb_steps)[batch, step_length, size, channels=1)]]
-    last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
+    last_mono = [mlayers.last.LastInstMonoBinary(softmax_axis=-2) for inst in range(nb_instruments)]
     outputs_inst_steps = [
         [
             last_mono[inst](decoded_inst_steps[inst][step])

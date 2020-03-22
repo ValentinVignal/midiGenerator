@@ -173,6 +173,8 @@ def main(args):
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
+    if not args.no_transposed:
+        data_transformed_path += 'Transposed'
     if args.mono:
         data_transformed_path += 'Mono'
 
@@ -262,13 +264,15 @@ def main(args):
             take_all_step_rhythm=take_all_step_rhythm,
             l_semitone=l_semitone,
             l_tone=l_tone,
-            l_tritone=l_tritone
+            l_tritone=l_tritone,
+            use_binary=args.use_binary
         )
 
         midi_generator.new_nn_model(
             model_id=model_id,
             opt_param=opt_params,
             work_on=args.work_on,
+            use_binary=args.use_binary,
             model_options=model_options,
             loss_options=loss_options,
             print_model=False,

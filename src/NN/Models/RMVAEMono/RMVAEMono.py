@@ -89,7 +89,8 @@ def create(
         take_all_step_rhythm=g.loss.take_all_step_rhythm,
         l_semiton=g.loss.l_semitone,
         l_tone=g.loss.l_tone,
-        l_tritone=g.loss.l_tritone
+        l_tritone=g.loss.l_tritone,
+        use_binary=g.loss.use_binary
     )
     dictionaries.set_default(loss_options, loss_options_default)
 
@@ -232,7 +233,10 @@ def create(
         layer=mlayers.wrapper.func.apply_different_layers(layers=decoders)
     )(rnn_output_steps)     # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
 
-    last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
+    if loss_options['use_binary']:
+        last_mono = [mlayers.last.LastInstMonoBinary(softmax_axis=-2) for inst in range(nb_instruments)]
+    else:
+        last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
     outputs_steps_inst = mlayers.wrapper.func.apply_same_on_list(
         layer=mlayers.wrapper.func.apply_different_on_list(layers=last_mono)
     )(decoded_steps_inst)       # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
@@ -268,7 +272,10 @@ def create(
             **loss_options
         )
         # metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
-        metrics[f'Output_{inst}'] = [Loss.metrics.acc_mono_bin(), Loss.metrics.acc_mono_cat()]
+        if loss_options['use_binary']:
+            metrics[f'Output_{inst}'] = [Loss.metrics.acc_mono_bin(), Loss.metrics.acc_mono_cat()]
+        else:
+            metrics[f'Output_{inst}'] = Loss.metrics.acc_mono()
     if music:
         losses['All_outputs'] = Loss.scale(**loss_options, mono=True)
 

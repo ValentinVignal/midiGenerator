@@ -197,6 +197,8 @@ class Parser(argparse.ArgumentParser):
                           help='the Lambda for the tone loss')
         self.add_argument('--l-tritone', type=self.get_type(argtype, float),
                           help='the Lambda for the tritone loss')
+        self.add_argument('--use-binary', default=False, action='store_true',
+                          help='To use binary cross entropy to note activation')
 
         self.set_defaults(
             loss_name=g.loss.loss_name,

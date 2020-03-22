@@ -11,8 +11,8 @@ from .MGInit import MGInit
 
 class MGModel(MGInit):
 
-    def new_nn_model(self, model_id, work_on=None, opt_param=None, model_options=None, loss_options=None,
-                     print_model=True, predict_offset=None):
+    def new_nn_model(self, model_id, work_on=None, use_binary=None, opt_param=None, model_options=None,
+                     loss_options=None, print_model=True, predict_offset=None):
         """
 
         :param loss_options:
@@ -35,6 +35,7 @@ class MGModel(MGInit):
             self.work_on = g.mg.work_on if self.work_on is None else self.work_on
         else:
             self.work_on = work_on
+        self.use_binary = use_binary
 
         step_length = g.mg.work_on2nb(self.work_on)
         self.get_new_i()
@@ -64,7 +65,7 @@ class MGModel(MGInit):
         """
         name, model_id, total_epochs, indice = id.split('-')
         path_to_load = EPath('saved_models',
-                            f'{name}-m({model_id})-e({total_epochs})-({indice})')
+                             f'{name}-m({model_id})-e({total_epochs})-({indice})')
         with open(str(path_to_load / 'infos.p'), 'rb') as dump_file:
             d = pickle.load(dump_file)
             # Model
@@ -98,7 +99,7 @@ class MGModel(MGInit):
         self.total_epochs = int(total_epochs)
         self.get_new_i()
         path_to_load = EPath('saved_models',
-                            self.full_name)
+                             self.full_name)
         self.keras_nn.load_weights(str(path_to_load / 'MyNN'))
         self.print_model()
         print('Weights of the', colored(f'{id}', 'white', 'on_blue'), 'model loaded')
@@ -117,7 +118,7 @@ class MGModel(MGInit):
         # Where to save the model
         path_to_save = self.saved_model_path if path is None else EPath(path)
         # Clean the folder if already in use
-        shutil.rmtree(path_to_save.as_posix(), ignore_errors=True)     # Delete it if it exists
+        shutil.rmtree(path_to_save.as_posix(), ignore_errors=True)  # Delete it if it exists
         path_to_save.mkdir(parents=True, exist_ok=True)  # Creation of this folder
         self.keras_nn.save(str(path_to_save / 'MyNN'))
         with open(str(path_to_save / 'infos.p'), 'wb') as dump_file:
@@ -164,4 +165,3 @@ class MGModel(MGInit):
         for layer in self.keras_nn.model.layers:
             weights = layer.get_weights()  # list of numpy arrays
             print('Weights:', weights)
-

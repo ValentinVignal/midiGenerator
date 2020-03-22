@@ -15,6 +15,7 @@ take_all_step_rhythm = False
 l_semitone = 1e-2
 l_tone = 1e-2
 l_tritone = 1e-2
+use_binary = False
 
 
 

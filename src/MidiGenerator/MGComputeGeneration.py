@@ -81,7 +81,7 @@ class MGComputeGeneration(MGInit):
         output_notes = midi.create.matrix_to_midi(generated_array,
                                                   instruments=self.instruments,
                                                   notes_range=self.notes_range, no_duration=no_duration,
-                                                  mono=self.mono)
+                                                  mono=self.mono, use_binary=self.use_binary)
         midi.create.print_informations(nb_steps=self.nb_steps * self.step_length,
                                        matrix=generated_array, notes_list=output_notes, verbose=verbose)
         midi.create.save_midi(output_notes_list=output_notes, instruments=self.instruments,
