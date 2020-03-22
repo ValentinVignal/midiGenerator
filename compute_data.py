@@ -86,7 +86,8 @@ def main(args):
         if args.bach:
             matrix_of_single_midi = midi.open.midi_to_matrix_bach(single_midi_path,
                                                                   length=args.length,
-                                                                  notes_range=args.notes_range
+                                                                  notes_range=args.notes_range,
+                                                                  transpose=not args.no_transpose
                                                                   )  # (nb_instruments, 88, nb_steps, 2)
         else:
             matrix_of_single_midi = midi.open.midi_to_matrix(single_midi_path, args.instruments,

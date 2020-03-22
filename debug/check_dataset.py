@@ -48,14 +48,14 @@ def main(args):
         if args.bach:
             matrix_midi = Midi.open.midi_to_matrix_bach(filename=midi_path.as_posix(),
                                                         print_instruments=True,
-                                                        notes_range=args.notes_range
+                                                        notes_range=args.notes_range,
+                                                        transpose=not args.no_transpose
                                                         )
         else:
             matrix_midi = Midi.open.midi_to_matrix(filename=midi_path.as_posix(),
                                                    instruments=args.instruments,
                                                    print_instruments=True,
                                                    notes_range=args.notes_range,
-
                                                    )  # (nb_args.instruments, 128, nb_steps, 2)
         if matrix_midi is None:
             continue

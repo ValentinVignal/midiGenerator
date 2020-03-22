@@ -30,6 +30,17 @@ Use the option `--bach`
 | **Medium2** | 30 | 21 | 18:61 | 322 | :heavy_check_mark: |
 | **Big** | 100 | 74 | 17:61 | 1127 | :heavy_check_mark: |
 
+### BachChoraleT
+
+Use the option `--bach`
+
+| | nb songs | nb accepted songs :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **Small** | 3 | 2 | 20:56 | 23 | :heavy_check_mark: |
+| **Medium** | 15 | 11 | 15:63 | 155 | :heavy_check_mark: |
+| **Medium2** | 30 | 21 | 15:63 | 322 | :heavy_check_mark: |
+| **Big** | 100 | 74 | 10:68 | 1127 | :heavy_check_mark: |
+
 # Other Dataset
 
 | Name | nb songs | instruments | nb accepted songs  :heavy_check_mark: | notes range :musical_note: | nb measures :musical_score: | Mono |

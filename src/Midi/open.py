@@ -42,7 +42,8 @@ def notes_to_matrix(notes, durations, offsets):
     total_offset_axis = last_offset * 4 + (
             8 * 4)  # nb times * 4 because quarter note + 2 measures (max length of a note)
     our_matrix = np.zeros(
-        (128, math.ceil(total_offset_axis / (4 * g.midi.step_per_beat)) * 4 * g.midi.step_per_beat, 2))  # (128, nb_times, 2)
+        (128, math.ceil(total_offset_axis / (4 * g.midi.step_per_beat)) * 4 * g.midi.step_per_beat,
+         2))  # (128, nb_times, 2)
 
     for (note, duration, offset) in zip(notes, durations, offsets):
         # how_many = int(float(duration) / 0.25)  # indicates time duration for single note.
@@ -226,15 +227,18 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
     return final_matrix
 
 
-def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_range=None):
+def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_range=None, transpose=False):
     """
     convert Midi file to matrix for DL architecture.
+    :param transpose:
     :param filename: path to the Midi file
     :param length: length max of the song
     :param print_instruments: bool
     :return: matrix with shape
     """
     midi = midifile_to_stream(filename)  # Load the file
+    if transpose:
+        midi = transpose_to_c(midi)
     if midi is None:
         return None
     if len(midi) != 4:
@@ -352,6 +356,28 @@ def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_ra
     return final_matrix
 
 
+def transpose_to_c(stream, keep_non_traditional=False):
+    """
+
+    :param keep_non_traditional:
+    :param stream: music21 stream
+    :return:
+    """
+    k = stream.analyze('key')
+    if not keep_non_traditional and k.isNonTraditional:
+        cprint(f'NonTraditional Key {k}', 'red')
+        return None
+    if k.mode == 'major':
+        interval = music21.interval.Interval(k.tonic, music21.pitch.Pitch('C'))
+    elif k.mode == 'minor':
+        interval = music21.interval.Interval(k.tonic, music21.pitch.Pitch('A'))
+    else:
+        cprint(f'Key is neither major or minor: {k.mode}', 'red')
+    transposed_stream = stream.transpose(interval)
+    k2 = transposed_stream.analyze('key')
+    return transposed_stream
+
+
 def all_midi_files(path, small_data):
     """
 
@@ -388,7 +414,7 @@ def to_mono_matrix(matrix):
     :return:
     """
     nb_instruments, input_size, nb_steps, _ = matrix.shape
-    one_note = np.zeros((nb_instruments, input_size + 1, nb_steps))     # Last note is the "rest" note
+    one_note = np.zeros((nb_instruments, input_size + 1, nb_steps))  # Last note is the "rest" note
     one_note[:, :-1, :] = matrix[:, :, :, 0]  # (nb_instruments, 88, nb_steps) (we don't need the duration)
     np.place(one_note[:, -1, :],
              np.all(one_note[:, :-1] == 0, axis=1),
@@ -404,4 +430,3 @@ def note_to_midinote(note, notes_range=(0, 88)):
     :return:
     """
     return note + 21 + notes_range[0]
-

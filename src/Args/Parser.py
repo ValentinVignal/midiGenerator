@@ -430,6 +430,8 @@ class Parser(argparse.ArgumentParser):
         if argtype in [ArgType.ALL, ArgType.CheckData]:
             self.add_argument('--images', action='store_true', default=False,
                               help='To also create the pianoroll')
+        self.add_argument('--no-transpose', action='store_true', default=False,
+                          help='To disable the transposition to C major')
 
         return self
 
