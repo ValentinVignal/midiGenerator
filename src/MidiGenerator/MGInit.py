@@ -30,6 +30,7 @@ class MGInit:
         self.sequence = None  # Instance of MySequence Generator
         self.batch = None  # Size if the batch
         self.mono = None  # If this is not polyphonic instrument and no rest
+        self.transposed = None      # If the dataset has been transposed
 
         # ----- Neural Network -----
         self.input_param = None  # The parameters for the neural network
@@ -141,9 +142,10 @@ class MGInit:
             work_on=self.work_on,
             predict_offset=self.predict_offset,
             nb_instruments=self.nb_instruments,
-            instrumetns=self.instruments,
+            instruments=self.instruments,
             notes_range=self.notes_range,
-            mono=self.mono
+            mono=self.mono,
+            transposed=self.transposed
         )
 
     @property

@@ -246,6 +246,8 @@ class Parser(argparse.ArgumentParser):
                           help='note, beat or measure')
         self.add_argument('--mono', default=False, action='store_true',
                           help='To work with monophonic instruments')
+        self.add_argument('--no-transposed', default=False, action='store_true',
+                          help='To not use a transposed dataset')
         # ---------- Model Id and Load ----------
         if argtype in [ArgType.ALL, ArgType.Train]:
             self.add_argument('-m', '--model-id', type=str, default='',

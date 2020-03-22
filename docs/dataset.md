@@ -30,7 +30,7 @@ Use the option `--bach`
 | **Medium2** | 30 | 21 | 18:61 | 322 | :heavy_check_mark: |
 | **Big** | 100 | 74 | 17:61 | 1127 | :heavy_check_mark: |
 
-### BachChoraleT
+### BachChorale (***transposed***)
 
 Use the option `--bach`
 

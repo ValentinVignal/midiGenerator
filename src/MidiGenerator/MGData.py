@@ -24,6 +24,7 @@ class MGData(MGInit):
             self.instruments = d['instruments']
             self.notes_range = d['notes_range']
             self.mono = d['mono']
+            self.transposed = d['transposed']
         if verbose == 1:
             print('data at', colored(data_transformed_path, 'grey', 'on_white'), 'loaded')
 

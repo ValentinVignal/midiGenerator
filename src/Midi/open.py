@@ -120,9 +120,11 @@ def midifile_to_stream(filename, keep_drums=False):
         return None
 
 
-def midi_to_matrix(filename, instruments, length=None, print_instruments=False, notes_range=None):
+def midi_to_matrix(filename, instruments, length=None, print_instruments=False, notes_range=None, transpose=True):
     """
     convert Midi file to matrix for DL architecture.
+    :param transpose:
+    :param notes_range:
     :param filename: path to the Midi file
     :param instruments: instruments to train on
     :param length: length max of the song
@@ -132,6 +134,8 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
     midi = midifile_to_stream(filename)  # Load the file
     if midi is None:
         return None
+    if transpose:
+        midi = transpose_to_c(midi)
     parts = music21.instrument.partitionByInstrument(midi)
     notes_range = (0, 88) if notes_range is None else notes_range
 
@@ -227,9 +231,10 @@ def midi_to_matrix(filename, instruments, length=None, print_instruments=False, 
     return final_matrix
 
 
-def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_range=None, transpose=False):
+def midi_to_matrix_bach(filename, length=None, print_instruments=False, notes_range=None, transpose=True):
     """
     convert Midi file to matrix for DL architecture.
+    :param notes_range:
     :param transpose:
     :param filename: path to the Midi file
     :param length: length max of the song
@@ -374,7 +379,6 @@ def transpose_to_c(stream, keep_non_traditional=False):
     else:
         cprint(f'Key is neither major or minor: {k.mode}', 'red')
     transposed_stream = stream.transpose(interval)
-    k2 = transposed_stream.analyze('key')
     return transposed_stream
 
 

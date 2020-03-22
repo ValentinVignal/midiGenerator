@@ -27,6 +27,8 @@ def check_args(args):
     else:
         data_path = os.path.join('../../../../../../storage1/valentin', args.data)
     data_transformed_path = data_path + '_transformed'
+    if not args.no_transpose:
+        data_transformed_path += 'Transposed'
     if args.mono:
         data_transformed_path += 'Mono'
 
@@ -92,7 +94,8 @@ def main(args):
         else:
             matrix_of_single_midi = midi.open.midi_to_matrix(single_midi_path, args.instruments,
                                                              length=args.length,
-                                                             notes_range=args.notes_range
+                                                             notes_range=args.notes_range,
+                                                             tranpose=not args.no_transpose
                                                              )  # (nb_instruments, 88, nb_steps, 2)
         if matrix_of_single_midi is None:  # It means an error happened
             continue
@@ -148,7 +151,8 @@ def main(args):
             'input_size': all_shapes[0][0][2],  # The number of notes
             'notes_range': args.notes_range,
             'mono': args.mono,
-            'nb_files_per_npy': g.midi.nb_files_per_npy
+            'nb_files_per_npy': g.midi.nb_files_per_npy,
+            'transposed': not args.no_transpose
         }, dump_file)
 
     summary.summarize(
