@@ -83,17 +83,18 @@ def save_tensorboard_plots(data, path, mono=False):
     loss_names = ['loss', 'kld']
     for name in loss_names:
         key = f'epoch_{name}'
-        plt.figure()
-        train, validation = data['train'][key], data['validation'][key]
-        plt.plot(train[0], train[1], label='Train', color=colors[0], linestyle='-')
-        plt.plot(validation[0], validation[1], label='Validation', color=colors[1], linestyle='-')
-        plt.title(name)
-        plt.xlabel('Epochs')
-        plt.ylabel(f'{name} value')
-        plt.legend()
-        plt.grid()
-        plt.savefig((path / name).with_suffix('.png'))
-        plt.close()
+        if key in data['train']:
+            plt.figure()
+            train, validation = data['train'][key], data['validation'][key]
+            plt.plot(train[0], train[1], label='Train', color=colors[0], linestyle='-')
+            plt.plot(validation[0], validation[1], label='Validation', color=colors[1], linestyle='-')
+            plt.title(name)
+            plt.xlabel('Epochs')
+            plt.ylabel(f'{name} value')
+            plt.legend()
+            plt.grid()
+            plt.savefig((path / name).with_suffix('.png'))
+            plt.close()
 
     # --------------------------------------------------
     #               Cross instruments
@@ -125,9 +126,10 @@ def save_tensorboard_plots(data, path, mono=False):
     for i in range(len(loss_names)):
         name = loss_names[i]
         key = f'epoch_{name}'
-        train, validation = data['train'][key], data['validation'][key]
-        plt.plot(train[0], train[1], label=f'{name} train', color=colors[i], linestyle='-')
-        plt.plot(validation[0], validation[1], label=f'{name} val', color=colors[i], linestyle='--')
+        if key in data['train']:
+            train, validation = data['train'][key], data['validation'][key]
+            plt.plot(train[0], train[1], label=f'{name} train', color=colors[i], linestyle='-')
+            plt.plot(validation[0], validation[1], label=f'{name} val', color=colors[i], linestyle='--')
     plt.title('Losses')
     plt.xlabel('Epochs')
     plt.ylabel(f'Losses value')
