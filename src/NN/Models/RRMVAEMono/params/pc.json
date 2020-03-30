@@ -1,0 +1,6 @@
+{
+  "dense_note": [16, 16],
+  "lstm_note": [64],
+  "dense_measure": [64, 32],
+  "lstm_measure": ["nb_steps * nb_instruments * 16"]
+}
