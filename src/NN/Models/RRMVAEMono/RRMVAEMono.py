@@ -133,9 +133,6 @@ def create(
     ]  # List(nb_instruments)[(nb_steps, step_length, input_size)]
 
     # ------------------------------ Encoding Notes ------------------------------
-    inputs_inst_step = [
-        mlayers.shapes.Unstack(axis=0)(inp) for inp in inputs_midi_reshaped
-    ]  # List(nb_instruments, nb_steps([(step_length, input_size)]
 
     encoders_note = [mlayers.dense.DenseCoder(
         size_list=model_param['dense_note'],
@@ -151,11 +148,10 @@ def create(
         mlayers.rnn.LstmRNN(
             size_list=model_param['lstm_note'],
             dropout=model_options['dropout_r'],
-        )
-    for _ in range(nb_instruments)]
+        ) for _ in range(nb_instruments)]
 
     notes_encoded_inst_step = [
-        mlayers.shapes.Unstack(axis=0)(inp) for inp in inputs_midi_reshaped
+        mlayers.shapes.Unstack(axis=0)(inp) for inp in note_encoded
     ]  # List(nb_instruments, nb_steps)[(step_length, input_size)]
     notes_encoded_step_inst = mlayers.shapes.transpose_list(
         l=notes_encoded_inst_step,
@@ -181,8 +177,7 @@ def create(
         mlayers.dense.DenseCoder(
             size_list=model_param['dense_measure'],
             dropout=model_options['dropout_d']
-        )
-    for _ in range(nb_instruments)]
+        ) for _ in range(nb_instruments)]
 
     measure_encoded_inst = mlayers.wrapper.func.apply_different_on_list(
         layers=encoders_measure
@@ -229,7 +224,7 @@ def create(
 
     rnn_output = mlayers.rnn.LstmRNN(
         size_list=model_param['lstm_measure'],
-        return_sequence=replicate,
+        return_sequences=replicate,
         use_sah=model_options['sah'],
         dropout=model_options['dropout_r']
     )(samples)  # (batch, steps, size) if replicate else (batch, size)
@@ -248,8 +243,7 @@ def create(
         mlayers.dense.DenseCoder(
             size_list=model_param['dense_measure'][::-1],
             dropout=model_options['dropout_d']
-        )
-    ]
+        ) for _ in range(nb_instruments)]
 
     decoded_measure = mlayers.wrapper.func.apply_different_layers(
         layers=measure_decoders
@@ -277,6 +271,17 @@ def create(
             layers=measure_decoders_lstm
         )
     )(decoded_measure_step_inst)        # List(nb_steps, nb_instruments)[(batch, step_length, size)]
+
+    decoders_notes = [mlayers.dense.DenseCoder(
+        size_list=dense_note_decoder,
+        dropout=model_options['dropout_d']
+        ) for _ in range(nb_instruments)]
+
+    decoded_notes_step_inst = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_different_on_list(
+            layers=decoders_notes
+        )
+    )(decoded_notes_step_inst)      # List(nb_steps, nb_instruments)[(batch, step_length, size)]
 
     decoded_measure_step_inst_withchannels = mlayers.wrapper.func.apply_same_on_list(
         layer=mlayers.wrapper.func.apply_same_on_list(

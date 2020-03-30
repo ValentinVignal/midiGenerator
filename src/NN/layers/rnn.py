@@ -10,15 +10,15 @@ layers = tf.keras.layers
 
 
 class LstmBlock(KerasLayer):
-    def __init__(self, size: int, dropout: float = g.nn.dropout_r, return_sequence: bool = False, *args, **kwargs):
+    def __init__(self, size: int, dropout: float = g.nn.dropout_r, return_sequences: bool = False, *args, **kwargs):
         super(LstmBlock, self).__init__(*args, **kwargs)
         # ---------- Raw parameters ----------
         self.size = size
         self.dropout = dropout
-        self.return_sequence = return_sequence
+        self.return_sequences = return_sequences
 
         self.lstm = layers.LSTM(size,
-                                return_sequences=return_sequence,
+                                return_sequences=return_sequences,
                                 unit_forget_bias=True,
                                 dropout=dropout,
                                 recurrent_dropout=dropout)
@@ -31,7 +31,7 @@ class LstmBlock(KerasLayer):
         config.update(dict(
             size=self.size,
             dropout=self.dropout,
-            return_sequence=self.return_sequence
+            return_sequences=self.return_sequences
         ))
         return config
 
@@ -57,14 +57,14 @@ class LstmBlock(KerasLayer):
 class LstmRNN(KerasLayer):
     type_size_list = t.List[int]
 
-    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout_r, return_sequence: bool = False,
+    def __init__(self, size_list: type_size_list, dropout: float = g.nn.dropout_r, return_sequences: bool = False,
                  use_sah=False, state_as_output=False, *args, **kwargs):
         """
 
         :param state_as_output:
         :param size_list:
         :param dropout:
-        :param return_sequence: If True, returns the all sequence
+        :param return_sequences: If True, returns the all sequence
         :param use_sah: If True, use a Self Attention Head after the first layer of LSTM
         :param args:
         :param kwargs:
@@ -74,7 +74,7 @@ class LstmRNN(KerasLayer):
         self.state_as_output = state_as_output
         self.size_list = size_list
         self.dropout = dropout
-        self.return_sequence = return_sequence
+        self.return_sequences = return_sequences
         self.use_sah = use_sah
 
         self.lstm_blocks = []
@@ -82,9 +82,9 @@ class LstmRNN(KerasLayer):
 
     def init_lstm_blocks(self, size_list, dropout=g.nn.dropout_r):
         for index, size in enumerate(size_list):
-            return_sequence = index < len(size_list) - 1 or self.return_sequence
-            self.lstm_blocks.append(LstmBlock(size=size, dropout=dropout, return_sequence=return_sequence))
-            if index == 0 and self.use_sah and (len(size_list) > 1 or self.return_sequence):
+            return_sequence = index < len(size_list) - 1 or self.return_sequences
+            self.lstm_blocks.append(LstmBlock(size=size, dropout=dropout, return_sequences=return_sequence))
+            if index == 0 and self.use_sah and (len(size_list) > 1 or self.return_sequences):
                 self.lstm_blocks.append(SAH(latent_size=size))
 
     def get_config(self):
@@ -92,7 +92,7 @@ class LstmRNN(KerasLayer):
         config.update(dict(
             size_list=self.size_list,
             dropout=self.dropout,
-            return_sequence=self.return_sequence,
+            return_sequences=self.return_sequences,
             use_sah=self.use_sah
         ))
         return config
@@ -158,9 +158,10 @@ class LSTMGen(KerasLayer):
             unit_forget_bias=True,
             dropout=self.dropout,
             recurrent_dropout=self.dropout,
-            return_sequanece=True,
+            return_sequences=True,
             return_state=True
         )
+        self.lstm.build((x[0], 1, x[1]))
 
     def call(self, inputs):
         """
@@ -169,15 +170,16 @@ class LSTMGen(KerasLayer):
         :return:
         """
         state_h, state_c, x = inputs
+        x = tf.expand_dims(input=x, axis=1)     # (batch, 1, size)
         outputs = []
         states = state_h, state_c
         x_ = x
         for _ in range(self.nb_steps):
-            x_, state_h_, state_c_ = self.lstm(x, initial_state=states)
+            x_, state_h_, state_c_ = self.lstm(x_, initial_state=states)
             outputs.append(x_)
             states = [state_h_, state_c_]
         # outputs: List(nb_steps)[batch, nb_units)]
-        stacked_outputs = tf.stack(values=outputs, axis=1)      # (batch, nb_steps, nb_units)
+        stacked_outputs = tf.concat(values=outputs, axis=1)      # (batch, nb_steps, nb_units)
         return stacked_outputs
 
     def compute_output_shape(self, inputs_shape):
@@ -226,7 +228,7 @@ class MultiLSTMGen(KerasLayer):
                 self.lstm_list.append(LstmBlock(
                     size=size_list[i],
                     dropout=dropout,
-                    return_sequence=True,
+                    return_sequences=True,
                 ))
                 self.dense_list.append(layers.Dense(
                     units=2*size_list[i]            # To create state h and state c
@@ -247,7 +249,7 @@ class MultiLSTMGen(KerasLayer):
         :param inputs_shape: (batch, size)
         :return:
         """
-        for i in range(self.size_list):
+        for i in range(len(self.size_list)):
             self.dense_list[i].build(inputs_shape)
             if i == 0:
                 self.first_dense.build(inputs_shape)

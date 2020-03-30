@@ -54,7 +54,7 @@ def build_model():
     inputs = tf.keras.Input(shape=(20, 30))
     x = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(20))(inputs)
     # x = tf.keras.layers.LSTM(20, return_sequences=True)(x)
-    x = mlayers.rnn.LstmRNN(size_list=[20, 30], return_sequence=True)(x)
+    x = mlayers.rnn.LstmRNN(size_list=[20, 30], return_sequences=True)(x)
     outputs = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(10))(x)
 
     model = tf.keras.Model(inputs=inputs, outputs=outputs)

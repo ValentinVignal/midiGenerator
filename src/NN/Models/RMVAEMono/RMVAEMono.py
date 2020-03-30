@@ -207,7 +207,7 @@ def create(
 
     rnn_output = mlayers.rnn.LstmRNN(
         size_list=model_param['lstm'],
-        return_sequence=replicate,
+        return_sequences=replicate,
         use_sah=model_options['sah'],
         dropout=model_options['dropout_r']
     )(samples)  # (batch, steps, size) if replicate else (batch, size)

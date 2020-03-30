@@ -122,7 +122,7 @@ def create_model(input_param, model_param, nb_steps, step_length, optimizer, mod
 
     rnn_output = mlayers.rnn.LstmRNN(
         size_list=model_param['lstm'],
-        return_sequence=True
+        return_sequences=True
     )(encoded)  # (batch, nb_steps, size)
     rnn_output_steps = mlayers.shapes.Unstack(axis=0)(rnn_output)  # List(nb_steps)[(batch, size)]
 
