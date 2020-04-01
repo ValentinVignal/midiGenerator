@@ -416,11 +416,11 @@ class MultiLSTMGen(KerasLayer):
         self.lstm_list = []
         for i in range(len(size_list)):
             self.dense_list_forward.append(layers.Dense(
-                units=2*size_list[0]        # To create state h and state c
+                units=2*size_list[i]        # To create state h and state c
             ))
             if bidirectional:
                 self.dense_list_backward.append(layers.Dense(
-                    units=2*size_list[0]        # To create state h and state c
+                    units=2*size_list[i]        # To create state h and state c
                 ))
             if i == 0:
                 # The first one need to generate the sequence from the state
@@ -454,6 +454,7 @@ class MultiLSTMGen(KerasLayer):
         :return:
         """
         for i in range(len(self.size_list)):
+            size_list_i = 2 * self.size_list[i] if self.bidirectional else self.size_list[i]
             self.dense_list_forward[i].build(inputs_shape)
             if self.bidirectional:
                 self.dense_list_backward[i].build(inputs_shape)
@@ -461,9 +462,12 @@ class MultiLSTMGen(KerasLayer):
                 self.first_dense_forward.build(inputs_shape)
                 if self.bidirectional:
                     self.first_dense_backward.build(inputs_shape)
-                self.lstm_list[0].build((None, self.size_list[0]))
+                    self.lstm_list[0].build([(None, size_list_i), (None, size_list_i)])
+                else:
+                    self.lstm_list[0].build([(None, size_list_i), (None, size_list_i)])
             else:
-                self.lstm_list[i].build((None, self.nb_steps,  self.size_list[i-1]))
+                size_list_i = 2 * self.size_list[i-1] if self.bidirectional else self.size_list[i-1]
+                self.lstm_list[i].build((None, self.nb_steps,  size_list_i))
 
     def call(self, inputs):
         """
@@ -472,37 +476,43 @@ class MultiLSTMGen(KerasLayer):
         :return:
         """
         first_x_forward = self.first_dense_forward(inputs)      # (batch, size)
-        first_x_backward = self.first_dense_backward(inputs)      # (batch, size)
         first_states_forward = self.dense_list_forward[0](inputs)
         first_states_forward_list = [
             first_states_forward[:, :self.size_list[0]],
             first_states_forward[:, self.size_list[0]:]
         ]
-        first_states_backward = self.dense_list_backward[0](inputs)
-        first_states_backward_list = [
-            first_states_backward[:, :self.size_list[0]],
-            first_states_backward[:, self.size_list[0]:]
-        ]
-        sequence = self.lstm_list[0](
-            inputs=[first_x_forward, first_x_backward],
-            initial_state=[first_states_forward_list, first_states_backward_list]
-        )      # LstmGen
+        if self.bidirectional:
+            first_x_backward = self.first_dense_backward(inputs)      # (batch, size)
+            first_states_backward = self.dense_list_backward[0](inputs)
+            first_states_backward_list = [
+                first_states_backward[:, :self.size_list[0]],
+                first_states_backward[:, self.size_list[0]:]
+            ]
+            sequence = self.lstm_list[0](
+                inputs=[first_x_forward, first_x_backward],
+                initial_state=[first_states_forward_list, first_states_backward_list]
+            )      # LstmGen
+        else:
+            sequence = self.lstm_list[0](
+                inputs=first_x_forward,
+                initial_state=first_states_forward_list
+            )
         # sequence: (batch, nb_steps, size)
         for i in range(1, len(self.size_list)):
             states_forward = self.dense_list_forward[i](inputs)     # (batch, 2*size)
-            state_h_forward, state_c_forward = states_forward[:, :self.size_list[i]], states_forward[:, self.size_list:]
+            state_h_forward, state_c_forward = states_forward[:, :self.size_list[i]], states_forward[:, self.size_list[i]:]
             # state_h: (batch, size)
             # state_c: (batch, size)
-            states_backward = self.dense_list_backward[i](inputs)     # (batch, 2*size)
-            state_h_backward, state_c_backward = states_backward[:, :self.size_list[i]], states_backward[:, self.size_list:]
-            # state_h: (batch, size)
-            # state_c: (batch, size)
+            all_states = [state_h_forward, state_c_forward]
+            if self.bidirectional:
+                states_backward = self.dense_list_backward[i](inputs)     # (batch, 2*size)
+                state_h_backward, state_c_backward = states_backward[:, :self.size_list[i]], states_backward[:, self.size_list[i]:]
+                # state_h: (batch, size)
+                # state_c: (batch, size)
+                all_states = [all_states, [state_h_backward, state_c_backward]]
             sequence = self.lstm_list[i](
                 inputs=sequence,
-                initial_state=[
-                    [state_h_forward, state_c_backward],
-                    [state_h_backward, state_c_backward]
-                ]
+                initial_state=all_states
             )
         return sequence
 
