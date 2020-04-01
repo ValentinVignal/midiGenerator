@@ -148,6 +148,7 @@ def create(
         mlayers.rnn.LstmRNN(
             size_list=model_param['lstm_note'],
             dropout=model_options['dropout_r'],
+            bidirectionnal=True
         ) for _ in range(nb_instruments)]
 
     notes_encoded_inst_step = [
@@ -263,7 +264,8 @@ def create(
         mlayers.rnn.MultiLSTMGen(
             nb_steps=step_length,
             size_list=model_param['lstm_note'][::-1],
-            dropout=model_options['dropout_r']
+            dropout=model_options['dropout_r'],
+            bidirectional=True
         ) for _ in range(nb_instruments)]
 
     decoded_notes_step_inst = mlayers.wrapper.func.apply_same_on_list(

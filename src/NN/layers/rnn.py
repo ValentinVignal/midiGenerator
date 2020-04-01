@@ -63,7 +63,7 @@ class Lstm(KerasLayer):
         :return:
         """
         self.forward.build(inputs_shape)
-        if self.bidirectionnal:
+        if self.bidirectional:
             self.backward.build(inputs_shape)
 
     def call(self, inputs, initial_state=None):
@@ -136,9 +136,7 @@ class LstmBlock(KerasLayer):
         self.lstm = Lstm(
             size,
             return_sequences=return_sequences,
-            unit_forget_bias=True,
             dropout=dropout,
-            recurrent_dropout=dropout,
             bidirectional=bidirectional
         )
         self.batch_norm = layers.BatchNormalization()
@@ -332,7 +330,7 @@ class LSTMGen(KerasLayer):
             # inputs
             if isinstance(inputs, list):
                 x_forward = inputs[0]
-                x_backward = inputs[1] if len(input) > 1 else inputs[0]
+                x_backward = inputs[1] if len(inputs) > 1 else inputs[0]
             else:
                 x_forward = inputs
                 x_backward = inputs
@@ -487,12 +485,11 @@ class MultiLSTMGen(KerasLayer):
         ]
         sequence = self.lstm_list[0](
             inputs=[first_x_forward, first_x_backward],
-            initial_states=[first_states_forward_list, first_states_backward_list]
+            initial_state=[first_states_forward_list, first_states_backward_list]
         )      # LstmGen
         # sequence: (batch, nb_steps, size)
         for i in range(1, len(self.size_list)):
             states_forward = self.dense_list_forward[i](inputs)     # (batch, 2*size)
-            states_backward = self.dense_list_backward[i](inputs)     # (batch, 2*size)
             state_h_forward, state_c_forward = states_forward[:, :self.size_list[i]], states_forward[:, self.size_list:]
             # state_h: (batch, size)
             # state_c: (batch, size)
