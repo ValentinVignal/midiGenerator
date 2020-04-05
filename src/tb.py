@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 def get_tensorboard_data(path, train=True, validation=True):
     """
     Get the scalar data from the tensorboard files
-    :param path:
+    :param path: path of the tensorboard folder
     :return: dict(
         train=dict(
             scale_name=(x_array, y_array)
