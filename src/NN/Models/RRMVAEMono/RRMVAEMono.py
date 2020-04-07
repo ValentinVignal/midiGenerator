@@ -285,21 +285,24 @@ def create(
         )
     )(decoded_notes_step_inst)      # List(nb_steps, nb_instruments)[(batch, step_length, size)]
 
-    decoded_measure_step_inst_withchannels = mlayers.wrapper.func.apply_same_on_list(
-        layer=mlayers.wrapper.func.apply_same_on_list(
-            layer=mlayers.shapes.ExpandDims(axis=-1)
-        )
-    )(decoded_notes_step_inst)      # List(nb_steps, nb_instruments)[(batch, step_length, size, channels=1)]    (Mono)
-
+    # Last layer
     if loss_options['use_binary']:
         last_mono = [mlayers.last.LastInstMonoBinary(softmax_axis=-2) for inst in range(nb_instruments)]
     else:
-        last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
-    outputs_steps_inst = mlayers.wrapper.func.apply_same_on_list(
+        # last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
+        last_mono = [mlayers.dense.DenseSameShape(activation_layer=layers.Softmax(axis=-1)) for _ in range(nb_instruments)]
+    outputs_step_inst = mlayers.wrapper.func.apply_same_on_list(
         layer=mlayers.wrapper.func.apply_different_on_list(layers=last_mono)
-    )(decoded_measure_step_inst_withchannels)  # List(nb_steps, nb_instruments)[(batch, step_length, size, channels)]
+    )(decoded_notes_step_inst)  # List(nb_steps, nb_instruments)[(batch, step_length, size)]
+
+    # Add the channels
+    outputs_step_inst_withchannels = mlayers.wrapper.func.apply_same_on_list(
+        layer=mlayers.wrapper.func.apply_same_on_list(
+            layer=mlayers.shapes.ExpandDims(axis=-1)
+        )
+    )(outputs_step_inst)      # List(nb_steps, nb_instruments)[(batch, step_length, size, channels=1)]    (Mono)
     outputs_inst_steps = mlayers.shapes.transpose_list(
-        outputs_steps_inst,
+        outputs_step_inst_withchannels,
         axes=(1, 0))  # List(nb_instruments, nb_steps)[batch, step_length, size, channels)]
 
     outputs = [mlayers.shapes.Stack(axis=0)(o) for o in

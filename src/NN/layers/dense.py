@@ -119,16 +119,26 @@ class DenseSameShape(KerasLayer):
     """
     Return a Dense layer which has the same shape as the inputs
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, activation_layer=None, **kwargs):
+        """
+
+        :param args:
+        :param activation_layer:
+        :param kwargs:
+        """
         super(DenseSameShape, self).__init__(*args, **kwargs)
         self.kwargs = kwargs
+        self.activation_layer = activation_layer
         self.dense = None
         self.already_built = False
         self.units = None
 
     def get_config(self):
         config = super(DenseSameShape, self).get_config()
-        config.update(self.kwargs)
+        config.update(
+            # self.kwargs,
+            activation_layer=self.activation_layer
+        )
         return config
 
     def build(self, input_shape):
@@ -142,12 +152,17 @@ class DenseSameShape(KerasLayer):
             self.dense = layers.Dense(units=self.units, **self.kwargs)
             self.already_built = True
         self.dense.build(input_shape)
-        self.set_weights_variables(self.dense)
+        # self.set_weights_variables(self.dense)
+        if self.activation_layer is not None:
+            self.activation_layer.build(input_shape)
         super(DenseSameShape, self).build(input_shape)
 
     def call(self, inputs):
         # print('DenseSameShape call: inputs', inputs, 'units', self.units)
-        return self.dense(inputs)
+        x = self.dense(inputs)
+        if self.activation_layer is not None:
+            x = self.activation_layer(x)
+        return x
 
     def compute_output_shape(self, input_shape):
         return self.dense.compute_output_shape(input_shape)
