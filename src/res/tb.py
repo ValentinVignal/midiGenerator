@@ -43,7 +43,7 @@ def get_all_data(paths):
 
 
 def plot_several_tensorboard(data, label, run_names=None, run_labels=None, max_length=None, train=True,
-                             validation=False):
+                             validation=True):
     """
 
     :param run_labels:
@@ -64,12 +64,13 @@ def plot_several_tensorboard(data, label, run_names=None, run_labels=None, max_l
     plt.title(label)
     validation_linestyle = '--' if train else '-'
     for i, run_name in enumerate(run_names):
-        train, validation = data[run_name]['train'][label], data[run_name]['validation'][label]
         if train:
-            plt.plot(train[0][:max_length], train[1][:max_length], label=f'Train {run_labels[i]}', linestyle='-',
+            train_data = data[run_name]['train'][label]
+            plt.plot(train_data[0][:max_length], train_data[1][:max_length], label=f'Train {run_labels[i]}', linestyle='-',
                      color=colors[i])
         if validation:
-            plt.plot(validation[0][:max_length], validation[1][:max_length], label=f'Val {run_labels[i]}',
+            validation_data = data[run_name]['validation'][label]
+            plt.plot(validation_data[0][:max_length], validation_data[1][:max_length], label=f'Val {run_labels[i]}',
                      linestyle=validation_linestyle, color=colors[i])
     plt.xlabel('Epochs')
     plt.ylabel('Value')
