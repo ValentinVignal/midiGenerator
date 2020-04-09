@@ -287,7 +287,7 @@ def create(
 
     # Last layer
     if loss_options['use_binary']:
-        last_mono = [mlayers.last.LastInstMonoBinary(softmax_axis=-2) for inst in range(nb_instruments)]
+        last_mono = [mlayers.last.LastInstMonoBinary(softmax_axis=-1) for inst in range(nb_instruments)]
     else:
         # last_mono = [mlayers.last.LastInstMono(softmax_axis=-2) for inst in range(nb_instruments)]
         last_mono = [mlayers.dense.DenseSameShape(activation_layer=layers.Softmax(axis=-1)) for _ in range(nb_instruments)]
