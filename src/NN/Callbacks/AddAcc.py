@@ -33,3 +33,14 @@ class AddAcc(KerasCallback):
                     ])
                     logs[f'val_Output_{i}_acc'] = acc
                     i += 1
+        if 'Output_0_acc' not in logs:
+            # So we have to construct it
+            if self.mono:
+                i = 0
+                while f'Output_{i}_loss' in logs:
+                    acc = np.mean([
+                        logs[f'Output_{i}_acc_cat'],
+                        logs[f'Output_{i}_acc_bin']
+                    ])
+                    logs[f'Output_{i}_acc'] = acc
+                    i += 1
