@@ -88,6 +88,11 @@ class BandPlayer(Controller):
             self.band_players.append(MidiPlayer(instrument=instrument))
 
     def get_nn_mask(self, instrument_mask=None):
+        """
+
+        :param instrument_mask:
+        :return:
+        """
         nn_mask = self.model.get_mask()  # (batch=1, nb_instruments, nb_steps)
         if instrument_mask is not None:
             for i in range(self.model.nb_instruments):
@@ -97,6 +102,8 @@ class BandPlayer(Controller):
     def play(self, played_voice=None, include_output=None, instrument_mask=None, max_plotted=None, on_step_end_callbacks=[], on_exact_time_step_begin_callbacks=[], on_time_step_end_callbacks=[],
              **kwargs):
         """
+        call the model one time to initialize it
+        Lunch super.play() with callbacks
 
         :return:
         """
@@ -211,37 +218,52 @@ class BandPlayer(Controller):
         """
         to be run on step_end
 
+        model_outputs.append(current_model_part)
+        current_model_part = next_model_part
+        next_model_part = model.predict(model_outputs)
+
         :return:
         """
         self.model_outputs.append(self.current_model_part)
         self.current_model_part = self.next_model_part
-        inputs_models = np.concatenate(self.model_outputs[-self.model.nb_steps:], axis=2)
-        if not self.include_output:
-            inputs_models = np.zeros_like(inputs_models)
-        # input_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
-        played_inst_input = np.concatenate(
-            self.arrays[-self.model.nb_steps:], axis=0
-        )[:, self.midi_notes_range[0]: self.midi_notes_range[1]]
-        # played_inst_input: (nb_steps * step_length, input_size)
-        if self.model.mono:
-            # We have to had the note "no note"
-            no_note_raw = 1 * (np.sum(played_inst_input, axis=1, keepdims=True) == 0)
-            # no_note_raw: Should be an array of shape (nb_steps * step_length, 1) with 1 when no note as been played at
-            # this time step, and 0 if a note has already been played
-            played_inst_input = np.concatenate([played_inst_input, no_note_raw], axis=1)
-        played_inst_input = np.reshape(played_inst_input,
-                                       newshape=(1, self.model.nb_steps, self.step_length, self.model.input_size, 1))
-        # played_inst_input: (batch=1, nb_steps, step_length, input_size, 1
-        inputs_models[self.played_voice] = played_inst_input
-        outputs_model = self.model.keras_nn.generate(input=list(inputs_models) + self.nn_mask)
-        outputs_model = np.asarray(outputs_model).astype('float64')
+        if len(self.model_outputs) < 2 * self.model.nb_steps:
+            # It means, we haven't played more than nb_steps measures yet.
+            # We want to wait before generating anything
+            pass
+            # self.next_model_part stays np zeros
+        else:
+            # The user played already enought measures
+            inputs_models = np.concatenate(self.model_outputs[-self.model.nb_steps:], axis=2)
+            if not self.include_output:
+                inputs_models = np.zeros_like(inputs_models)
+            # input_models: (nb_instruments, batch=1, nb_steps, step_length, input_size, channels)
+            played_inst_input = np.concatenate(
+                self.arrays[-self.model.nb_steps:], axis=0
+            )[:, self.midi_notes_range[0]: self.midi_notes_range[1]]
+            # played_inst_input: (nb_steps * step_length, input_size)
+            if self.model.mono:
+                # We have to had the note "no note"
+                no_note_raw = 1 * (np.sum(played_inst_input, axis=1, keepdims=True) == 0)
+                # no_note_raw: Should be an array of shape (nb_steps * step_length, 1) with 1 when no note as been played at
+                # this time step, and 0 if a note has already been played
+                played_inst_input = np.concatenate([played_inst_input, no_note_raw], axis=1)
+            played_inst_input = np.reshape(played_inst_input,
+                                           newshape=(1, self.model.nb_steps, self.step_length, self.model.input_size, 1))
+            # played_inst_input: (batch=1, nb_steps, step_length, input_size, 1
+            inputs_models[self.played_voice] = played_inst_input
+            outputs_model = self.model.keras_nn.generate(input=list(inputs_models) + self.nn_mask)
+            outputs_model = np.asarray(outputs_model).astype('float64')
 
-        # output_model: (nb_instruments, batch=1, np_steps=1, step_length, input_size, channels)
-        self.next_model_part = normalize_activation(outputs_model, mono=self.model.mono)
+            # output_model: (nb_instruments, batch=1, np_steps=1, step_length, input_size, channels)
+            self.next_model_part = normalize_activation(
+                outputs_model,
+                mono=self.model.mono,
+                use_binary=self.model.use_binary
+            )
 
     def play_current_model_part(self, exact_time_step):
         """
-        Plays the models notes
+        Plays the models notes generated by the model
 
         :param time_step:
         :return:
