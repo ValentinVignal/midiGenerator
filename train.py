@@ -14,18 +14,6 @@ def main(args):
     """
         Entry point
     """
-    # if args.pc:
-    #     # args.data = 'lmd_matched_mini'
-    #     data_path = os.path.join('../Dataset', args.data)
-    #     data_test_path = os.path.join('../Dataset', args.data_test)
-    # else:
-    #     data_path = os.path.join('../../../../../../storage1/valentin', args.data)
-    #     data_test_path = os.path.join('../../../../../../storage1/valentin', args.data_test)
-    # data_transformed_path = data_path + '_transformed'
-    # if not args.no_transposed:
-    #     data_transformed_path += 'Transposed'
-    # if args.mono:
-    #     data_transformed_path += 'Mono'
     data_path = g.path.get_data_path(args.data, args.pc, not args.no_transposed, args.mono)
     data_test_path = None
     if args.data_test is not None:
