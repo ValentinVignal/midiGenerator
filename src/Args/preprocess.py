@@ -48,6 +48,8 @@ def train(args):
         args.batch = 2
         args.max_queue_size = 10        # Default parameter of Keras
         args.workers = 4
+    if args.data_test == '':
+        args.data_test = None
     return args
 
 

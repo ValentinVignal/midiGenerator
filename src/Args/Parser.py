@@ -406,8 +406,10 @@ class Parser(argparse.ArgumentParser):
         :param argtype:
         :return:
         """
-        self.add_argument('-d', '--data', type=str, default='lmd_matched_small',
+        self.add_argument('-d', '--data', type=str, default='BachChoraleBig',
                           help='The name of the data')
+        self.add_argument('--data-test', type=str, default='',
+                          help='The name of the test data')
         return self
 
     def add_compute_data_args(self, argtype=ArgType.ALL):

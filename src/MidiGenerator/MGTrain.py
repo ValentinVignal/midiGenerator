@@ -37,11 +37,11 @@ class MGTrain(MGInit):
 
         if flag_new_sequence:
             self.get_sequence(
-                path=str(self.data_transformed_path),
-                nb_steps=int(self.model_id.split(',')[2]),
-                batch_size=self.batch,
-                work_on=self.work_on,
-                predict_offset=self.predict_offset,
+                # path=self.data_transformed_path,
+                # nb_steps=self.nb_steps,
+                # batch_size=self.batch,
+                # work_on=self.work_on,
+                # predict_offset=self.predict_offset,
             )
         if noise is not None:
             self.sequence.set_noise(noise)
@@ -69,14 +69,16 @@ class MGTrain(MGInit):
         if self.batch is None:
             self.batch = 4
         cprint('Evaluation', 'blue')
-        if self.sequence is None:
-            self.get_sequence(
-                path=str(self.data_transformed_path),
-                nb_steps=int(self.model_id.split(',')[2]),
-                batch_size=self.batch,
-                work_on=self.work_on
-            )
-        evaluation = self.keras_nn.evaluate(generator=self.sequence)
+        # if self.sequence is None:
+        #     self.get_sequence(
+        #         path=str(self.data_transformed_path),
+        #         nb_steps=int(self.model_id.split(',')[2]),
+        #         batch_size=self.batch,
+        #         work_on=self.work_on
+        #     )
+        sequence_test = self.sequence_test      # sequence_test if exists else sequence (train)
+        print('sequence test', sequence_test.path)
+        evaluation = self.keras_nn.evaluate(generator=sequence_test)
 
         metrics_names = self.keras_nn.model.metrics_names
         text = ''

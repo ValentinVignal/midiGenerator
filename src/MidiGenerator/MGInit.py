@@ -23,12 +23,14 @@ class MGInit:
 
         # ----- Data -----
         self.data_transformed_path = None
+        self.data_test_transformed_path = None
 
         self.instruments = None  # List of instruments used
         self.notes_range = None
 
         # ----- MySequence -----
         self.sequence = None  # Instance of MySequence Generator
+        self._sequence_test = None
         self.batch = None  # Size if the batch
         self.mono = None  # If this is not polyphonic instrument and no rest
         self.transposed = None      # If the dataset has been transposed
@@ -147,7 +149,9 @@ class MGInit:
             notes_range=self.notes_range,
             mono=self.mono,
             transposed=self.transposed,
-            use_binary=self.use_binary
+            use_binary=self.use_binary,
+            data=self.data_transformed_path,
+            data_test=self.data_test_transformed_path
         )
 
     @property
@@ -184,6 +188,18 @@ class MGInit:
         del self.sequence
         del self.train_history
         self.delete_tokens()
+
+    @property
+    def sequence_test(self):
+        if self.data_test_transformed_path is None:
+            return self.sequence
+        else:
+            self.get_sequence(test=True)
+            return self._sequence_test
+
+    @sequence_test.setter
+    def sequence_test(self, sequence_test):
+        self._sequence_test = sequence_test
 
     # ----------------------------------------------------------------------------------------------------
     #                                           Functions
@@ -228,6 +244,9 @@ class MGInit:
 
     def change_batch_size(self, *args, **kwargs):
         self.warning_init_function(self.change_batch_size.__name__, 'MGData')
+
+    def create_sequence(self, *args, **kwargs):
+        self.warning_init_function(self.create_sequence.__name__, 'MGData')
 
     def get_sequence(self, *args, **kwargs):
         self.warning_init_function(self.get_sequence.__name__, 'MGData')

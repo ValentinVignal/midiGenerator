@@ -30,10 +30,11 @@ class MGGenerate(MGComputeGeneration, MGInit):
         # ---------- Verify the inputs ----------
 
         # ----- Create the seed -----
-        if self.data_transformed_path is None:
+        if self.data_transformed_path is None and self.data_test_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
+        path = self.data_transformed_path if self.data_test_transformed_path is None else self.data_test_transformed_path
         self.sequence = Sequences.AllInstSequence(
-            path=str(self.data_transformed_path),
+            path=path,
             nb_steps=self.nb_steps,
             batch_size=1,
             work_on=self.work_on)
@@ -113,10 +114,11 @@ class MGGenerate(MGComputeGeneration, MGInit):
         max_length = 300 / self.step_length if max_length is None else max_length
 
         # ----- Variables -----
-        if self.data_transformed_path is None:
+        if self.data_transformed_path is None and self.data_test_transformed_path is None:
             raise Exception('Some data need to be loaded before comparing the generation')
+        path = self.data_transformed_path if self.data_test_transformed_path is None else self.data_test_transformed_path
         sequence = Sequences.KerasSequence(
-            path=self.data_transformed_path,
+            path=path,
             nb_steps=self.nb_steps,
             batch_size=1,
             work_on=self.work_on
@@ -227,10 +229,11 @@ class MGGenerate(MGComputeGeneration, MGInit):
         :return:
         """
         # -------------------- Find informations --------------------
-        if self.data_transformed_path is None:
+        if self.data_transformed_path is None and self.data_test_transformed_path is None:
             raise Exception('Some data need to be loaded before comparing the generation')
+        path = self.data_transformed_path if self.data_test_transformed_path is None else self.data_test_transformed_path
         self.sequence = Sequences.AllInstSequence(
-            path=str(self.data_transformed_path),
+            path=path,
             nb_steps=self.nb_steps,
             batch_size=1,
             work_on=self.work_on,
@@ -378,8 +381,9 @@ class MGGenerate(MGComputeGeneration, MGInit):
         :param noise:
         :return:
         """
+        path = self.data_transformed_path if self.data_test_transformed_path is None else self.data_test_transformed_path
         self.sequence = Sequences.KerasSequence(
-            path=self.data_transformed_path,
+            path=path,
             nb_steps=self.nb_steps,
             batch_size=1,
             work_on=self.work_on,

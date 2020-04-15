@@ -5,6 +5,7 @@ from src.MidiGenerator import MidiGenerator
 from src.NN.KerasNeuralNetwork import KerasNeuralNetwork
 from src import Args
 from src.Args import ArgType, Parser
+from src import GlobalVariables as g
 
 os.system('echo start train.py')
 
@@ -13,16 +14,22 @@ def main(args):
     """
         Entry point
     """
-    if args.pc:
-        # args.data = 'lmd_matched_mini'
-        data_path = os.path.join('../Dataset', args.data)
-    else:
-        data_path = os.path.join('../../../../../../storage1/valentin', args.data)
-    data_transformed_path = data_path + '_transformed'
-    if not args.no_transposed:
-        data_transformed_path += 'Transposed'
-    if args.mono:
-        data_transformed_path += 'Mono'
+    # if args.pc:
+    #     # args.data = 'lmd_matched_mini'
+    #     data_path = os.path.join('../Dataset', args.data)
+    #     data_test_path = os.path.join('../Dataset', args.data_test)
+    # else:
+    #     data_path = os.path.join('../../../../../../storage1/valentin', args.data)
+    #     data_test_path = os.path.join('../../../../../../storage1/valentin', args.data_test)
+    # data_transformed_path = data_path + '_transformed'
+    # if not args.no_transposed:
+    #     data_transformed_path += 'Transposed'
+    # if args.mono:
+    #     data_transformed_path += 'Mono'
+    data_path = g.path.get_data_path(args.data, args.pc, not args.no_transposed, args.mono)
+    data_test_path = None
+    if args.data_test is not None:
+        data_test_path = g.path.get_data_path(args.data_test, args.pc, not args.no_transposed, args.mono)
 
     # -------------------- Create model --------------------
     midi_generator = MidiGenerator(name=args.name)
@@ -36,7 +43,10 @@ def main(args):
         KerasNeuralNetwork.disable_eager_exection()
 
     if args.model_id != '':
-        midi_generator.load_data(data_transformed_path=data_transformed_path)
+        midi_generator.load_data(
+            data_transformed_path=data_path,
+            data_test_transformed_path=data_test_path
+        )
         opt_param = dict(
             lr=args.lr,
             name=args.optimizer,
@@ -80,7 +90,7 @@ def main(args):
         midi_generator.recreate_model(args.load)
 
     # -------------------- Train --------------------
-    midi_generator.train(epochs=10, batch=args.batch, noise=args.noise, validation=args.validation,
+    midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation,
                          sequence_to_numpy=args.seq2np, fast_sequence=args.fast_seq, memory_sequence=args.memory_seq)
 
     # -------------------- Save the model --------------------
