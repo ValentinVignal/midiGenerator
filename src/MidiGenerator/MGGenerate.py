@@ -160,7 +160,7 @@ class MGGenerate(MGComputeGeneration, MGInit):
                                     note = np.random.randint(self.input_size)
                                 else:
                                     bin = np.random.randint(2)
-                                    if bin == 1:
+                                    if bin == 0:
                                         note = self.input_size - 1
                                     else:
                                         note = np.random.randint(self.input_size - 1)
