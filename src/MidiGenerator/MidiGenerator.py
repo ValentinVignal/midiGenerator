@@ -21,14 +21,6 @@ class MidiGenerator(MGGenerate, MGReplicate, MGComputeGeneration, MGData, MGTrai
     #               Class Methods
     # --------------------------------------------------
 
-    '''
-    @classmethod
-    def from_model(cls, id, name='name', data=None):
-        my_model = cls(name=name, data=data)
-        my_model.load_model(id=id)
-        return my_model
-    '''
-
     @classmethod
     def with_new_model(cls, model_infos, name='name', work_on=g.mg.work_on, data=None):
         my_model = cls(name=name, data=data)

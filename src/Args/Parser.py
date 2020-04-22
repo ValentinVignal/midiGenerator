@@ -375,9 +375,13 @@ class Parser(argparse.ArgumentParser):
         :param argtype:
         :return:
         """
+        self.add_argument('--no-train', default=False, action='store_true',
+                          help='Disable the training')
 
         self.add_argument('-l', '--load', type=str, default='',
                           help='The name of the train model to load')
+        self.add_argument('--no-save', default=False, action='store_true',
+                          help='Won t save the model')
         return self
 
     def add_execution_type_args(self, argtype=ArgType.ALL):

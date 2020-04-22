@@ -78,11 +78,13 @@ def main(args):
         midi_generator.recreate_model(args.load)
 
     # -------------------- Train --------------------
-    midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation,
-                         sequence_to_numpy=args.seq2np, fast_sequence=args.fast_seq, memory_sequence=args.memory_seq)
+    if not args.no_train:
+        midi_generator.train(epochs=args.epochs, batch=args.batch, noise=args.noise, validation=args.validation,
+                             sequence_to_numpy=args.seq2np, fast_sequence=args.fast_seq, memory_sequence=args.memory_seq)
 
     # -------------------- Save the model --------------------
-    midi_generator.save_model()
+    if not args.no_save:
+        midi_generator.save_model()
 
     # -------------------- Test --------------------
     if args.evaluate:
