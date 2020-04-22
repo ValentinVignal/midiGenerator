@@ -98,6 +98,9 @@ def main(args):
     if args.generate:
         midi_generator.generate_from_data(nb_seeds=4, save_images=True, no_duration=args.no_duration)
 
+    if args.generate_noise:
+        midi_generator.generate_from_noise(nb_seeds=4, save_images=True, no_duration=args.no_duration)
+
     # -------------------- Replicate --------------------
     if args.replicate:
         midi_generator.replicate_from_data(save_images=True, no_duration=args.no_duration, noise=args.noise)

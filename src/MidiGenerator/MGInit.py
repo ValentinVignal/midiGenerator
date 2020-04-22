@@ -191,11 +191,14 @@ class MGInit:
 
     @property
     def sequence_test(self):
-        if self.data_test_transformed_path is None:
-            return self.sequence
-        else:
-            self.get_sequence(test=True)
+        if self._sequence_test is not None:
             return self._sequence_test
+        else:
+            if self.data_test_transformed_path is None:
+                return self.sequence
+            else:
+                self.get_sequence(test=True)
+                return self._sequence_test
 
     @sequence_test.setter
     def sequence_test(self, sequence_test):
@@ -253,8 +256,14 @@ class MGInit:
 
     # ---------------------------------------- MGGenerate ----------------------------------------
 
+    def generate_from_array(self, *args, **kwargs):
+        self.warning_init_function(self.generate_from_array.__name__, 'MGGenerate')
+
     def generate_from_data(self, *args, **kwargs):
         self.warning_init_function(self.generate_from_data.__name__, 'MGGenerate')
+
+    def generate_from_noise(self, *args, **kwargs):
+        self.warning_init_function(self.generate_from_noise.__name__, 'MGGenerate')
 
     def generate_fill(self, *args, **kwargs):
         self.warning_init_function(self.generate_fill.__name__, 'MGGenerate')

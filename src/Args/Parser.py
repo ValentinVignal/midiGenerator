@@ -346,6 +346,8 @@ class Parser(argparse.ArgumentParser):
         """
         self.add_argument('--generate', default=False, action='store_true',
                           help='Generation after training')
+        self.add_argument('--generate-noise', default=False, action='store_true',
+                          help='Generation after training from noise')
         self.add_argument('--replicate', default=False, action='store_true',
                           help='Replication after training')
         self.add_argument('--generate-fill', default=False, action='store_true',

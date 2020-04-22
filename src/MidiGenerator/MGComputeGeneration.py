@@ -14,21 +14,32 @@ class MGComputeGeneration(MGInit):
     """
 
     @staticmethod
-    def reshape_generated_array(array):
+    def reshape_generated_array(array, keep_batch=False):
         """
 
         :param array: (nb_instruments, batch=1, nb_steps, step_length, size, channels)
         :return: array: (nb_instruments, size, length, channels)
         """
-        array = np.reshape(
-            array,
-            (array.shape[0], array.shape[2] * array.shape[3], *array.shape[4:])
-        )  # (nb_instruments, length, size, channels)
-        array = np.transpose(
-            array,
-            (0, 2, 1, 3)
-        )  # (nb_instruments, size, length, channels)
-        return array
+        if keep_batch:
+            array = np.reshape(
+                array,
+                (array.shape[0], array.shape[1], array.shape[2] * array.shape[3], *array.shape[4:])
+            )  # (nb_instruments, batch, length, size, channels)
+            array = np.transpose(
+                array,
+                (1, 0, 3, 2, 4)
+            )  # (batch, nb_instruments,  size, length, channels)
+            return array
+        else:
+            array = np.reshape(
+                array,
+                (array.shape[0], array.shape[2] * array.shape[3], *array.shape[4:])
+            )  # (nb_instruments, length, size, channels)
+            array = np.transpose(
+                array,
+                (0, 2, 1, 3)
+            )  # (nb_instruments, size, length, channels)
+            return array
 
     @staticmethod
     def accuracy_generation(array, truth, mono=False):

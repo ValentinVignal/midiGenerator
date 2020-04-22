@@ -15,6 +15,49 @@ class MGGenerate(MGComputeGeneration, MGInit):
 
     """
 
+    def generate_from_array(self, array, length=None, mask=None):
+        """
+
+        :param mask:
+        :param array: (nb_instruments, batch, nb_steps, step_size, inputs_size, channels)
+        :param length:
+        :return:
+        """
+        # -- Length --
+        length = length if length is not None else 10
+        # -- mask --
+        mask = self.get_mask(batch_size=array.shape[1]) if mask is None else mask
+        # --- Done Verifying the inputs ---
+
+        bar = progressbar.ProgressBar(maxval=length,
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
+                                               progressbar.ETA()])
+        generated = np.copy(array)
+        bar.start()  # To see it working
+        for l in range(length):
+            samples = generated[:, :, -self.nb_steps:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
+            # expanded_samples = np.expand_dims(samples, axis=0)
+            preds = self.keras_nn.generate(
+                input=list(samples) + mask)  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
+            preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
+            if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
+                preds = preds[np.newaxis]
+            next_array = midi.create.normalize_activation(
+                preds,
+                mono=self.mono,
+                use_binary=self.use_binary
+            )  # Normalize the activation part
+            generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, nb_steps, length, 88, 2)
+
+            bar.update(l + 1)
+        bar.finish()
+
+        generated_midi_final = self.reshape_generated_array(
+            generated,
+            keep_batch=True
+        )  # (batch, nb_instruments, size, length, channels)
+        return generated_midi_final
+
     def generate_from_data(self, nb_seeds=10, length=None, new_save_path=None, save_images=False,
                            no_duration=False, verbose=1):
         """
@@ -33,51 +76,33 @@ class MGGenerate(MGComputeGeneration, MGInit):
         if self.data_transformed_path is None and self.data_test_transformed_path is None:
             raise Exception('Some data need to be loaded before generating')
         path = self.data_transformed_path if self.data_test_transformed_path is None else self.data_test_transformed_path
-        self.sequence = Sequences.AllInstSequence(
+        self.sequence_test = Sequences.AllInstSequence(
             path=path,
             nb_steps=self.nb_steps,
             batch_size=1,
             work_on=self.work_on)
-        nb_instruments = self.sequence.nb_instruments
 
-        seeds_indexes = random.sample(range(len(self.sequence)), nb_seeds)
+        seeds = []
+        seeds_indexes = random.sample(range(len(self.sequence_test)), nb_seeds)
+        for s in range(nb_seeds):
+            seeds.append(
+                np.array(self.sequence_test[seeds_indexes[s]][0])
+            )  # (nb_instruments, 1, nb_steps, step_size, input_size, channels)
+        seeds = np.concatenate(seeds, axis=1)  # (nb_instruments, batch, nb_steps, step_size, input_size, channels)
 
         # -- Length --
         length = length if length is not None else 10
         # --- Done Verifying the inputs ---
-        mask = self.get_mask(nb_instruments)
 
         self.save_midis_path.mkdir(parents=True, exist_ok=True)
         cprint('Start generating from data ...', 'blue')
+        generated_midi_final = self.generate_from_array(
+            array=seeds,
+            length=length,
+        )  # (batch, nb_instruments, size, length, channels)
         for s in range(nb_seeds):
-            cprint('Generation {0}/{1}'.format(s + 1, nb_seeds), 'blue')
-            generated = np.array(
-                self.sequence[seeds_indexes[s]][0])  # (nb_instruments, 1, nb_steps, step_size, inputs_size, 2)
-            bar = progressbar.ProgressBar(maxval=length,
-                                          widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',
-                                                   progressbar.ETA()])
-            bar.start()  # To see it working
-            for l in range(length):
-                samples = generated[:, :, l:]  # (nb_instruments, 1, nb_steps, length, 88, 2)   # 1 = batch
-                # expanded_samples = np.expand_dims(samples, axis=0)
-                preds = self.keras_nn.generate(
-                    input=list(samples) + mask)  # (nb_instruments, batch=1 , nb_steps=1, length, 88, 2)
-                preds = np.asarray(preds).astype('float64')  # (nb_instruments, 1, 1, step_size, input_size, 2)
-                if len(preds.shape) == 4:  # Only one instrument : output of nn not a list
-                    preds = preds[np.newaxis]
-                next_array = midi.create.normalize_activation(
-                    preds,
-                    mono=self.mono,
-                    use_binary=self.use_binary
-                )  # Normalize the activation part
-                generated = np.concatenate((generated, next_array), axis=2)  # (nb_instruments, nb_steps, length, 88, 2)
-
-                bar.update(l + 1)
-            bar.finish()
-
-            generated_midi_final = self.reshape_generated_array(generated)
             self.compute_generated_array(
-                generated_array=generated_midi_final,
+                generated_array=generated_midi_final[s],
                 folder_path=self.save_midis_path,
                 name=f'generated_{s}',
                 no_duration=no_duration,
@@ -101,6 +126,81 @@ class MGGenerate(MGComputeGeneration, MGInit):
         )
 
         cprint('Done generating', 'green')
+
+    def generate_from_noise(self, nb_seeds=10, length=None, new_save_path=None, save_images=False,
+                            no_duration=False, verbose=1):
+        """
+        Generate Midi file from the seed and the trained model
+        :param nb_seeds: number of seeds for the generation
+        :param length: Length of th generation
+        :param new_save_path:
+        :param save_images: To save the pianoroll of the generation (.jpg images)
+        :param no_duration: if True : all notes will be the shortest length possible
+        :param verbose: Level of verbose
+        :return:
+        """
+        # ---------- Verify the inputs ----------
+
+        # ----- Create the seed -----
+        random_type = ['gaussian', 'softmax', 'binary']
+        for t in random_type:
+            if t == 'gaussian':
+                seeds = np.random.normal(
+                    loc=0.5,
+                    scale=1.0,
+                    size=(self.nb_instruments, nb_seeds, self.nb_steps, self.step_length, self.input_size, self.nb_channels)
+                )
+            else:
+                seeds = np.zeros((self.nb_instruments, nb_seeds, self.nb_steps, self.step_length, self.input_size, self.nb_channels))
+                for inst in range(self.nb_instruments):
+                    for s in range(nb_seeds):
+                        for step in range(self.nb_steps):
+                            for i in range(self.step_length):
+                                if t == 'softmax':
+                                    note = np.random.randint(self.input_size)
+                                else:
+                                    bin = np.random.randint(2)
+                                    if bin == 1:
+                                        note = self.input_size - 1
+                                    else:
+                                        note = np.random.randint(self.input_size - 1)
+                                seeds[inst, s, step, i, note] = 1
+            # -- Length --
+            length = length if length is not None else 10
+            # --- Done Verifying the inputs ---
+
+            self.save_midis_path.mkdir(parents=True, exist_ok=True)
+            cprint(f'Start generating from {t} noise ...', 'blue')
+            generated_midi_final = self.generate_from_array(
+                array=seeds,
+                length=length,
+            )  # (batch, nb_instruments, size, length, channels)
+            for s in range(nb_seeds):
+                self.compute_generated_array(
+                    generated_array=generated_midi_final[s],
+                    folder_path=self.save_midis_path,
+                    name=f'generated_noise_{t}_{s}',
+                    no_duration=no_duration,
+                    verbose=verbose,
+                    save_images=save_images
+                )
+
+            if self.batch is not None:
+                self.sequence.batch_size = self.batch
+
+            summary.summarize(
+                # Function params
+                path=self.save_midis_path,
+                title=self.full_name,
+                file_name='generate_noise_summary.txt',
+                # Summary params
+                lenght=length,
+                no_duration=no_duration,
+                # Generic Summary
+                **self.summary_dict
+            )
+
+        cprint('Done generating from noise', 'green')
 
     def generate_fill(self, max_length=None, no_duration=False, verbose=1):
         """
