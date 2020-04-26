@@ -1,6 +1,12 @@
 import numpy as np
 from epicpath import EPath
-import math
+import os
+import sys
+import pickle
+
+
+if __name__ == '__main__':
+    sys.path.append(os.path.abspath('.'))
 
 from src import Midi
 
@@ -69,8 +75,12 @@ def eval_songs_folder(path):
         seed_length = 8 if file.rstem[20:] != "redo_song_generate_3" else None
         res = eval_song_midi(file, seed_length)
         all_res[file.rstem] = res
-        res_seed += res['harmony_seed']
-        res_created += res['harmony_created']
+        h_s = res['harmony_seed']
+        h_c = res['harmony_created']
+        if h_s is not None and not np.isnan(h_s):
+            res_seed += res['harmony_seed']
+        if h_c is not None and not np.isnan(h_c):
+            res_created += h_c
         text += file.rstem + '\n'
         for k in res:
             text += f'\t{k}: {res[k]}\n'
@@ -80,6 +90,24 @@ def eval_songs_folder(path):
     text = f'\t\tRes for generation\n\nMean:\n\tharmony_seed: {res_seed}\n\tharmony_created: {res_created}\n' + text
     with open(path / 'res.txt', 'w') as f:
         f.write(text)
+    with open(path / 'res.p', 'wb') as dump_file:
+        pickle.dump(all_res, dump_file)
+
+
+if __name__ == '__main__':
+    path = EPath('..', '..', '..', 'big_runs', 'lstm')
+    for folder in path.listdir(concat=True):
+        if not folder.is_dir():
+            continue
+        midi_folder = folder / 'generated_midis'
+        midi_folder /= midi_folder.listdir(concat=False)[0]
+        eval_songs_folder(midi_folder)
+
+
+
+
+
+
 
 
 
