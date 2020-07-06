@@ -5,6 +5,12 @@
 This project aim to train different neural networks on midi dataset to
 generate music
 
+## Context
+
+This repository contains the code of my Master Thesis for my Master in the School of Computing of the [National University of Singapore](https://www.comp.nus.edu.sg/) ***""Music completion with deep probabilistic models"***
+
+The Report, Abstract and Presentation's slides are available [here](https://github.com/ValentinVignal/Dissertation-Report)
+
 ## Files
 
 ### `bayesian-opt.py`
