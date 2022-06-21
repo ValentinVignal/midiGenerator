@@ -1,7 +1,7 @@
 termcolor==1.1.0
 colour==0.1.5
 matplotlib==3.1.0
-numpy==1.17.4
+numpy==1.22.0
 epic_path==0.0.7
 dill==0.3.0
 pygame==1.9.6
