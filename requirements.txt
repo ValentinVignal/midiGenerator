@@ -8,7 +8,7 @@ pygame==1.9.6
 pynput==1.6.6
 music21==5.7.0
 scikit_optimize==0.7.1
-tensorflow==2.0.0
+tensorflow==2.9.3
 typeguard==2.5.1
 Pillow==7.1.1
 progressbar2==3.51.0
